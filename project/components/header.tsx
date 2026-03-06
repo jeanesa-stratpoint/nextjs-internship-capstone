@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useTheme } from "./theme-provider"
-import { Moon, Sun } from "lucide-react"
-import Link from "next/link"
+import { useTheme } from "./theme-provider";
+import { Moon, Sun } from "lucide-react";
+import Link from "next/link";
 
 export function Header() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme();
 
   return (
     <header className="border-b border-french_gray-300 dark:border-payne's_gray-400 bg-white/80 dark:bg-outer_space-500/80 backdrop-blur-sm">
@@ -56,5 +56,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

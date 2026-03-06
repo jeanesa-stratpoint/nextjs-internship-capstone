@@ -10,17 +10,17 @@
 export default function middleware() {
   // TODO: Implement actual authentication middleware
   // For now, allow all routes so interns can navigate and see the mock pages
-  console.log("TODO: Implement Clerk authentication middleware")
+  console.log("TODO: Implement Clerk authentication middleware");
 
   // Return undefined to allow all requests through
-  return undefined
+  return undefined;
 }
 
 export const config = {
   // TODO: Update matcher when implementing actual authentication
   // For now, don't match any routes to allow free navigation
   matcher: [],
-}
+};
 
 /*
 TODO: Task 2.2 Implementation Notes for Interns:

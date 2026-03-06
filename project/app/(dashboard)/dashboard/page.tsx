@@ -1,12 +1,14 @@
-import { TrendingUp, Users, CheckCircle, Clock, Plus } from "lucide-react"
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { TrendingUp, Users, CheckCircle, Clock, Plus } from "lucide-react";
+import { DashboardLayout } from "@/components/dashboard-layout";
 
 export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">
+            Dashboard
+          </h1>
           <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">
             Welcome back! Here's an overview of your projects and tasks.
           </p>
@@ -21,7 +23,9 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">Dashboard Implementation Tasks</h3>
+              <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Dashboard Implementation Tasks
+              </h3>
               <div className="mt-2 text-sm text-blue-800 dark:text-blue-200">
                 <ul className="list-disc list-inside space-y-1">
                   <li>Task 4.2: Create project listing and dashboard interface</li>
@@ -75,7 +79,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Projects */}
           <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-            <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">Recent Projects</h3>
+            <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">
+              Recent Projects
+            </h3>
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
                 <div
@@ -83,7 +89,9 @@ export default function DashboardPage() {
                   className="flex items-center justify-between p-3 bg-platinum-800 dark:bg-outer_space-400 rounded-lg"
                 >
                   <div>
-                    <div className="font-medium text-outer_space-500 dark:text-platinum-500">Project {i}</div>
+                    <div className="font-medium text-outer_space-500 dark:text-platinum-500">
+                      Project {i}
+                    </div>
                     <div className="text-sm text-payne's_gray-500 dark:text-french_gray-400">
                       Last updated 2 hours ago
                     </div>
@@ -103,7 +111,9 @@ export default function DashboardPage() {
 
           {/* Quick Actions */}
           <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-            <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">Quick Actions</h3>
+            <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">
+              Quick Actions
+            </h3>
             <div className="space-y-3">
               <button className="w-full flex items-center justify-center px-4 py-3 bg-blue_munsell-500 text-white rounded-lg hover:bg-blue_munsell-600 transition-colors">
                 <Plus size={20} className="mr-2" />
@@ -127,5 +137,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }

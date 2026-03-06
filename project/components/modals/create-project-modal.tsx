@@ -44,5 +44,5 @@ export function CreateProjectModal() {
         </div>
       </div>
     </div>
-  )
+  );
 }
