@@ -1,34 +1,62 @@
 // TODO: Task 2.3 - Create sign-in and sign-up pages
+import { SignUp } from "@clerk/nextjs";
+import Image from "next/image";
+
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-platinum-900 dark:bg-outer_space-600 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500 mb-2">
-            Create Account
-          </h1>
-          <p className="text-payne's_gray-500 dark:text-french_gray-400">
-            Join our project management platform
-          </p>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="bg-white/90 backdrop-blur-xl shadow-2xl rounded-3xl w-full max-w-[680px] p-6 sm:p-8 ">
+        
+        <div className="flex justify-center w-full mb-4">
+          <Image 
+            src="/levera-logo.svg" 
+            alt="Levera Logo" 
+            width={192}   
+            height={48}   
+            className="h-12 w-auto object-contain"
+            priority      
+          />
         </div>
 
-        {/* TODO: Task 2.3 - Replace with actual Clerk SignUp component */}
-        <div className="bg-white dark:bg-outer_space-500 p-8 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400">
-          <div className="text-center text-payne's_gray-500 dark:text-french_gray-400">
-            <p className="mb-4">📝 Clerk Registration Component Placeholder</p>
-            <p className="text-sm">TODO: Implement Clerk SignUp component</p>
-            <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                📋 <strong>For Interns:</strong> Replace this with {`<SignUp />`} from @clerk/nextjs
-              </p>
-            </div>
-          </div>
-        </div>
+        <SignUp
+          appearance={{
+            elements: {
+              cardBox: "bg-transparent shadow-none border-none w-full",
+              card: "bg-transparent shadow-none border-none", 
+              
+              logoBox: "hidden", 
+              
+              headerTitle: "text-2xl sm:text-3xl font-bold text-black text-center",
+              headerSubtitle: "text-sm sm:text-base text-gray-800 text-center mb-4 mt-2",
+              
+              socialButtonsBlockButton:
+                "border border-gray-300 rounded-full py-2.5 hover:bg-gray-50 text-sm font-medium transition-colors",
+              socialButtonsBlockButtonText: "font-semibold",
+              
+              dividerRow: "my-4",
+              dividerLine: "bg-gray-200",
+              dividerText: "text-gray-400 text-xs",
+              
+              formFieldLabel: "text-xs font-bold text-black mb-1",
+              formFieldInput:
+                "rounded-lg border border-gray-300 focus:ring-black focus:border-black py-2.5 px-3 text-sm",
+              
+              formButtonPrimary:
+                "bg-black text-white hover:bg-gray-900 rounded-full py-3 mt-4 text-sm font-bold uppercase tracking-wide transition-colors",
+              
+              footer: "bg-transparent border-none p-0 mt-6",
+              footerAction: "bg-transparent border-none p-0 justify-center",
+              footerActionText: "text-gray-600 text-sm",
+              footerActionLink: "text-black font-bold hover:text-gray-800 text-sm",
+              
+              watermark: "hidden",
+            },
+          }}
+        />
       </div>
     </div>
   );
 }
-
 /*
 TODO: Task 2.3 Implementation Notes:
 - Import SignUp from @clerk/nextjs
