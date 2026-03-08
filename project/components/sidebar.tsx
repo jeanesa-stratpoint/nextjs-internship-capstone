@@ -23,12 +23,12 @@ export default function Sidebar() {
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Projects", href: "/dashboard/projects", icon: FolderKanban },
-    { name: "Team", href: "/dashboard/team", icon: Users },
-    { name: "Analytics", href: "/dashboard/analytics", icon: PieChart },
-    { name: "Calendar", href: "/dashboard/calendar", icon: CalendarDays },
-    { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
+    { name: "Projects", href: "/projects", icon: FolderKanban },
+    { name: "Team", href: "/team", icon: Users },
+    { name: "Analytics", href: "/analytics", icon: PieChart },
+    { name: "Calendar", href: "/calendar", icon: CalendarDays },
+    { name: "Notifications", href: "/notifications", icon: Bell },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (
