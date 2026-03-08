@@ -111,7 +111,9 @@ export const tasks = pgTable('tasks', {
   listId: uuid('list_id').notNull().references(() => lists.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description'),
-  assigneeId: text('assignee_id').references(() => users.id, { onDelete: 'set null' }), // Kept to "one assignee" per your decision!
+  assigneeId: text('assignee_id').references(() => users.id, { onDelete: 'set null' }),
+  priority: varchar('priority', { length: 20 }).default('medium'), 
+  dueDate: timestamp('due_date'),
   order: integer('order').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
