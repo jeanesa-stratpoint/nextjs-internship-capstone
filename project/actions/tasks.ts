@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 
 export async function createTaskAction(formData: unknown, projectId: string) {
   try {
@@ -34,5 +35,23 @@ export async function createTaskAction(formData: unknown, projectId: string) {
   } catch (error) {
     console.error("Failed to create task:", error);
     return { success: false, error: "Failed to create task. Please check your inputs." };
+  }
+}
+
+export async function updateTaskStatus(taskId: string, newListId: string, projectId: string) {
+  try {
+    // Update the task's listId in the Neon database
+    await db
+      .update(tasks)
+      .set({ listId: newListId })
+      .where(eq(tasks.id, taskId));
+
+    // Clear the Next.js cache so the board stays perfectly in sync
+    revalidatePath(`/projects/${projectId}`);
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update task status:", error);
+    return { success: false, error: "Failed to move task." };
   }
 }
