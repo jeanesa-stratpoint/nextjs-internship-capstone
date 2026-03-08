@@ -84,15 +84,19 @@ export const projects = pgTable('projects', {
   name: text('name').notNull(),
   description: text('description'),
   ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  dueDate: timestamp('due_date'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export const projectMembers = pgTable('project_members', {
-  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.projectId, t.userId] }),
-}));
+  projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  userId: text('user_id').notNull(), // The Clerk User ID
+  role: text('role').notNull().default('member'), // Can be 'owner', 'admin', or 'member'
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
+}, (t) => [
+  // This ensures a user can only be added to a specific project once!
+  primaryKey({ columns: [t.projectId, t.userId] }), 
+]);
 
 
 // ==========================================
