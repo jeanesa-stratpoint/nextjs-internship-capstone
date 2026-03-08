@@ -139,41 +139,61 @@
 // }
 
 import { db } from "@/lib/db";
-import { projects } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { projects, lists, tasks } from "@/lib/db/schema"; // <-- Added lists import
+import { eq, asc, inArray } from "drizzle-orm"; // <-- Added asc import
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Users, CalendarDays } from "lucide-react";
+import KanbanBoard from "@/components/kanban-board";
 
-export default async function ProjectDetailPage({ 
-  params 
-}: { 
-  // In newer Next.js versions, params is a Promise!
-  params: Promise<{ id: string }> 
-}) {
-  // 1. Properly await the dynamic URL parameters
+export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const projectId = resolvedParams.id;
 
-  // 2. Fetch the specific project using standard Drizzle syntax
+  // 1. Fetch the project
   const projectResult = await db
     .select()
     .from(projects)
     .where(eq(projects.id, projectId));
 
-  const project = projectResult[0]; // Grab the first (and only) match
+  const project = projectResult[0];
 
-  // 3. If the DB doesn't have this ID, trigger the 404 intentionally
   if (!project) {
-    console.warn("Uh oh! Could not find project with ID:", projectId);
     notFound();
   }
 
+  // 2. Fetch the real columns (lists) for this project
+  let boardLists = await db
+    .select()
+    .from(lists)
+    .where(eq(lists.projectId, projectId))
+    .orderBy(asc(lists.order));
+
+  // 3. If the project has no columns, auto-generate the 4 defaults!
+  if (boardLists.length === 0) {
+    boardLists = await db.insert(lists).values([
+      { name: "To Do", projectId: projectId, order: 0 },
+      { name: "In Progress", projectId: projectId, order: 1 },
+      { name: "Review", projectId: projectId, order: 2 },
+      { name: "Done", projectId: projectId, order: 3 },
+    ]).returning();
+  }
+
+  // 3. NEW: Extract the IDs of the columns we just fetched
+  const listIds = boardLists.map(list => list.id);
+
+  // 4. NEW: Fetch all tasks that belong to these columns
+  const boardTasks = await db
+    .select()
+    .from(tasks)
+    .where(inArray(tasks.listId, listIds))
+    .orderBy(asc(tasks.order));
+    console.log(" SERVER FETCHED TASKS:", boardTasks);
+
   return (
-    <div className="h-full flex flex-col text-black">
-      
-      {/* HEADER ROW (Matches image_ac5de9.png) */}
-      <div className="flex items-start justify-between mb-4">
+    <div className="h-full flex flex-col text-black overflow-hidden">
+      {/* HEADER ROW RESTORED! */}
+      <div className="flex items-start justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
           <Link 
             href="/projects" 
@@ -194,17 +214,18 @@ export default async function ProjectDetailPage({
         </div>
       </div>
 
-      {/* DESCRIPTION */}
-      <p className="text-gray-600 ml-14 max-w-4xl mb-10">
+      {/* DESCRIPTION RESTORED! */}
+      <p className="text-gray-600 ml-14 max-w-4xl mb-8 flex-shrink-0">
         {project.description || "No description provided for this project."}
       </p>
-
-      {/* KANBAN BOARD PLACEHOLDER */}
-      <div className="flex-1 bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-[24px] flex items-center justify-center">
-        <div className="text-center">
-          <h3 className="text-lg font-bold text-gray-400 mb-2">Kanban Board UI Goes Here</h3>
-          <p className="text-sm text-gray-400">Next step: Build the To Do, In Progress, Review, and Done columns!</p>
-        </div>
+      
+      {/* 5. NEW: Pass initialTasks to the KanbanBoard! */}
+      <div className="flex-1 overflow-hidden ml-14">
+        <KanbanBoard 
+          projectId={project.id} 
+          initialLists={boardLists} 
+          initialTasks={boardTasks} 
+        />
       </div>
 
     </div>

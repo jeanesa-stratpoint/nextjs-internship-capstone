@@ -1,7 +1,3 @@
-"use client";
-
-import { useState } from "react";
-
 // TODO: Task 5.1 - Design responsive Kanban board layout
 // TODO: Task 5.2 - Implement drag-and-drop functionality with dnd-kit
 
@@ -37,116 +33,143 @@ State management:
 - Handle conflicts with server state
 */
 
-const initialColumns = [
-  {
-    id: "todo",
-    title: "To Do",
-    tasks: [
-      {
-        id: "1",
-        title: "Design homepage mockup",
-        description: "Create initial design concepts",
-        priority: "high",
-        assignee: "John Doe",
-      },
-      {
-        id: "2",
-        title: "Research competitors",
-        description: "Analyze competitor websites",
-        priority: "medium",
-        assignee: "Jane Smith",
-      },
-      {
-        id: "3",
-        title: "Define user personas",
-        description: "Create detailed user personas",
-        priority: "low",
-        assignee: "Mike Johnson",
-      },
-    ],
-  },
-  {
-    id: "in-progress",
-    title: "In Progress",
-    tasks: [
-      {
-        id: "4",
-        title: "Develop navigation component",
-        description: "Build responsive navigation",
-        priority: "high",
-        assignee: "Sarah Wilson",
-      },
-      {
-        id: "5",
-        title: "Content strategy",
-        description: "Plan content structure",
-        priority: "medium",
-        assignee: "Tom Brown",
-      },
-    ],
-  },
-  {
-    id: "review",
-    title: "Review",
-    tasks: [
-      {
-        id: "6",
-        title: "Logo design options",
-        description: "Present logo variations",
-        priority: "high",
-        assignee: "Lisa Davis",
-      },
-    ],
-  },
-  {
-    id: "done",
-    title: "Done",
-    tasks: [
-      {
-        id: "7",
-        title: "Project kickoff meeting",
-        description: "Initial team meeting completed",
-        priority: "medium",
-        assignee: "John Doe",
-      },
-      {
-        id: "8",
-        title: "Requirements gathering",
-        description: "Collected all requirements",
-        priority: "high",
-        assignee: "Jane Smith",
-      },
-    ],
-  },
-];
+"use client";
 
-export function KanbanBoard({ projectId }: { projectId: string }) {
-  const [columns, setColumns] = useState(initialColumns);
+import { useEffect, useState } from "react";
+import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent, closestCorners } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { Plus, Circle, Clock, CheckCircle2, CheckCircle } from "lucide-react";
+import { useBoardStore, List, Task } from "@/stores/board-store";
+import TaskCard from "@/components/task-card";
+import CreateTaskModal from "./modals/create-task-modal";
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
-      case "medium":
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
-      case "low":
-        return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
-      default:
-        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+const getColumnStyling = (name: string) => {
+  if (name === "In Progress") return { icon: Clock, color: "text-amber-500" };
+  if (name === "Review") return { icon: CheckCircle2, color: "text-emerald-500" };
+  if (name === "Done") return { icon: CheckCircle, color: "text-rose-500" };
+  return { icon: Circle, color: "text-gray-400" };
+};
+
+export default function KanbanBoard({ 
+  projectId, 
+  initialLists,
+  initialTasks // 1. Catching the tasks from the server!
+}: { 
+  projectId: string;
+  initialLists: List[]; 
+  initialTasks: Task[]; 
+}) {
+  const { tasks, setBoardData, moveTask } = useBoardStore();
+  const [isMounted, setIsMounted] = useState(false);
+  const [activeListId, setActiveListId] = useState<string | null>(null);
+
+  // 2. IMMEDIATE LOG: This will fire the second the component exists!
+  console.log("🔥 KANBAN BOARD RECEIVED PROPS ->", { 
+    listCount: initialLists?.length, 
+    taskCount: initialTasks?.length,
+    tasks: initialTasks 
+  });
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setIsMounted(true);
+    }, 0);
+    
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    // 3. CRITICAL: Pushing the REAL tasks into your Zustand store!
+    setBoardData(initialLists, initialTasks); 
+  }, [setBoardData, initialLists, initialTasks, isMounted]);
+
+  if (!isMounted) return null;
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const taskId = active.id as string;
+    const targetListId = over.id as string;
+    const activeTask = tasks.find(t => t.id === taskId);
+    
+    if (activeTask && activeTask.listId !== targetListId) {
+      moveTask(taskId, targetListId, 0);
     }
   };
 
   return (
-    <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-      <div className="text-center text-payne's_gray-500 dark:text-french_gray-400">
-        <h3 className="text-lg font-semibold mb-2">TODO: Implement Kanban Board</h3>
-        <p className="text-sm mb-4">Project ID: {projectId}</p>
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded border border-yellow-200 dark:border-yellow-800">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            📋 This will be the main interactive Kanban board with drag-and-drop functionality
-          </p>
-        </div>
+    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+      <div className="flex h-full gap-6 overflow-x-auto pb-4 items-start" data-project-id={projectId}>
+        
+        {/* Map over the REAL database lists */}
+        {initialLists.map((column) => {
+          const style = getColumnStyling(column.name);
+          const Icon = style.icon;
+          const columnTasks = tasks.filter(task => task.listId === column.id);
+
+          return (
+            <div key={column.id} className="flex-shrink-0 w-[320px] bg-white border border-gray-100 rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px]">
+              
+              <div className="flex items-center justify-between p-5 border-b border-gray-50/50">
+                <div className="flex items-center gap-2">
+                  <Icon size={18} className={style.color} />
+                  <h3 className="font-bold text-black">{column.name}</h3>
+                </div>
+                <span className="text-xs font-bold text-gray-400">{columnTasks.length}</span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                <SortableContext items={columnTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                  {columnTasks.length === 0 ? (
+                    <div className="border-2 border-dashed border-gray-200 rounded-xl h-24 flex items-center justify-center text-sm text-gray-400 font-medium bg-gray-50/50">
+                      Drop tasks here
+                    </div>
+                  ) : (
+                    columnTasks.map(task => <TaskCard key={task.id} task={task} />)
+                  )}
+                </SortableContext>
+              </div>
+
+              <div className="p-3 mt-auto">
+                {/* Clicking this now passes a REAL UUID to the modal! */}
+                <button 
+                  onClick={() => setActiveListId(column.id)}
+                  className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 hover:text-black hover:bg-gray-50 rounded-xl transition-colors"
+                >
+                  <Plus size={16} />
+                  Add task
+                </button>
+              </div>
+              
+            </div>
+          );
+        })}
+
       </div>
-    </div>
+
+      <CreateTaskModal 
+        isOpen={activeListId !== null} 
+        onClose={() => setActiveListId(null)} 
+        listId={activeListId || ""} 
+        projectId={projectId} 
+      />
+    </DndContext>
   );
 }
+
+
+
+
+
+  // useEffect(() => {
+  //   const timeout = setTimeout(() => {
+  //     setIsMounted(true);
+  //   }, 0);
+    
+  //   return () => clearTimeout(timeout);
+  // }, []);
