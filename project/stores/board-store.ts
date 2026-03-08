@@ -57,15 +57,77 @@ export const useBoardStore = create<BoardState>()(
 */
 
 // Placeholder to prevent import errors
-export const useBoardStore = () => {
-  console.log("TODO: Implement board store with Zustand");
-  return {
-    currentProject: null,
-    lists: [],
-    tasks: [],
-    isLoading: false,
-    loadProject: (projectId: string) => console.log(`TODO: Load project ${projectId}`),
-    createTask: (listId: string, task: any) =>
-      console.log(`TODO: Create task in list ${listId}`, task),
-  };
-};
+// export const useBoardStore = () => {
+//   console.log("TODO: Implement board store with Zustand");
+//   return {
+//     currentProject: null,
+//     lists: [],
+//     tasks: [],
+//     isLoading: false,
+//     loadProject: (projectId: string) => console.log(`TODO: Load project ${projectId}`),
+//     createTask: (listId: string, task: any) =>
+//       console.log(`TODO: Create task in list ${listId}`, task),
+//   };
+// };
+
+import { create } from 'zustand';
+
+// 1. Define the TypeScript interfaces based on your database schema
+export interface Task {
+  id: string;
+  title: string;
+  listId: string;
+  order: number;
+}
+
+export interface List {
+  id: string;
+  name: string;
+  order: number;
+}
+
+interface BoardState {
+  // Data State
+  lists: List[];
+  tasks: Task[];
+  
+  // UI Loading State
+  isLoading: boolean;
+  
+  // Actions
+  setBoardData: (lists: List[], tasks: Task[]) => void;
+  
+  // Optimistic UI Actions (Task 5.4)
+  moveTask: (taskId: string, newListId: string, newOrder: number) => void;
+  reorderTask: (taskId: string, newOrder: number) => void;
+}
+
+// 2. Create the Zustand Store
+export const useBoardStore = create<BoardState>((set) => ({
+  lists: [],
+  tasks: [],
+  isLoading: false,
+
+  // Called when the page first loads to populate the board
+  setBoardData: (lists, tasks) => set({ lists, tasks }),
+
+  // Called when dragging a task into a completely DIFFERENT column
+  moveTask: (taskId, newListId, newOrder) => 
+    set((state) => ({
+      tasks: state.tasks.map((task) => 
+        task.id === taskId 
+          ? { ...task, listId: newListId, order: newOrder } 
+          : task
+      )
+    })),
+
+  // Called when reordering a task within the SAME column
+  reorderTask: (taskId, newOrder) =>
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        task.id === taskId
+          ? { ...task, order: newOrder }
+          : task
+      )
+    })),
+}));
