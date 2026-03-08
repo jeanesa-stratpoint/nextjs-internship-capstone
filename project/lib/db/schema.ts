@@ -44,7 +44,7 @@ export const users = pgTable('users', {
 // export const comments = "TODO: Implement comments table schema";
 
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp, uuid, primaryKey, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer } from 'drizzle-orm/pg-core';
 
 // ==========================================
 // 1. SYSTEM RBAC TABLES (Supervisor Request)
@@ -73,8 +73,8 @@ export const rolePermissions = pgTable('role_permissions', {
 export const users = pgTable('users', {
   id: text('id').primaryKey(), // 🔑 Crucial: This is text because we use Clerk's string IDs
   email: text('email').notNull().unique(),
-  firstName: text('first_name'),
-  lastName: text('last_name'),
+  firstName: varchar('first_name', { length: 255 }),
+  lastName: varchar('last_name', { length: 255 }),
   roleId: uuid('role_id').references(() => roles.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
