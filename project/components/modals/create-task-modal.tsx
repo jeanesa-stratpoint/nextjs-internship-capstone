@@ -57,6 +57,7 @@ import { X, Loader2, FolderDot } from "lucide-react";
 import { createTaskAction } from "@/actions/tasks";
 import { useRouter } from "next/navigation";
 import { getTodayString } from "@/lib/utils"; // <-- Your new Date Utility!
+import { TeamMember } from "../kanban-board";
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -64,9 +65,10 @@ interface CreateTaskModalProps {
   listId: string;
   projectId: string;
   projectName: string; // <-- Catching the project name
+  projectTeam: TeamMember[];
 }
 
-export default function CreateTaskModal({ isOpen, onClose, listId, projectId, projectName }: CreateTaskModalProps) {
+export default function CreateTaskModal({ isOpen, onClose, listId, projectId, projectName, projectTeam }: CreateTaskModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -93,6 +95,7 @@ export default function CreateTaskModal({ isOpen, onClose, listId, projectId, pr
       title: formData.get("title"),
       description: formData.get("description"),
       priority: formData.get("priority"),
+      assigneeId: formData.get("assigneeId") || null,
       ...(formData.get("dueDate") && { dueDate: formData.get("dueDate") }),
       listId: listId,
     };
@@ -138,6 +141,20 @@ export default function CreateTaskModal({ isOpen, onClose, listId, projectId, pr
               <FolderDot size={16} />
               <span className="font-semibold">{projectName}</span>
             </div>
+          </div>
+
+          <div>
+              <label htmlFor="assigneeId" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Assignee</label>
+              <select
+                id="assigneeId"
+                name="assigneeId"
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm appearance-none cursor-pointer"
+              >
+                <option value="">Unassigned</option>
+                {projectTeam.map(member => (
+                  <option key={member.id} value={member.id}>{member.name}</option>
+                ))}
+              </select>
           </div>
 
           <div>

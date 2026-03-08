@@ -54,12 +54,14 @@ import { CSS } from "@dnd-kit/utilities";
 import { Task } from "@/stores/board-store";
 import { CheckCircle2, Clock, Circle, CheckCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { TeamMember } from "./kanban-board"; // <-- Imports the type from the board!
 
-// EXPLICITLY DEFINING PROPS HERE
+// 1. UPDATED INTERFACE TO CATCH THE TEAM ARRAY
 interface TaskCardProps {
   task: Task;
   projectName: string;
   columnName: string;
+  projectTeam: TeamMember[]; 
 }
 
 const getColumnStyle = (name: string) => {
@@ -75,58 +77,54 @@ const getPriorityStyle = (priority?: string | null) => {
   return "bg-[#D2E9FF] text-[#15538D] border-[#15538D]";
 };
 
-// DESTRUCTURING PROPS PERFECTLY HERE
-export default function TaskCard({ task, projectName, columnName }: TaskCardProps) {
+// 2. LOGIC FOR THE AVATAR INITIALS
+const getInitials = (name?: string) => {
+  if (!name) return "UN"; // Unassigned
+  const parts = name.split(" ");
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+};
+
+export default function TaskCard({ task, projectName, columnName, projectTeam }: TaskCardProps) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ 
     id: task.id,
     data: { type: "Task", task } 
   });
 
-  const style = {
-    transition,
-    transform: CSS.Transform.toString(transform),
-  };
-
+  const style = { transition, transform: CSS.Transform.toString(transform) };
   const colStyle = getColumnStyle(columnName);
   const StatusIcon = colStyle.icon;
 
+  // 3. FIND THE ASSIGNEE'S REAL NAME
+  const assignee = projectTeam.find(member => member.id === task.assigneeId);
+  const initials = getInitials(assignee?.name);
+
   if (isDragging) {
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className="p-4 bg-gray-50 border-2 border-blue_munsell-500 border-dashed rounded-xl h-[100px] opacity-50"
-      />
-    );
+    return <div ref={setNodeRef} style={style} className="p-4 bg-gray-50 border-2 border-blue_munsell-500 border-dashed rounded-xl h-[100px] opacity-50" />;
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="p-4 bg-[white] border border-gray-200 shadow-sm hover:shadow-md rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none"
-    >
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="p-4 bg-white border border-gray-200 shadow-sm hover:shadow-md rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none">
       <div className="flex justify-between items-start mb-1">
-        
-        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 uppercase">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
           <StatusIcon size={12} className={colStyle.iconColor} />
           <span className="truncate max-w-[150px]">{projectName}</span>
         </div>
 
-        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${colStyle.avatarBg} ${colStyle.avatarText}`}>
-          UN
+        {/* 4. REAL INITIALS RENDERED HERE! */}
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${colStyle.avatarBg} ${colStyle.avatarText}`} title={assignee?.name || "Unassigned"}>
+          {initials}
         </div>
       </div>
 
       <h4 className="text-sm font-bold text-black">{task.title}</h4>
 
       <div className="flex items-center justify-between mt-3">
-        <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-[3px] capitalize border ${getPriorityStyle(task.priority)}`}>
+        <span className={`px-2.5 py-1 text-[10px] font-bold rounded-md capitalize border ${getPriorityStyle(task.priority)}`}>
           {task.priority || "Medium"}
         </span>
-        
         <span className="text-[10px] font-medium text-gray-400">
           Created {formatDate(task.createdAt)}
         </span>

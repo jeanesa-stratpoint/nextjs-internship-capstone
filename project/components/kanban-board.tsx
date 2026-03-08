@@ -52,9 +52,11 @@ import TaskCard from "@/components/task-card";
 import CreateTaskModal from "./modals/create-task-modal";
 import { updateTaskStatus } from "@/actions/tasks";
 
+export type TeamMember = { id: string; name: string; imageUrl: string };
+
 const getColumnStyling = (name: string) => {
   if (name === "In Progress") return { icon: Clock, color: "text-amber-500" };
-  if (name === "Review") return { icon: CheckCircle2, color: "text-emerald-500" };
+  if (name === "Review") return { icon: CheckCircle2, color: "textemerald-500" };
   if (name === "Done") return { icon: CheckCircle, color: "text-rose-500" };
   return { icon: Circle, color: "text-gray-400" };
 };
@@ -64,12 +66,14 @@ export default function KanbanBoard({
   projectId, 
   projectName, 
   initialLists,
-  initialTasks 
+  initialTasks,
+  projectTeam // <--- CAUGHT THE TEAM FROM THE PAGE
 }: { 
   projectId: string;
   projectName: string;
   initialLists: List[]; 
   initialTasks: Task[]; 
+  projectTeam: TeamMember[]; // <--- ADDED TO TYPES
 }) {
   const { tasks, setBoardData, moveTask } = useBoardStore();
   const [isMounted, setIsMounted] = useState(false);
@@ -129,6 +133,7 @@ export default function KanbanBoard({
               columnTasks={columnTasks} 
               setActiveListId={setActiveListId} 
               projectName={projectName} 
+              projectTeam={projectTeam} // <--- PASSED TO COLUMN
             />
           );
         })}
@@ -140,6 +145,7 @@ export default function KanbanBoard({
         listId={activeListId || ""} 
         projectId={projectId} 
         projectName={projectName}
+        projectTeam={projectTeam} // <--- PASSED TO MODAL
       />
     </DndContext>
   );
@@ -149,12 +155,14 @@ function KanbanColumn({
   column, 
   columnTasks, 
   setActiveListId,
-  projectName 
+  projectName,
+  projectTeam // <--- CAUGHT FROM BOARD
 }: { 
   column: List, 
   columnTasks: Task[], 
   setActiveListId: (id: string) => void,
-  projectName: string 
+  projectName: string,
+  projectTeam: TeamMember[] // <--- ADDED TO TYPES
 }) {
   const { setNodeRef } = useDroppable({
     id: column.id,
@@ -162,12 +170,11 @@ function KanbanColumn({
   });
 
   const style = getColumnStyling(column.name);
-  const Icon = style.icon; // <-- Properly used right below!
+  const Icon = style.icon; 
 
   return (
     <div ref={setNodeRef} className="flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px]">
       
-      {/* RESTORED HEADER */}
       <div className="flex items-center justify-between p-5 border-b border-gray-50/50">
         <div className="flex items-center gap-2">
           <Icon size={18} className={style.color} />
@@ -189,6 +196,7 @@ function KanbanColumn({
                 task={task} 
                 projectName={projectName} 
                 columnName={column.name} 
+                projectTeam={projectTeam} // <--- PASSED TO CARD
               />
             ))
           )}

@@ -139,12 +139,13 @@
 // }
 
 import { db } from "@/lib/db";
-import { projects, lists, tasks } from "@/lib/db/schema"; // <-- Added lists import
+import { projects, lists, tasks, projectMembers } from "@/lib/db/schema"; // <-- Added lists import
 import { eq, asc, inArray } from "drizzle-orm"; // <-- Added asc import
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Users, CalendarDays } from "lucide-react";
 import KanbanBoard from "@/components/kanban-board";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -161,6 +162,20 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!project) {
     notFound();
   }
+
+  // 1. FETCH THE REAL TEAM MEMBERS FROM CLERK
+  const membersData = await db.select().from(projectMembers).where(eq(projectMembers.projectId, projectId));
+  const memberIds = membersData.map(m => m.userId);
+
+  const client = await clerkClient();
+  const clerkUsers = await client.users.getUserList({ userId: memberIds });
+
+  // Clean up the data for the frontend
+  const projectTeam = clerkUsers.data.map(u => ({
+    id: u.id,
+    name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.emailAddresses[0].emailAddress,
+    imageUrl: u.imageUrl
+  }));
 
   // 2. Fetch the real columns (lists) for this project
   let boardLists = await db
@@ -222,10 +237,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {/* 5. NEW: Pass initialTasks to the KanbanBoard! */}
       <div className="flex-1 overflow-hidden ml-14">
         <KanbanBoard 
-          projectId={project.id}
-          projectName={project.name} 
+          projectId={project.id} 
+          projectName={project.name}
           initialLists={boardLists} 
           initialTasks={boardTasks} 
+          projectTeam={projectTeam}
         />
       </div>
 
