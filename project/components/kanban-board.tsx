@@ -43,7 +43,7 @@ import {
   useSensors, 
   DragEndEvent, 
   pointerWithin,
-  useDroppable // 1. ADDED: We need this to make the columns "Droppable"
+  useDroppable 
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus, Circle, Clock, CheckCircle2, CheckCircle } from "lucide-react";
@@ -59,66 +59,9 @@ const getColumnStyling = (name: string) => {
   return { icon: Circle, color: "text-gray-400" };
 };
 
-// 2. NEW: Extracted the Column into its own component so we can use a React Hook on it!
-function KanbanColumn({ 
-  column, 
-  columnTasks, 
-  setActiveListId 
-}: { 
-  column: List, 
-  columnTasks: Task[], 
-  setActiveListId: (id: string) => void 
-}) {
-  // THE MAGIC WAND: This tells dnd-kit that this entire box is a drop zone
-  const { setNodeRef } = useDroppable({
-    id: column.id,
-    data: { type: "Column", column }
-  });
-
-  const style = getColumnStyling(column.name);
-  const Icon = style.icon;
-
-  return (
-    <div 
-      ref={setNodeRef} // Attach the droppable radar to this div!
-      className="flex-shrink-0 w-[320px] bg-white border border-gray-100 rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px]"
-    >
-      <div className="flex items-center justify-between p-5 border-b border-gray-50/50">
-        <div className="flex items-center gap-2">
-          <Icon size={18} className={style.color} />
-          <h3 className="font-bold text-black">{column.name}</h3>
-        </div>
-        <span className="text-xs font-bold text-gray-400">{columnTasks.length}</span>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        <SortableContext items={columnTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          {columnTasks.length === 0 ? (
-            <div className="border-2 border-dashed border-gray-200 rounded-xl h-24 flex items-center justify-center text-sm text-gray-400 font-medium bg-gray-50/50">
-              Drop tasks here
-            </div>
-          ) : (
-            columnTasks.map(task => <TaskCard key={task.id} task={task} />)
-          )}
-        </SortableContext>
-      </div>
-
-      <div className="p-3 mt-auto">
-        <button 
-          onClick={() => setActiveListId(column.id)}
-          className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 hover:text-black hover:bg-gray-50 rounded-xl transition-colors"
-        >
-          <Plus size={16} />
-          Add task
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// 3. MAIN COMPONENT (Cleaned up!)
+// MAIN BOARD COMPONENT
 export default function KanbanBoard({ 
-  projectId,
+  projectId, 
   projectName, 
   initialLists,
   initialTasks 
@@ -135,9 +78,7 @@ export default function KanbanBoard({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setIsMounted(true);
-    }, 0);
+    const timeout = setTimeout(() => setIsMounted(true), 0);
     return () => clearTimeout(timeout);
   }, []);
 
@@ -154,8 +95,8 @@ export default function KanbanBoard({
 
     const taskId = active.id as string;
     const overId = over.id as string;
-
     const activeTask = tasks.find(t => t.id === taskId);
+    
     if (!activeTask) return;
 
     const isOverList = initialLists.some(list => list.id === overId);
@@ -179,8 +120,6 @@ export default function KanbanBoard({
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
       <div className="flex h-full gap-6 overflow-x-auto pb-4 items-start" data-project-id={projectId}>
-        
-        {/* We now map over our brand new Droppable KanbanColumn component! */}
         {initialLists.map((column) => {
           const columnTasks = tasks.filter(task => task.listId === column.id);
           return (
@@ -189,10 +128,10 @@ export default function KanbanBoard({
               column={column} 
               columnTasks={columnTasks} 
               setActiveListId={setActiveListId} 
+              projectName={projectName} 
             />
           );
         })}
-
       </div>
 
       <CreateTaskModal 
@@ -200,14 +139,74 @@ export default function KanbanBoard({
         onClose={() => setActiveListId(null)} 
         listId={activeListId || ""} 
         projectId={projectId} 
-        projectName={projectName} // <--- ADD THIS
+        projectName={projectName}
       />
     </DndContext>
   );
 }
 
+function KanbanColumn({ 
+  column, 
+  columnTasks, 
+  setActiveListId,
+  projectName 
+}: { 
+  column: List, 
+  columnTasks: Task[], 
+  setActiveListId: (id: string) => void,
+  projectName: string 
+}) {
+  const { setNodeRef } = useDroppable({
+    id: column.id,
+    data: { type: "Column", column }
+  });
 
+  const style = getColumnStyling(column.name);
+  const Icon = style.icon; // <-- Properly used right below!
 
+  return (
+    <div ref={setNodeRef} className="flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px]">
+      
+      {/* RESTORED HEADER */}
+      <div className="flex items-center justify-between p-5 border-b border-gray-50/50">
+        <div className="flex items-center gap-2">
+          <Icon size={18} className={style.color} />
+          <h3 className="font-bold text-black">{column.name}</h3>
+        </div>
+        <span className="text-xs font-bold text-gray-400">{columnTasks.length}</span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        <SortableContext items={columnTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+          {columnTasks.length === 0 ? (
+            <div className="border-2 border-dashed border-gray-200 rounded-xl h-24 flex items-center justify-center text-sm text-gray-400 font-medium bg-gray-50/50">
+              Drop tasks here
+            </div>
+          ) : (
+            columnTasks.map(task => (
+              <TaskCard 
+                key={task.id} 
+                task={task} 
+                projectName={projectName} 
+                columnName={column.name} 
+              />
+            ))
+          )}
+        </SortableContext>
+      </div>
+
+      <div className="p-3 mt-auto">
+        <button 
+          onClick={() => setActiveListId(column.id)}
+          className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 hover:text-black hover:bg-gray-50 rounded-xl transition-colors"
+        >
+          <Plus size={16} />
+          Add task
+        </button>
+      </div>
+    </div>
+  );
+}
 
 
   // useEffect(() => {

@@ -23,3 +23,12 @@ export function getTodayString(): string {
   const localISOTime = (new Date(today.getTime() - offset)).toISOString().slice(0, 10);
   return localISOTime;
 }
+
+// Formats a date for the dashboard header (e.g., "Sunday, March 8")
+export function formatHeaderDate(date: Date = new Date()): string {
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+}

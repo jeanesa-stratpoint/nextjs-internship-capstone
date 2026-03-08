@@ -52,33 +52,44 @@ Features to implement:
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Task } from "@/stores/board-store";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Clock, Circle, CheckCircle } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 
+// EXPLICITLY DEFINING PROPS HERE
 interface TaskCardProps {
   task: Task;
+  projectName: string;
+  columnName: string;
 }
 
-export default function TaskCard({ task }: TaskCardProps) {
-  // 1. The dnd-kit hook that makes this component draggable!
-  const {
-    setNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ 
+const getColumnStyle = (name: string) => {
+  if (name === "In Progress") return { icon: Clock, iconColor: "text-amber-500", avatarBg: "bg-[#FFA724]", avatarText: "text-[#FFDAA2]" };
+  if (name === "Review") return { icon: CheckCircle2, iconColor: "text-emerald-500", avatarBg: "bg-[#007B50]", avatarText: "text-[#B3D8B8]" };
+  if (name === "Done") return { icon: CheckCircle, iconColor: "text-rose-500", avatarBg: "bg-[#FF8B81]", avatarText: "text-[#FFFFFF]" };
+  return { icon: Circle, iconColor: "text-gray-400", avatarBg: "bg-[#7E7E7E]", avatarText: "text-[#BDBDBD]" };
+};
+
+const getPriorityStyle = (priority?: string | null) => {
+  if (priority === "high") return "bg-[#FFD3D3] text-[#7B0002] border-[#7B0002]";
+  if (priority === "low") return "bg-[#D3FFD8] text-[#007B50] border-[#007B50]";
+  return "bg-[#D2E9FF] text-[#15538D] border-[#15538D]";
+};
+
+// DESTRUCTURING PROPS PERFECTLY HERE
+export default function TaskCard({ task, projectName, columnName }: TaskCardProps) {
+  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ 
     id: task.id,
     data: { type: "Task", task } 
   });
 
-  // 2. This applies the visual CSS transform while you are dragging
   const style = {
     transition,
     transform: CSS.Transform.toString(transform),
   };
 
-  // 3. If we are currently dragging this card, leave a semi-transparent placeholder behind
+  const colStyle = getColumnStyle(columnName);
+  const StatusIcon = colStyle.icon;
+
   if (isDragging) {
     return (
       <div
@@ -89,40 +100,35 @@ export default function TaskCard({ task }: TaskCardProps) {
     );
   }
 
-  // 4. The actual rendered card
   return (
     <div
       ref={setNodeRef}
       style={style}
-      // These attributes make the entire card a draggable handle
       {...attributes}
       {...listeners}
-      className="p-4 bg-white border border-gray-200 shadow-sm hover:shadow-md rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none"
+      className="p-4 bg-[white] border border-gray-200 shadow-sm hover:shadow-md rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none"
     >
-      {/* Card Header */}
       <div className="flex justify-between items-start mb-1">
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-          <CheckCircle2 size={12} />
-          <span>Project #</span>
+        
+        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 uppercase">
+          <StatusIcon size={12} className={colStyle.iconColor} />
+          <span className="truncate max-w-[150px]">{projectName}</span>
         </div>
-        {/* Dummy Assignee Avatar */}
-        <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-[10px] font-bold text-amber-700">
-          AS
+
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${colStyle.avatarBg} ${colStyle.avatarText}`}>
+          UN
         </div>
       </div>
 
-      {/* Real Task Title */}
       <h4 className="text-sm font-bold text-black">{task.title}</h4>
 
-      {/* Card Footer */}
       <div className="flex items-center justify-between mt-3">
-        {/* WE FIXED THE BUG: Now using real data with basic dynamic styling! */}
-        <span className={`px-2 py-1 text-[10px] font-bold rounded-md capitalize border 
-          ${task.priority === 'low' ? 'bg-[#D3FFD8] text-[#007B50] border-[#007B50]' : 
-            task.priority === 'high' ? 'bg-[#FFD3D3] text-[#7B0002] border-[#7B0002]' : 
-            'bg-[#D2E9FF] text-[#15538D] border-[#15538D]'}`}
-        >
-          {task.priority}
+        <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-[3px] capitalize border ${getPriorityStyle(task.priority)}`}>
+          {task.priority || "Medium"}
+        </span>
+        
+        <span className="text-[10px] font-medium text-gray-400">
+          Created {formatDate(task.createdAt)}
         </span>
       </div>
     </div>
