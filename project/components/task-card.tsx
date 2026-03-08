@@ -116,12 +116,13 @@ export default function TaskCard({ task }: TaskCardProps) {
 
       {/* Card Footer */}
       <div className="flex items-center justify-between mt-3">
-        {/* Dummy Priority Badge */}
-        <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] rounded-md">
-          Medium
-        </span>
-        <span className="text-[10px] font-medium text-gray-400">
-          Created at Feb 28
+        {/* WE FIXED THE BUG: Now using real data with basic dynamic styling! */}
+        <span className={`px-2 py-1 text-[10px] font-bold rounded-md capitalize border 
+          ${task.priority === 'low' ? 'bg-[#D3FFD8] text-[#007B50] border-[#007B50]' : 
+            task.priority === 'high' ? 'bg-[#FFD3D3] text-[#7B0002] border-[#7B0002]' : 
+            'bg-[#D2E9FF] text-[#15538D] border-[#15538D]'}`}
+        >
+          {task.priority}
         </span>
       </div>
     </div>

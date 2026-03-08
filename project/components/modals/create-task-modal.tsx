@@ -52,22 +52,34 @@ Integration:
 
 "use client";
 
-import { useState } from "react";
-import { X, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Loader2, FolderDot } from "lucide-react";
 import { createTaskAction } from "@/actions/tasks";
 import { useRouter } from "next/navigation";
+import { getTodayString } from "@/lib/utils"; // <-- Your new Date Utility!
 
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  listId: string; // The ID of the column where the task will be added
-  projectId: string; // The ID of the current project
+  listId: string;
+  projectId: string;
+  projectName: string; // <-- Catching the project name
 }
 
-export default function CreateTaskModal({ isOpen, onClose, listId, projectId }: CreateTaskModalProps) {
+export default function CreateTaskModal({ isOpen, onClose, listId, projectId, projectName }: CreateTaskModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // THE SCROLL LOCK: Identical to your Project Modal
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => { document.body.style.overflow = "unset"; };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -76,22 +88,18 @@ export default function CreateTaskModal({ isOpen, onClose, listId, projectId }: 
     setIsLoading(true);
     setError("");
 
-    // 1. Gather the data from the form
     const formData = new FormData(e.currentTarget);
     const data = {
       title: formData.get("title"),
       description: formData.get("description"),
       priority: formData.get("priority"),
-      // Only include dueDate if the user actually picked one
       ...(formData.get("dueDate") && { dueDate: formData.get("dueDate") }),
       listId: listId,
     };
 
-    // 2. Send the data to your secure Server Action
     const result = await createTaskAction(data, projectId);
 
     if (result.success) {
-      // 3. Success! Refresh the route to grab the new Next.js cache and close the modal
       router.refresh();
       onClose();
     } else {
@@ -102,10 +110,9 @@ export default function CreateTaskModal({ isOpen, onClose, listId, projectId }: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-[20px] p-6 w-full max-w-md mx-4 shadow-xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-[20px] p-6 w-full max-w-md mx-4 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-black">Create New Task</h3>
           <button 
@@ -116,19 +123,27 @@ export default function CreateTaskModal({ isOpen, onClose, listId, projectId }: 
           </button>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100">
             {error}
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-black">
           
-          {/* Title */}
+          {/* THE NEW READ-ONLY PROJECT NAME FIELD */}
           <div>
-            <label htmlFor="title" className="block text-sm font-bold mb-1">Task Title <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Project</label>
+            <div className="flex items-center gap-2 w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-500 cursor-not-allowed">
+              <FolderDot size={16} />
+              <span className="font-semibold">{projectName}</span>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="title" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
+              Task Title <span className="text-red-500">*</span>
+            </label>
             <input
               id="title"
               name="title"
@@ -139,9 +154,8 @@ export default function CreateTaskModal({ isOpen, onClose, listId, projectId }: 
             />
           </div>
 
-          {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-bold mb-1">Description</label>
+            <label htmlFor="description" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Description</label>
             <textarea
               id="description"
               name="description"
@@ -152,9 +166,8 @@ export default function CreateTaskModal({ isOpen, onClose, listId, projectId }: 
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Priority (Defaults to Medium per your schema!) */}
             <div>
-              <label htmlFor="priority" className="block text-sm font-bold mb-1">Priority</label>
+              <label htmlFor="priority" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Priority</label>
               <select
                 id="priority"
                 name="priority"
@@ -167,24 +180,31 @@ export default function CreateTaskModal({ isOpen, onClose, listId, projectId }: 
               </select>
             </div>
 
-            {/* Due Date */}
+            {/* UPGRADED DUE DATE FIELD */}
             <div>
-              <label htmlFor="dueDate" className="block text-sm font-bold mb-1">Due Date</label>
+              <label htmlFor="dueDate" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Due Date</label>
               <input
                 id="dueDate"
                 name="dueDate"
                 type="date"
+                min={getTodayString()} // <--- BLOCKS PAST DATES!
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-gray-600"
               />
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="pt-4">
+          <div className="pt-4 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-black hover:bg-gray-100 rounded-full transition-colors"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+              className="px-6 py-2.5 bg-black text-white font-bold rounded-full hover:bg-gray-800 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
             >
               {isLoading && <Loader2 size={18} className="animate-spin" />}
               {isLoading ? "Saving..." : "Create Task"}

@@ -75,9 +75,15 @@ import { create } from 'zustand';
 // 1. Define the TypeScript interfaces based on your database schema
 export interface Task {
   id: string;
-  title: string;
   listId: string;
+  title: string;
   order: number;
+  // NEW FIELDS FROM DATABASE SCHEMA:
+  description?: string | null;
+  priority?: string | null;
+  dueDate?: Date | string | null;
+  assigneeId?: string | null;
+  createdAt?: Date | string;
 }
 
 export interface List {

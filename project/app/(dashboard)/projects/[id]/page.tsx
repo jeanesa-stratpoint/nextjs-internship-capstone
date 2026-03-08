@@ -222,7 +222,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {/* 5. NEW: Pass initialTasks to the KanbanBoard! */}
       <div className="flex-1 overflow-hidden ml-14">
         <KanbanBoard 
-          projectId={project.id} 
+          projectId={project.id}
+          projectName={project.name} 
           initialLists={boardLists} 
           initialTasks={boardTasks} 
         />

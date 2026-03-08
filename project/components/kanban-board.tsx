@@ -118,11 +118,13 @@ function KanbanColumn({
 
 // 3. MAIN COMPONENT (Cleaned up!)
 export default function KanbanBoard({ 
-  projectId, 
+  projectId,
+  projectName, 
   initialLists,
   initialTasks 
 }: { 
   projectId: string;
+  projectName: string;
   initialLists: List[]; 
   initialTasks: Task[]; 
 }) {
@@ -198,6 +200,7 @@ export default function KanbanBoard({
         onClose={() => setActiveListId(null)} 
         listId={activeListId || ""} 
         projectId={projectId} 
+        projectName={projectName} // <--- ADD THIS
       />
     </DndContext>
   );
