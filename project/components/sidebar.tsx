@@ -17,7 +17,7 @@ import {
   //   Moon
 } from "lucide-react";
 
-export default function Sidebar() {
+export default function Sidebar({ roleName = "Loading..." }: { roleName?: string }) {
   const pathname = usePathname();
   const { user } = useUser();
 
@@ -85,7 +85,7 @@ export default function Sidebar() {
             <span className="text-sm font-bold text-black truncate w-40">
               {user?.fullName || "Loading..."}
             </span>
-            <span className="text-xs text-gray-500 font-medium">Project Manager</span>
+            <span className="text-xs text-gray-500 font-medium">{roleName}</span>
           </div>
         </div>
       </div>
