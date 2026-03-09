@@ -4,36 +4,60 @@ import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";import { auth } from "@clerk/nextjs/server";
+import { hasSystemPermission } from "@/lib/rbac";
 
 export async function createTaskAction(formData: unknown, projectId: string) {
   try {
-    // 1. Validate the incoming data using the Zod schema we built earlier
-    // This ensures no one can inject bad data into your database!
-    const validatedData = taskSchema.parse(formData);
+    const { userId } = await auth();
+    if (!userId) {
+      return { 
+        success: false, 
+        error: "Unauthorized: You must be logged in." 
+      };
+    }
 
-    // 2. Insert the new task into the Neon Postgres database
-    const [newTask] = await db
-      .insert(tasks)
-      .values({
+    const canCreateTask = await hasSystemPermission(userId, "task:create");
+    if (!canCreateTask) {
+      return { 
+        success: false, 
+        error: "Access Denied: Your role cannot create tasks." 
+      };
+    }
+
+    const validationResult = taskSchema.safeParse(formData);
+
+    if (!validationResult.success) {
+      return { 
+        success: false, 
+        error: validationResult.error.issues[0].message 
+      };
+    }
+
+    const validatedData = validationResult.data;
+
+    const [newTask] = await db.insert(tasks).values({
         title: validatedData.title,
-        description: validatedData.description,
+        description: validatedData.description || null,
         priority: validatedData.priority,
-        dueDate: validatedData.dueDate,
+        dueDate: validatedData.dueDate || null,
         listId: validatedData.listId,
-        order: 0, // <--- ADDED THIS: Sets the new task at the top of the column
-        assigneeId: validatedData.assigneeId,
-      })
-      .returning();
+        order: 0,
+        assigneeId: validatedData.assigneeId || null,
+      }).returning();
 
-    // 3. Clear the Next.js cache for this specific project page
-    // This guarantees that when the server responds, the user sees the newest data instantly.
     revalidatePath(`/projects/${projectId}`);
+    return { 
+      success: true, 
+      task: newTask 
+    };
 
-    return { success: true, task: newTask };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Failed to create task:", error);
-    return { success: false, error: "Failed to create task. Please check your inputs." };
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to create task. Please check your inputs." 
+    };
   }
 }
 

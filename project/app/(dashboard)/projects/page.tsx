@@ -127,6 +127,7 @@ import { eq, desc, inArray } from "drizzle-orm";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { formatHeaderDate } from "@/lib/utils";
+import { hasSystemPermission } from "@/lib/rbac";
 
 export default async function ProjectsPage() {
   const { userId } = await auth();
@@ -135,50 +136,22 @@ export default async function ProjectsPage() {
     redirect("/sign-in");
   }
 
-  // 1. FETCH ALL PROJECTS THE USER IS A MEMBER OF
-  const userProjects = await db
-    .select({
-      project: projects,
-      role: projectMembers.role,
-    })
-    .from(projectMembers)
-    .innerJoin(projects, eq(projectMembers.projectId, projects.id))
-    .where(eq(projectMembers.userId, userId))
-    .orderBy(desc(projects.createdAt));
+  const canCreateProject = await hasSystemPermission(userId, "project:create");
+  const canInviteMember = await hasSystemPermission(userId, "project-invite:create");
 
-  // 2. FETCH CLERK DATA TO GET REAL OWNER NAMES
+  const userProjects = await db.select({ project: projects, role: projectMembers.role }).from(projectMembers).innerJoin(projects, eq(projectMembers.projectId, projects.id)).where(eq(projectMembers.userId, userId)).orderBy(desc(projects.createdAt));
   let ownerNameMap = new Map();
   if (userProjects.length > 0) {
     const ownerIds = [...new Set(userProjects.map((p) => p.project.ownerId))];
     const client = await clerkClient();
     const ownerData = await client.users.getUserList({ userId: ownerIds });
-
-    ownerNameMap = new Map(
-      ownerData.data.map((u) => [
-        u.id,
-        u.firstName
-          ? `${u.firstName} ${u.lastName || ""}`.trim()
-          : u.emailAddresses[0].emailAddress,
-      ])
-    );
+    ownerNameMap = new Map(ownerData.data.map((u) => [u.id, u.firstName ? `${u.firstName} ${u.lastName || ""}`.trim() : u.emailAddresses[0].emailAddress]));
   }
-
-  // 3. FETCH METRICS FOR PROGRESS BARS & MEMBER COUNTS
   const projectIds = userProjects.map((p) => p.project.id);
-
-  const allMembers =
-    projectIds.length > 0
-      ? await db.select().from(projectMembers).where(inArray(projectMembers.projectId, projectIds))
-      : [];
-  const allLists =
-    projectIds.length > 0
-      ? await db.select().from(lists).where(inArray(lists.projectId, projectIds))
-      : [];
-
+  const allMembers = projectIds.length > 0 ? await db.select().from(projectMembers).where(inArray(projectMembers.projectId, projectIds)) : [];
+  const allLists = projectIds.length > 0 ? await db.select().from(lists).where(inArray(lists.projectId, projectIds)) : [];
   const listIds = allLists.map((l) => l.id);
-  const allTasks =
-    listIds.length > 0 ? await db.select().from(tasks).where(inArray(tasks.listId, listIds)) : [];
-
+  const allTasks = listIds.length > 0 ? await db.select().from(tasks).where(inArray(tasks.listId, listIds)) : [];
   const currentDate = formatHeaderDate();
 
   return (
@@ -213,13 +186,17 @@ export default async function ProjectsPage() {
         <div className="flex flex-col items-start lg:items-end gap-2">
           <span className="text-xs font-bold text-black mb-1">Quick Actions</span>
           <div className="flex flex-wrap items-center gap-3">
-            <CreateProjectModal />
-            <button className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white">
-              <Plus size={16} className="text-gray-500" /> Add Team Member
-            </button>
+            {canCreateProject && <CreateProjectModal />}
+              {canInviteMember && (
+                <button className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white">
+                  <Plus size={16} className="text-gray-500" /> Add Team Member
+                </button>
+              )
+            }
             <button className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white">
               <Plus size={16} className="text-gray-500" /> Create Task
             </button>
+            
           </div>
         </div>
       </div>
@@ -245,7 +222,6 @@ export default async function ProjectsPage() {
                 .map((l) => l.id);
               const projectTasks = allTasks.filter((t) => projectListIds.includes(t.listId));
 
-              // To calculate progress, we find how many tasks are in the "Done" list
               const doneListIds = allLists
                 .filter((l) => l.projectId === project.id && l.name.toLowerCase() === "done")
                 .map((l) => l.id);
