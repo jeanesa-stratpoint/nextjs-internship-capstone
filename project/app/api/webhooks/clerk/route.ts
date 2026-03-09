@@ -2,13 +2,14 @@ import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, roles } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    throw new Error("Please add WEBHOOK_SECRET from Clerk Dashboard to .env.local");
+    throw new Error("Please add WEBHOOK_SECRET from Clerk Dashboard to .env");
   }
 
   const headerPayload = await headers();
@@ -33,8 +34,8 @@ export async function POST(req: Request) {
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     }) as WebhookEvent;
-  } catch (err) {
-    console.error("Error verifying webhook:", err);
+  } catch (error) {
+    console.error("Error verifying webhook:", error);
     return new Response("Error occured", {
       status: 400,
     });
@@ -46,13 +47,25 @@ export async function POST(req: Request) {
     const { id, email_addresses, first_name, last_name } = evt.data;
 
     try {
+      const [standardRole] = await db
+        .select()
+        .from(roles)
+        .where(eq(roles.name, "Standard User"))
+        .limit(1);
+
+      if (!standardRole) {
+         console.error("'Standard User' role not found. Did you run the seed script?");
+         return new Response("Missing default role", { status: 500 });
+      }
+
       await db.insert(users).values({
         id: id,
         email: email_addresses[0].email_address,
         firstName: first_name || "",
         lastName: last_name || "",
+        roleId: standardRole.id, 
       });
-      console.warn(`Successfully synced user ${id} to database`);
+      console.log(`Successfully synced user ${id} to database as Standard User`);
     } catch (error) {
       console.error(`Error inserting user ${id} into database:`, error);
       return new Response("Error inserting user", { status: 500 });
