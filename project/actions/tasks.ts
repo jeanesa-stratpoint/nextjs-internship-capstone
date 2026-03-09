@@ -31,7 +31,6 @@ export async function createTaskAction(formData: unknown, projectId: string) {
     revalidatePath(`/projects/${projectId}`);
 
     return { success: true, task: newTask };
-    
   } catch (error) {
     console.error("Failed to create task:", error);
     return { success: false, error: "Failed to create task. Please check your inputs." };
@@ -41,14 +40,11 @@ export async function createTaskAction(formData: unknown, projectId: string) {
 export async function updateTaskStatus(taskId: string, newListId: string, projectId: string) {
   try {
     // Update the task's listId in the Neon database
-    await db
-      .update(tasks)
-      .set({ listId: newListId })
-      .where(eq(tasks.id, taskId));
+    await db.update(tasks).set({ listId: newListId }).where(eq(tasks.id, taskId));
 
     // Clear the Next.js cache so the board stays perfectly in sync
     revalidatePath(`/projects/${projectId}`);
-    
+
     return { success: true };
   } catch (error) {
     console.error("Failed to update task status:", error);

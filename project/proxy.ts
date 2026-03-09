@@ -9,7 +9,6 @@
 // TODO: Replace with actual Clerk authMiddleware when authentication is implemented
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// 1. Define the routes that require a user to be logged in
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/projects(.*)",
@@ -17,17 +16,15 @@ const isProtectedRoute = createRouteMatcher([
   "/analytics(.*)",
   "/calendar(.*)",
   "/settings(.*)",
+  "/api/users/search(.*)",
 ]);
 
-// 2. Execute the Proxy (formerly middleware)
 export default clerkMiddleware(async (auth, req) => {
-  // If the user tries to access a protected route, force them to sign in
   if (isProtectedRoute(req)) {
     await auth.protect();
   }
 });
 
-// 3. Configure the matcher (Skip Next.js internals and static files)
 export const config = {
   matcher: [
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",

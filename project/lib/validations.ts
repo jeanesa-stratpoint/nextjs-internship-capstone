@@ -61,8 +61,8 @@ export const projectSchema = z.object({
 export const taskSchema = z.object({
   title: z.string().min(1, "Task title is required").max(100, "Title cannot exceed 100 characters"),
   description: z.string().max(1000, "Description cannot exceed 1000 characters").optional(),
-  priority: z.enum(["low", "medium", "high"], { 
-    message: "Please select a valid priority level (low, medium, or high)" 
+  priority: z.enum(["low", "medium", "high"], {
+    message: "Please select a valid priority level (low, medium, or high)",
   }),
   dueDate: z.coerce.date().optional(),
   listId: z.string().uuid("Invalid List ID"),

@@ -144,11 +144,10 @@ export default function DashboardPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold text-black mb-8">Dashboard Overview</h1>
-      
+
       <div className="h-64 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-white">
         <p className="text-gray-500 font-medium">Your Dashboard Content goes here</p>
       </div>
     </div>
   );
 }
-

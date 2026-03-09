@@ -36,14 +36,14 @@ State management:
 "use client";
 
 import { useEffect, useState } from "react";
-import { 
-  DndContext, 
-  PointerSensor, 
-  useSensor, 
-  useSensors, 
-  DragEndEvent, 
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
   pointerWithin,
-  useDroppable 
+  useDroppable,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus, Circle, Clock, CheckCircle2, CheckCircle } from "lucide-react";
@@ -61,19 +61,18 @@ const getColumnStyling = (name: string) => {
   return { icon: Circle, color: "text-gray-400" };
 };
 
-// MAIN BOARD COMPONENT
-export default function KanbanBoard({ 
-  projectId, 
-  projectName, 
+export default function KanbanBoard({
+  projectId,
+  projectName,
   initialLists,
   initialTasks,
-  projectTeam // <--- CAUGHT THE TEAM FROM THE PAGE
-}: { 
+  projectTeam, 
+}: {
   projectId: string;
   projectName: string;
-  initialLists: List[]; 
-  initialTasks: Task[]; 
-  projectTeam: TeamMember[]; // <--- ADDED TO TYPES
+  initialLists: List[];
+  initialTasks: Task[];
+  projectTeam: TeamMember[]; 
 }) {
   const { tasks, setBoardData, moveTask } = useBoardStore();
   const [isMounted, setIsMounted] = useState(false);
@@ -88,7 +87,7 @@ export default function KanbanBoard({
 
   useEffect(() => {
     if (!isMounted) return;
-    setBoardData(initialLists, initialTasks); 
+    setBoardData(initialLists, initialTasks);
   }, [setBoardData, initialLists, initialTasks, isMounted]);
 
   if (!isMounted) return null;
@@ -99,19 +98,19 @@ export default function KanbanBoard({
 
     const taskId = active.id as string;
     const overId = over.id as string;
-    const activeTask = tasks.find(t => t.id === taskId);
-    
+    const activeTask = tasks.find((t) => t.id === taskId);
+
     if (!activeTask) return;
 
-    const isOverList = initialLists.some(list => list.id === overId);
+    const isOverList = initialLists.some((list) => list.id === overId);
     let targetListId = overId;
-    
+
     if (!isOverList) {
-      const overTask = tasks.find(t => t.id === overId);
+      const overTask = tasks.find((t) => t.id === overId);
       if (overTask) {
         targetListId = overTask.listId;
       } else {
-        return; 
+        return;
       }
     }
 
@@ -123,58 +122,63 @@ export default function KanbanBoard({
 
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
-      <div className="flex h-full gap-6 overflow-x-auto pb-4 items-start" data-project-id={projectId}>
+      <div
+        className="flex h-full gap-6 overflow-x-auto pb-4 items-start"
+        data-project-id={projectId}
+      >
         {initialLists.map((column) => {
-          const columnTasks = tasks.filter(task => task.listId === column.id);
+          const columnTasks = tasks.filter((task) => task.listId === column.id);
           return (
-            <KanbanColumn 
-              key={column.id} 
-              column={column} 
-              columnTasks={columnTasks} 
-              setActiveListId={setActiveListId} 
-              projectName={projectName} 
-              projectTeam={projectTeam} // <--- PASSED TO COLUMN
+            <KanbanColumn
+              key={column.id}
+              column={column}
+              columnTasks={columnTasks}
+              setActiveListId={setActiveListId}
+              projectName={projectName}
+              projectTeam={projectTeam} 
             />
           );
         })}
       </div>
 
-      <CreateTaskModal 
-        isOpen={activeListId !== null} 
-        onClose={() => setActiveListId(null)} 
-        listId={activeListId || ""} 
-        projectId={projectId} 
+      <CreateTaskModal
+        isOpen={activeListId !== null}
+        onClose={() => setActiveListId(null)}
+        listId={activeListId || ""}
+        projectId={projectId}
         projectName={projectName}
-        projectTeam={projectTeam} // <--- PASSED TO MODAL
+        projectTeam={projectTeam} 
       />
     </DndContext>
   );
 }
 
-function KanbanColumn({ 
-  column, 
-  columnTasks, 
+function KanbanColumn({
+  column,
+  columnTasks,
   setActiveListId,
   projectName,
-  projectTeam // <--- CAUGHT FROM BOARD
-}: { 
-  column: List, 
-  columnTasks: Task[], 
-  setActiveListId: (id: string) => void,
-  projectName: string,
-  projectTeam: TeamMember[] // <--- ADDED TO TYPES
+  projectTeam, 
+}: {
+  column: List;
+  columnTasks: Task[];
+  setActiveListId: (id: string) => void;
+  projectName: string;
+  projectTeam: TeamMember[]; 
 }) {
   const { setNodeRef } = useDroppable({
     id: column.id,
-    data: { type: "Column", column }
+    data: { type: "Column", column },
   });
 
   const style = getColumnStyling(column.name);
-  const Icon = style.icon; 
+  const Icon = style.icon;
 
   return (
-    <div ref={setNodeRef} className="flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px]">
-      
+    <div
+      ref={setNodeRef}
+      className="flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px]"
+    >
       <div className="flex items-center justify-between p-5 border-b border-gray-50/50">
         <div className="flex items-center gap-2">
           <Icon size={18} className={style.color} />
@@ -184,19 +188,22 @@ function KanbanColumn({
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        <SortableContext items={columnTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext
+          items={columnTasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
           {columnTasks.length === 0 ? (
             <div className="border-2 border-dashed border-gray-200 rounded-xl h-24 flex items-center justify-center text-sm text-gray-400 font-medium bg-gray-50/50">
               Drop tasks here
             </div>
           ) : (
-            columnTasks.map(task => (
-              <TaskCard 
-                key={task.id} 
-                task={task} 
-                projectName={projectName} 
-                columnName={column.name} 
-                projectTeam={projectTeam} // <--- PASSED TO CARD
+            columnTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                projectName={projectName}
+                columnName={column.name}
+                projectTeam={projectTeam} 
               />
             ))
           )}
@@ -204,7 +211,7 @@ function KanbanColumn({
       </div>
 
       <div className="p-3 mt-auto">
-        <button 
+        <button
           onClick={() => setActiveListId(column.id)}
           className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 hover:text-black hover:bg-gray-50 rounded-xl transition-colors"
         >
@@ -215,12 +222,3 @@ function KanbanColumn({
     </div>
   );
 }
-
-
-  // useEffect(() => {
-  //   const timeout = setTimeout(() => {
-  //     setIsMounted(true);
-  //   }, 0);
-    
-  //   return () => clearTimeout(timeout);
-  // }, []);

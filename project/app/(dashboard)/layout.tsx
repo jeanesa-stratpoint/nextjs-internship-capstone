@@ -140,18 +140,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     // 1. The exact Figma Gradient translated to a Tailwind arbitrary value
     <div className="min-h-screen p-4 sm:p-6 flex bg-[linear-gradient(118deg,#E7E2DC_21.03%,#E0FAFF_68.51%,#F0F0F0_94.19%)]">
-      
       {/* 2. The Sidebar sits directly on the gradient */}
       <Sidebar />
 
       {/* 3. The Main Content "Island" Container */}
       <main className="flex-1 bg-[#F8F8F8] rounded-[18px] shadow-sm ml-6 overflow-hidden relative border border-white/50">
         {/* Your individual pages will render inside this white container */}
-        <div className="h-full overflow-y-auto p-8">
-          {children}
-        </div>
+        <div className="h-full overflow-y-auto p-8">{children}</div>
       </main>
-      
     </div>
   );
 }

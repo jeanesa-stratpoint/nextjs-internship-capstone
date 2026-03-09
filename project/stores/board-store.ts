@@ -70,15 +70,13 @@ export const useBoardStore = create<BoardState>()(
 //   };
 // };
 
-import { create } from 'zustand';
+import { create } from "zustand";
 
-// 1. Define the TypeScript interfaces based on your database schema
 export interface Task {
   id: string;
   listId: string;
   title: string;
   order: number;
-  // NEW FIELDS FROM DATABASE SCHEMA:
   description?: string | null;
   priority?: string | null;
   dueDate?: Date | string | null;
@@ -93,47 +91,34 @@ export interface List {
 }
 
 interface BoardState {
-  // Data State
   lists: List[];
   tasks: Task[];
-  
-  // UI Loading State
+
   isLoading: boolean;
-  
-  // Actions
+
   setBoardData: (lists: List[], tasks: Task[]) => void;
-  
-  // Optimistic UI Actions (Task 5.4)
+
   moveTask: (taskId: string, newListId: string, newOrder: number) => void;
   reorderTask: (taskId: string, newOrder: number) => void;
 }
 
-// 2. Create the Zustand Store
 export const useBoardStore = create<BoardState>((set) => ({
   lists: [],
   tasks: [],
   isLoading: false,
 
-  // Called when the page first loads to populate the board
   setBoardData: (lists, tasks) => set({ lists, tasks }),
 
-  // Called when dragging a task into a completely DIFFERENT column
-  moveTask: (taskId, newListId, newOrder) => 
-    set((state) => ({
-      tasks: state.tasks.map((task) => 
-        task.id === taskId 
-          ? { ...task, listId: newListId, order: newOrder } 
-          : task
-      )
-    })),
-
-  // Called when reordering a task within the SAME column
-  reorderTask: (taskId, newOrder) =>
+  moveTask: (taskId, newListId, newOrder) =>
     set((state) => ({
       tasks: state.tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, order: newOrder }
-          : task
-      )
+        task.id === taskId ? { ...task, listId: newListId, order: newOrder } : task
+      ),
+    })),
+
+
+  reorderTask: (taskId, newOrder) =>
+    set((state) => ({
+      tasks: state.tasks.map((task) => (task.id === taskId ? { ...task, order: newOrder } : task)),
     })),
 }));

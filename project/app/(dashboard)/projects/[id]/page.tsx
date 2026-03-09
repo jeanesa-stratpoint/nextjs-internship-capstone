@@ -152,10 +152,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const projectId = resolvedParams.id;
 
   // 1. Fetch the project
-  const projectResult = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.id, projectId));
+  const projectResult = await db.select().from(projects).where(eq(projects.id, projectId));
 
   const project = projectResult[0];
 
@@ -164,17 +161,22 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   }
 
   // 1. FETCH THE REAL TEAM MEMBERS FROM CLERK
-  const membersData = await db.select().from(projectMembers).where(eq(projectMembers.projectId, projectId));
-  const memberIds = membersData.map(m => m.userId);
+  const membersData = await db
+    .select()
+    .from(projectMembers)
+    .where(eq(projectMembers.projectId, projectId));
+  const memberIds = membersData.map((m) => m.userId);
 
   const client = await clerkClient();
   const clerkUsers = await client.users.getUserList({ userId: memberIds });
 
   // Clean up the data for the frontend
-  const projectTeam = clerkUsers.data.map(u => ({
+  const projectTeam = clerkUsers.data.map((u) => ({
     id: u.id,
-    name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.emailAddresses[0].emailAddress,
-    imageUrl: u.imageUrl
+    name: u.firstName
+      ? `${u.firstName} ${u.lastName || ""}`.trim()
+      : u.emailAddresses[0].emailAddress,
+    imageUrl: u.imageUrl,
   }));
 
   // 2. Fetch the real columns (lists) for this project
@@ -186,16 +188,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   // 3. If the project has no columns, auto-generate the 4 defaults!
   if (boardLists.length === 0) {
-    boardLists = await db.insert(lists).values([
-      { name: "To Do", projectId: projectId, order: 0 },
-      { name: "In Progress", projectId: projectId, order: 1 },
-      { name: "Review", projectId: projectId, order: 2 },
-      { name: "Done", projectId: projectId, order: 3 },
-    ]).returning();
+    boardLists = await db
+      .insert(lists)
+      .values([
+        { name: "To Do", projectId: projectId, order: 0 },
+        { name: "In Progress", projectId: projectId, order: 1 },
+        { name: "Review", projectId: projectId, order: 2 },
+        { name: "Done", projectId: projectId, order: 3 },
+      ])
+      .returning();
   }
 
   // 3. NEW: Extract the IDs of the columns we just fetched
-  const listIds = boardLists.map(list => list.id);
+  const listIds = boardLists.map((list) => list.id);
 
   // 4. NEW: Fetch all tasks that belong to these columns
   const boardTasks = await db
@@ -203,17 +208,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     .from(tasks)
     .where(inArray(tasks.listId, listIds))
     .orderBy(asc(tasks.order));
-    console.log(" SERVER FETCHED TASKS:", boardTasks);
+  console.log(" SERVER FETCHED TASKS:", boardTasks);
 
   return (
     <div className="h-full flex flex-col text-black overflow-hidden">
       {/* HEADER ROW RESTORED! */}
       <div className="flex items-start justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <Link 
-            href="/projects" 
-            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-          >
+          <Link href="/projects" className="p-2 hover:bg-gray-200 rounded-full transition-colors">
             <ArrowLeft size={24} className="text-black" />
           </Link>
           <h1 className="text-3xl font-bold">{project.name}</h1>
@@ -233,18 +235,17 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <p className="text-gray-600 ml-14 max-w-4xl mb-8 flex-shrink-0">
         {project.description || "No description provided for this project."}
       </p>
-      
+
       {/* 5. NEW: Pass initialTasks to the KanbanBoard! */}
       <div className="flex-1 overflow-hidden ml-14">
-        <KanbanBoard 
-          projectId={project.id} 
+        <KanbanBoard
+          projectId={project.id}
           projectName={project.name}
-          initialLists={boardLists} 
-          initialTasks={boardTasks} 
+          initialLists={boardLists}
+          initialTasks={boardTasks}
           projectTeam={projectTeam}
         />
       </div>
-
     </div>
   );
 }

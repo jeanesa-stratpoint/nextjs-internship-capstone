@@ -53,8 +53,8 @@ import { useState, useEffect } from "react";
 import { X, Plus, Loader2, Search } from "lucide-react";
 import { createProjectAction } from "@/actions/projects";
 import { getTodayString } from "@/lib/utils";
+import Image from "next/image";
 
-// Define what the API returns so TypeScript is happy
 interface SearchUser {
   id: string;
   firstName: string | null;
@@ -70,24 +70,24 @@ export default function CreateProjectModal() {
   const [dueDate, setDueDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // New state for the Team Member Search feature
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<SearchUser[]>([]);
 
-  // THE SCROLL LOCK
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
-    return () => { document.body.style.overflow = "unset"; };
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen]);
 
-  // THE DEBOUNCED SEARCH API CALL
   useEffect(() => {
     if (searchQuery.length < 2) {
       setSearchResults([]);
@@ -100,9 +100,8 @@ export default function CreateProjectModal() {
         const res = await fetch(`/api/users/search?q=${searchQuery}`);
         if (res.ok) {
           const data = await res.json();
-          // Filter out users we've already selected so they don't show up in the dropdown again
-          const filtered = data.filter((user: SearchUser) => 
-            !selectedUsers.some(selected => selected.id === user.id)
+          const filtered = data.filter(
+            (user: SearchUser) => !selectedUsers.some((selected) => selected.id === user.id)
           );
           setSearchResults(filtered);
         }
@@ -111,7 +110,7 @@ export default function CreateProjectModal() {
       } finally {
         setIsSearching(false);
       }
-    }, 400); // Waits 400ms after you stop typing before fetching
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [searchQuery, selectedUsers]);
@@ -120,19 +119,18 @@ export default function CreateProjectModal() {
     setSelectedUsers([...selectedUsers, user]);
     setSearchQuery("");
     setSearchResults([]);
-    setIsInviteOpen(false); // Close the input after selecting
+    setIsInviteOpen(false); 
   };
 
   const handleRemoveUser = (userId: string) => {
-    setSelectedUsers(selectedUsers.filter(u => u.id !== userId));
+    setSelectedUsers(selectedUsers.filter((u) => u.id !== userId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Extract just the IDs of the selected users to send to the database
-    const memberIds = selectedUsers.map(u => u.id);
+
+    const memberIds = selectedUsers.map((u) => u.id);
     const result = await createProjectAction(projectName, description, dueDate || null, memberIds);
 
     if (result.success) {
@@ -151,7 +149,7 @@ export default function CreateProjectModal() {
 
   return (
     <>
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors text-black bg-white"
       >
@@ -161,10 +159,9 @@ export default function CreateProjectModal() {
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
           <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-bold text-black">Create New Project</h2>
-              <button 
+              <button
                 onClick={() => setIsOpen(false)}
                 className="text-gray-400 hover:text-black transition-colors p-1 rounded-full hover:bg-gray-100"
               >
@@ -175,7 +172,10 @@ export default function CreateProjectModal() {
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1">
               <div className="space-y-4 mb-6">
                 <div>
-                  <label htmlFor="projectName" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
+                  <label
+                    htmlFor="projectName"
+                    className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide"
+                  >
                     Project Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -190,8 +190,12 @@ export default function CreateProjectModal() {
                 </div>
 
                 <div>
-                  <label htmlFor="description" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
-                    Description <span className="text-gray-400 font-normal lowercase">(optional)</span>
+                  <label
+                    htmlFor="description"
+                    className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide"
+                  >
+                    Description{" "}
+                    <span className="text-gray-400 font-normal lowercase">(optional)</span>
                   </label>
                   <textarea
                     id="description"
@@ -204,7 +208,10 @@ export default function CreateProjectModal() {
                 </div>
 
                 <div>
-                  <label htmlFor="dueDate" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
+                  <label
+                    htmlFor="dueDate"
+                    className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide"
+                  >
                     Due Date <span className="text-gray-400 font-normal lowercase">(optional)</span>
                   </label>
                   <input
@@ -216,23 +223,29 @@ export default function CreateProjectModal() {
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all text-black"
                   />
                 </div>
-                
-                {/* --- INVITE TEAM MEMBERS SECTION --- */}
+
                 <div className="pt-2 border-t border-gray-100">
                   <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
                     Team Members
                   </label>
 
-                  {/* Render Selected Users */}
                   {selectedUsers.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {selectedUsers.map(user => (
-                        <div key={user.id} className="flex items-center gap-2 bg-gray-100 pl-2 pr-1 py-1 rounded-full text-xs font-medium text-black">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={user.imageUrl} alt="Avatar" className="w-5 h-5 rounded-full" />
-                          <span>{user.firstName || user.email.split('@')[0]}</span>
-                          <button 
-                            type="button" 
+                      {selectedUsers.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center gap-2 bg-gray-100 pl-2 pr-1 py-1 rounded-full text-xs font-medium text-black"
+                        >
+                          <Image 
+                            src={user.imageUrl} 
+                            alt={`${user.firstName || 'User'}'s avatar`} 
+                            width={20}
+                            height={20}
+                            className="w-5 h-5 rounded-full object-cover" 
+                          />
+                          <span>{user.firstName || user.email.split("@")[0]}</span>
+                          <button
+                            type="button"
                             onClick={() => handleRemoveUser(user.id)}
                             className="p-0.5 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
                           >
@@ -243,7 +256,6 @@ export default function CreateProjectModal() {
                     </div>
                   )}
 
-                  {/* Invite Button / Search Input */}
                   {!isInviteOpen ? (
                     <button
                       type="button"
@@ -264,12 +276,18 @@ export default function CreateProjectModal() {
                           placeholder="Search by email..."
                           className="w-full text-sm outline-none text-black bg-transparent"
                         />
-                        <button type="button" onClick={() => {setIsInviteOpen(false); setSearchQuery("");}} className="text-gray-400 hover:text-black">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsInviteOpen(false);
+                            setSearchQuery("");
+                          }}
+                          className="text-gray-400 hover:text-black"
+                        >
                           <X size={16} />
                         </button>
                       </div>
 
-                      {/* Search Results Dropdown */}
                       {(searchQuery.length >= 2 || isSearching) && (
                         <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 shadow-lg rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto">
                           {isSearching ? (
@@ -277,23 +295,32 @@ export default function CreateProjectModal() {
                               <Loader2 size={14} className="animate-spin" /> Searching...
                             </div>
                           ) : searchResults.length > 0 ? (
-                            searchResults.map(user => (
+                            searchResults.map((user) => (
                               <button
                                 key={user.id}
                                 type="button"
                                 onClick={() => handleAddUser(user)}
                                 className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0"
                               >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={user.imageUrl} alt="" className="w-8 h-8 rounded-full bg-gray-200" />
+                                <Image
+                                  src={user.imageUrl}
+                                  alt={`${user.firstName || 'User'}'s avatar`}
+                                  width={32}
+                                  height={32}
+                                  className="w-8 h-8 rounded-full bg-gray-200 object-cover"
+                                />
                                 <div className="flex flex-col">
-                                  <span className="text-sm font-bold text-black">{user.firstName} {user.lastName}</span>
+                                  <span className="text-sm font-bold text-black">
+                                    {user.firstName} {user.lastName}
+                                  </span>
                                   <span className="text-xs text-gray-500">{user.email}</span>
                                 </div>
                               </button>
                             ))
                           ) : (
-                            <div className="p-3 text-center text-xs text-gray-500">No users found.</div>
+                            <div className="p-3 text-center text-xs text-gray-500">
+                              No users found.
+                            </div>
                           )}
                         </div>
                       )}
@@ -316,12 +343,15 @@ export default function CreateProjectModal() {
                   className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
-                    <><Loader2 size={16} className="animate-spin" /> Creating...</>
-                  ) : "Create Project"}
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Creating...
+                    </>
+                  ) : (
+                    "Create Project"
+                  )}
                 </button>
               </div>
             </form>
-
           </div>
         </div>
       )}

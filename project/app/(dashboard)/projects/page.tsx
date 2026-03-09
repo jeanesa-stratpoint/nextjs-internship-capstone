@@ -130,7 +130,7 @@ import { formatHeaderDate } from "@/lib/utils";
 
 export default async function ProjectsPage() {
   const { userId } = await auth();
-  
+
   if (!userId) {
     redirect("/sign-in");
   }
@@ -149,32 +149,40 @@ export default async function ProjectsPage() {
   // 2. FETCH CLERK DATA TO GET REAL OWNER NAMES
   let ownerNameMap = new Map();
   if (userProjects.length > 0) {
-    const ownerIds = [...new Set(userProjects.map(p => p.project.ownerId))];
+    const ownerIds = [...new Set(userProjects.map((p) => p.project.ownerId))];
     const client = await clerkClient();
     const ownerData = await client.users.getUserList({ userId: ownerIds });
-    
+
     ownerNameMap = new Map(
-      ownerData.data.map(u => [
-        u.id, 
-        u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.emailAddresses[0].emailAddress
+      ownerData.data.map((u) => [
+        u.id,
+        u.firstName
+          ? `${u.firstName} ${u.lastName || ""}`.trim()
+          : u.emailAddresses[0].emailAddress,
       ])
     );
   }
 
   // 3. FETCH METRICS FOR PROGRESS BARS & MEMBER COUNTS
-  const projectIds = userProjects.map(p => p.project.id);
-  
-  const allMembers = projectIds.length > 0 ? await db.select().from(projectMembers).where(inArray(projectMembers.projectId, projectIds)) : [];
-  const allLists = projectIds.length > 0 ? await db.select().from(lists).where(inArray(lists.projectId, projectIds)) : [];
-  
-  const listIds = allLists.map(l => l.id);
-  const allTasks = listIds.length > 0 ? await db.select().from(tasks).where(inArray(tasks.listId, listIds)) : [];
+  const projectIds = userProjects.map((p) => p.project.id);
+
+  const allMembers =
+    projectIds.length > 0
+      ? await db.select().from(projectMembers).where(inArray(projectMembers.projectId, projectIds))
+      : [];
+  const allLists =
+    projectIds.length > 0
+      ? await db.select().from(lists).where(inArray(lists.projectId, projectIds))
+      : [];
+
+  const listIds = allLists.map((l) => l.id);
+  const allTasks =
+    listIds.length > 0 ? await db.select().from(tasks).where(inArray(tasks.listId, listIds)) : [];
 
   const currentDate = formatHeaderDate();
 
   return (
     <div className="space-y-8 text-black h-full flex flex-col">
-      
       {/* TOP ROW */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
         <div>
@@ -200,9 +208,7 @@ export default async function ProjectsPage() {
 
       {/* QUICK ACTIONS */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <p className="text-gray-600 text-sm">
-          Manage and organize your team projects
-        </p>
+        <p className="text-gray-600 text-sm">Manage and organize your team projects</p>
 
         <div className="flex flex-col items-start lg:items-end gap-2">
           <span className="text-xs font-bold text-black mb-1">Quick Actions</span>
@@ -221,34 +227,41 @@ export default async function ProjectsPage() {
       {/* ACTIVE PROJECTS GRID */}
       <div className="pt-2">
         <h2 className="text-lg font-bold mb-4">Active Projects ({userProjects.length})</h2>
-        
+
         {userProjects.length === 0 ? (
           <div className="border-2 border-dashed border-gray-200 rounded-[20px] p-12 text-center flex flex-col items-center justify-center">
-             <p className="text-gray-500 font-medium mb-4">No projects yet. Create one to get started!</p>
+            <p className="text-gray-500 font-medium mb-4">
+              No projects yet. Create one to get started!
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {userProjects.map(({ project }, index) => {
-              
               // CALCULATE METRICS FOR THIS CARD
-              const memberCount = allMembers.filter(m => m.projectId === project.id).length;
-              
-              const projectListIds = allLists.filter(l => l.projectId === project.id).map(l => l.id);
-              const projectTasks = allTasks.filter(t => projectListIds.includes(t.listId));
-              
+              const memberCount = allMembers.filter((m) => m.projectId === project.id).length;
+
+              const projectListIds = allLists
+                .filter((l) => l.projectId === project.id)
+                .map((l) => l.id);
+              const projectTasks = allTasks.filter((t) => projectListIds.includes(t.listId));
+
               // To calculate progress, we find how many tasks are in the "Done" list
-              const doneListIds = allLists.filter(l => l.projectId === project.id && l.name.toLowerCase() === "done").map(l => l.id);
-              const completedTasks = projectTasks.filter(t => doneListIds.includes(t.listId)).length;
+              const doneListIds = allLists
+                .filter((l) => l.projectId === project.id && l.name.toLowerCase() === "done")
+                .map((l) => l.id);
+              const completedTasks = projectTasks.filter((t) =>
+                doneListIds.includes(t.listId)
+              ).length;
 
               const isOwner = project.ownerId === userId;
               const ownerName = ownerNameMap.get(project.ownerId) || "Unknown User";
 
               return (
-                <ProjectCard 
-                  key={project.id} 
-                  project={project} 
-                  index={index} 
-                  isActive={true} 
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  index={index}
+                  isActive={true}
                   memberCount={memberCount}
                   taskCount={projectTasks.length}
                   completedTaskCount={completedTasks}
@@ -265,10 +278,9 @@ export default async function ProjectsPage() {
       <div className="pt-6 pb-12">
         <h2 className="text-lg font-bold mb-4">Archive</h2>
         <div className="border-2 border-dashed border-gray-200 rounded-[20px] p-8 text-center bg-gray-50/50">
-             <p className="text-gray-400 text-sm font-medium">No archived projects.</p>
+          <p className="text-gray-400 text-sm font-medium">No archived projects.</p>
         </div>
       </div>
-
     </div>
   );
 }

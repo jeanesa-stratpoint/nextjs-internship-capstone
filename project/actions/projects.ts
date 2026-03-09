@@ -7,9 +7,9 @@ import { revalidatePath } from "next/cache";
 
 // 1. Added memberIds as a parameter
 export async function createProjectAction(
-  name: string, 
-  description: string, 
-  dueDate: string | null, 
+  name: string,
+  description: string,
+  dueDate: string | null,
   memberIds: string[] = [] // Default to an empty array
 ) {
   try {
@@ -33,7 +33,7 @@ export async function createProjectAction(
     // We map over the memberIds and set their role to "member"
     const membersToInsert = [
       { projectId: newProject.id, userId: userId, role: "owner" },
-      ...memberIds.map(id => ({ projectId: newProject.id, userId: id, role: "member" }))
+      ...memberIds.map((id) => ({ projectId: newProject.id, userId: id, role: "member" })),
     ];
 
     // 4. Batch insert all members at once!
@@ -41,7 +41,6 @@ export async function createProjectAction(
 
     revalidatePath("/projects");
     return { success: true, project: newProject };
-    
   } catch (error: unknown) {
     console.error("Failed to create project:", error);
     const errorMessage = error instanceof Error ? error.message : "Failed to create project.";
