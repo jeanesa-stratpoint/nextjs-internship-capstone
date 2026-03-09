@@ -46,9 +46,7 @@ export const users = pgTable('users', {
 import { relations } from 'drizzle-orm';
 import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer } from 'drizzle-orm/pg-core';
 
-// ==========================================
-// 1. SYSTEM RBAC TABLES (Supervisor Request)
-// ==========================================
+// RBAC
 export const roles = pgTable('roles', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull().unique(), // e.g., 'Project Manager', 'Developer'
@@ -67,11 +65,9 @@ export const rolePermissions = pgTable('role_permissions', {
 }));
 
 
-// ==========================================
-// 2. CORE ENTITIES
-// ==========================================
+
 export const users = pgTable('users', {
-  id: text('id').primaryKey(), // 🔑 Crucial: This is text because we use Clerk's string IDs
+  id: text('id').primaryKey(), // Clerk's string IDs
   email: text('email').notNull().unique(),
   firstName: varchar('first_name', { length: 255 }),
   lastName: varchar('last_name', { length: 255 }),
@@ -94,14 +90,11 @@ export const projectMembers = pgTable('project_members', {
   role: text('role').notNull().default('member'), // Can be 'owner', 'admin', or 'member'
   joinedAt: timestamp('joined_at').defaultNow().notNull(),
 }, (t) => [
-  // This ensures a user can only be added to a specific project once!
+  // user can only be added to a specific project once
   primaryKey({ columns: [t.projectId, t.userId] }), 
 ]);
 
-
-// ==========================================
-// 3. KANBAN TABLES
-// ==========================================
+// KANBAN
 export const lists = pgTable('lists', {
   id: uuid('id').defaultRandom().primaryKey(),
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
@@ -122,10 +115,6 @@ export const tasks = pgTable('tasks', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-
-// ==========================================
-// 4. DRIZZLE RELATIONS (The Magic Bridge)
-// ==========================================
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, {
