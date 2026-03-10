@@ -72,3 +72,52 @@ export async function createProjectAction(
     };
   }
 }
+
+export async function inviteMembersAction(projectId: string, memberIds: string[]) {
+  try {
+    const { userId } = await auth();
+    if (!userId) 
+      return { 
+        success: false, 
+        error: "Unauthorized" 
+      };
+
+    const canInvite = await hasSystemPermission(userId, "project-invite:create");
+    if (!canInvite) return { 
+      success: false, 
+      error: "Access Denied: You cannot invite members." 
+    };
+
+    if (!projectId) 
+      return { 
+        success: false, 
+        error: "Please select a project." 
+      };
+    if (memberIds.length === 0) 
+      return { 
+        success: false, 
+        error: "Please select at least one user to invite." 
+      };
+
+    const membersToInsert = memberIds.map((id) => ({ 
+      projectId: projectId, 
+      userId: id, 
+      role: "member" 
+    }));
+
+    await db.insert(projectMembers)
+      .values(membersToInsert)
+      .onConflictDoNothing();
+      
+    revalidatePath("/projects");
+    revalidatePath(`/projects/${projectId}`);
+    
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to invite members:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to invite members." 
+    };
+  }
+}

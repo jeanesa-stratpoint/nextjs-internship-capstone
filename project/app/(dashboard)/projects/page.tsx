@@ -118,8 +118,7 @@
 //     </DashboardLayout>
 //   );
 // }
-import { Search, Filter, Plus } from "lucide-react";
-import CreateProjectModal from "@/components/modals/create-project-modal";
+import { Search, Filter } from "lucide-react";
 import ProjectCard from "@/components/project-card";
 import { db } from "@/lib/db";
 import { projects, projectMembers, lists, tasks } from "@/lib/db/schema";
@@ -128,6 +127,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { formatHeaderDate } from "@/lib/utils";
 import { hasSystemPermission } from "@/lib/rbac";
+import QuickActions from "@/components/quick-actions";
 
 export default async function ProjectsPage() {
   const { userId } = await auth();
@@ -183,22 +183,11 @@ export default async function ProjectsPage() {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <p className="text-gray-600 text-sm">Manage and organize your team projects</p>
 
-        <div className="flex flex-col items-start lg:items-end gap-2">
-          <span className="text-xs font-bold text-black mb-1">Quick Actions</span>
-          <div className="flex flex-wrap items-center gap-3">
-            {canCreateProject && <CreateProjectModal />}
-              {canInviteMember && (
-                <button className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white">
-                  <Plus size={16} className="text-gray-500" /> Add Team Member
-                </button>
-              )
-            }
-            <button className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white">
-              <Plus size={16} className="text-gray-500" /> Create Task
-            </button>
-            
-          </div>
-        </div>
+        <QuickActions 
+          canCreateProject={canCreateProject} 
+          canInviteMember={canInviteMember} 
+          userProjects={userProjects.map(p => ({ id: p.project.id, name: p.project.name }))}
+        />
       </div>
 
       {/* ACTIVE PROJECTS GRID */}
