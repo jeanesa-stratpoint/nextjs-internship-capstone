@@ -1,33 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Plus, Loader2, Search, FolderKanban } from "lucide-react";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { X, Loader2, Search, FolderKanban, CheckCircle2 } from "lucide-react";
 import { inviteMembersAction } from "@/actions/projects";
-import { useRouter } from "next/navigation";
+import { useUIStore } from "@/stores/ui-store";
+import { useUser } from "@clerk/nextjs";
 
 interface Project { id: string; name: string; }
 interface SearchUser { id: string; firstName: string | null; lastName: string | null; email: string; imageUrl: string; }
 interface GlobalInviteModalProps { userProjects: Project[]; }
 
 export default function GlobalInviteModal({ userProjects }: GlobalInviteModalProps) {
-  const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  const { user } = useUser();
+  const { isGlobalInviteModalOpen, closeGlobalInviteModal } = useUIStore(); 
+
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  // Search States
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<SearchUser[]>([]);
 
+  const handleClose = () => {
+    closeGlobalInviteModal();
+    setTimeout(() => {
+      setSelectedProjectId("");
+      setSelectedUsers([]);
+      setSearchQuery("");
+      setError("");
+      setSuccessMessage("");
+    }, 300);
+  };
+
   useEffect(() => {
-    if (isOpen) document.body.style.overflow = "hidden";
+    if (isGlobalInviteModalOpen) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "unset";
     return () => { document.body.style.overflow = "unset"; };
-  }, [isOpen]);
+  }, [isGlobalInviteModalOpen]);
 
   useEffect(() => {
     if (searchQuery.length < 2) {
@@ -40,7 +53,10 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
         const res = await fetch(`/api/users/search?q=${searchQuery}`);
         if (res.ok) {
           const data = await res.json();
-          const filtered = data.filter((user: SearchUser) => !selectedUsers.some((selected) => selected.id === user.id));
+          const filtered = data.filter((u: SearchUser) => 
+            u.id !== user?.id && 
+            !selectedUsers.some((selected) => selected.id === u.id)
+          );
           setSearchResults(filtered);
         }
       } catch (error) {
@@ -50,7 +66,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedUsers]);
+  }, [searchQuery, selectedUsers, user?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,29 +77,38 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
     const result = await inviteMembersAction(selectedProjectId, memberIds);
 
     if (result.success) {
-      setSelectedProjectId("");
-      setSelectedUsers([]);
-      setSearchQuery("");
-      setIsOpen(false);
-      router.refresh();
+      setSuccessMessage(`Successfully added ${selectedUsers.length} member(s) to the project!`);
     } else {
       setError(result.error || "Failed to invite members");
     }
     setIsSubmitting(false);
   };
 
-  return (
-    <>
-      <button onClick={() => setIsOpen(true)} className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black">
-        <Plus size={16} className="text-gray-500" /> Add Team Member
-      </button>
+  if (!isGlobalInviteModalOpen) return null;
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        
+        {successMessage ? (
+          <div className="p-8 flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-5">
+              <CheckCircle2 size={32} className="text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-black mb-2">Team Updated!</h2>
+            <p className="text-gray-500 mb-8">{successMessage}</p>
+            <button
+              onClick={handleClose}
+              className="w-full py-3 bg-black text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-bold text-black">Invite Team Member</h2>
-              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-black transition-colors p-1 rounded-full hover:bg-gray-100">
+              <button onClick={handleClose} className="text-gray-400 hover:text-black transition-colors p-1 rounded-full hover:bg-gray-100">
                 <X size={20} />
               </button>
             </div>
@@ -92,8 +117,6 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
 
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1">
               <div className="space-y-6 mb-6">
-                
-                {/* 1. PROJECT SELECTION DROPDOWN */}
                 <div>
                   <label htmlFor="projectId" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Select Project <span className="text-red-500">*</span></label>
                   <div className="relative">
@@ -113,17 +136,16 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                   </div>
                 </div>
 
-                {/* 2. USER SEARCH (Reused from Create Project!) */}
                 <div className="pt-4 border-t border-gray-100">
                   <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Search Users <span className="text-red-500">*</span></label>
                   
                   {selectedUsers.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {selectedUsers.map((user) => (
-                        <div key={user.id} className="flex items-center gap-2 bg-gray-100 pl-2 pr-1 py-1 rounded-full text-xs font-medium text-black">
-                          <Image src={user.imageUrl} alt="Avatar" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
-                          <span>{user.firstName || user.email.split("@")[0]}</span>
-                          <button type="button" onClick={() => setSelectedUsers(selectedUsers.filter((u) => u.id !== user.id))} className="p-0.5 hover:bg-gray-200 rounded-full transition-colors text-gray-500"><X size={14} /></button>
+                      {selectedUsers.map((u) => (
+                        <div key={u.id} className="flex items-center gap-2 bg-gray-100 pl-2 pr-1 py-1 rounded-full text-xs font-medium text-black">
+                          <Image src={u.imageUrl} alt="Avatar" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
+                          <span>{u.firstName || u.email.split("@")[0]}</span>
+                          <button type="button" onClick={() => setSelectedUsers(selectedUsers.filter((usr) => usr.id !== u.id))} className="p-0.5 hover:bg-gray-200 rounded-full transition-colors text-gray-500"><X size={14} /></button>
                         </div>
                       ))}
                     </div>
@@ -140,12 +162,12 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                         {isSearching ? (
                           <div className="p-3 text-center text-xs text-gray-500 flex justify-center items-center gap-2"><Loader2 size={14} className="animate-spin" /> Searching...</div>
                         ) : searchResults.length > 0 ? (
-                          searchResults.map((user) => (
-                            <button key={user.id} type="button" onClick={() => { setSelectedUsers([...selectedUsers, user]); setSearchQuery(""); setSearchResults([]); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0">
-                              <Image src={user.imageUrl} alt="Avatar" width={32} height={32} className="w-8 h-8 rounded-full bg-gray-200 object-cover" />
+                          searchResults.map((u) => (
+                            <button key={u.id} type="button" onClick={() => { setSelectedUsers([...selectedUsers, u]); setSearchQuery(""); setSearchResults([]); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0">
+                              <Image src={u.imageUrl} alt="Avatar" width={32} height={32} className="w-8 h-8 rounded-full bg-gray-200 object-cover" />
                               <div className="flex flex-col">
-                                <span className="text-sm font-bold text-black">{user.firstName} {user.lastName}</span>
-                                <span className="text-xs text-gray-500">{user.email}</span>
+                                <span className="text-sm font-bold text-black">{u.firstName} {u.lastName}</span>
+                                <span className="text-xs text-gray-500">{u.email}</span>
                               </div>
                             </button>
                           ))
@@ -159,15 +181,15 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 flex-shrink-0 border-t border-gray-100 mt-4">
-                <button type="button" onClick={() => setIsOpen(false)} className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-black hover:bg-gray-100 rounded-full transition-colors">Cancel</button>
+                <button type="button" onClick={handleClose} className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-black hover:bg-gray-100 rounded-full transition-colors">Cancel</button>
                 <button type="submit" disabled={isSubmitting || !selectedProjectId || selectedUsers.length === 0} className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                   {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Sending...</> : "Send Invites"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-    </>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

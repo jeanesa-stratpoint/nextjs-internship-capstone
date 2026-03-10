@@ -25,7 +25,7 @@ export default function QuickActions({ canCreateProject, canInviteMember, userPr
         {canCreateProject && (
           <button 
             onClick={openCreateProjectModal}
-            className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
+            className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors bg-white text-black"
           >
             <Plus size={16} className="text-gray-500" /> Create Project
           </button>
@@ -35,7 +35,7 @@ export default function QuickActions({ canCreateProject, canInviteMember, userPr
         {canInviteMember && (
           <button 
             onClick={openGlobalInviteModal}
-            className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
+            className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors bg-white text-black"
           >
             <Plus size={16} className="text-gray-500" /> Add Team Member
           </button>
@@ -44,7 +44,7 @@ export default function QuickActions({ canCreateProject, canInviteMember, userPr
         {/* 3. Create Task Trigger */}
         <button 
           onClick={openCreateTaskModal}
-          className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
+          className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors bg-white text-black"
         >
           <Plus size={16} className="text-gray-500" /> Create Task
         </button>
