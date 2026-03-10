@@ -64,7 +64,7 @@ export const taskSchema = z.object({
   priority: z.enum(["low", "medium", "high"], {
     message: "Please select a valid priority level (low, medium, or high)",
   }),
-  dueDate: z.coerce.date().optional(),
+  dueDate: z.coerce.date().min(new Date(new Date().setHours(0,0,0,0)), "Due date cannot be in the past").optional(),
   listId: z.string().uuid("Invalid List ID"),
   assigneeId: z.string().optional(),
 });
