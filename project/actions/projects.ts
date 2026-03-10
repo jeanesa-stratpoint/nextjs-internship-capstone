@@ -58,6 +58,7 @@ export async function createProjectAction(
     ];
 
     await db.insert(projectMembers).values(membersToInsert);
+    revalidatePath("/dashboard");
     revalidatePath("/projects");
     
     return { 
