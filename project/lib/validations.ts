@@ -54,7 +54,7 @@ export const projectSchema = z.object({
   name: z.string().min(1, "Project name is required").max(100, "Name cannot exceed 100 characters"),
   description: z.string().max(500, "Description cannot exceed 500 characters").optional(),
   // z.coerce.date() safely converts HTML date picker strings into native JavaScript Date objects
-  dueDate: z.coerce.date().min(new Date(), "Due date must be in the future").optional(),
+  dueDate: z.coerce.date().min(new Date(new Date().setHours(0,0,0,0)), "Project due date cannot be in the past.").optional(),
 });
 
 // TASK VALIDATION
