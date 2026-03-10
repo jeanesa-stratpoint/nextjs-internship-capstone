@@ -48,13 +48,38 @@ export const useUIStore = create<UIState>((set) => ({
 }))
 */
 
-// Placeholder to prevent import errors
-export const useUIStore = () => {
-  console.log("TODO: Implement UI store with Zustand");
-  return {
-    isCreateProjectModalOpen: false,
-    isCreateTaskModalOpen: false,
-    openCreateProjectModal: () => console.log("TODO: Open create project modal"),
-    closeCreateProjectModal: () => console.log("TODO: Close create project modal"),
-  };
-};
+import { create } from 'zustand';
+
+interface UIState {
+  // Modal visibility states
+  isCreateProjectModalOpen: boolean;
+  isGlobalInviteModalOpen: boolean;
+  isCreateTaskModalOpen: boolean;
+
+  // Actions to open/close them
+  openCreateProjectModal: () => void;
+  closeCreateProjectModal: () => void;
+  
+  openGlobalInviteModal: () => void;
+  closeGlobalInviteModal: () => void;
+  
+  openCreateTaskModal: () => void;
+  closeCreateTaskModal: () => void;
+}
+
+export const useUIStore = create<UIState>((set) => ({
+  // Default states
+  isCreateProjectModalOpen: false,
+  isGlobalInviteModalOpen: false,
+  isCreateTaskModalOpen: false,
+
+  // Actions
+  openCreateProjectModal: () => set({ isCreateProjectModalOpen: true }),
+  closeCreateProjectModal: () => set({ isCreateProjectModalOpen: false }),
+
+  openGlobalInviteModal: () => set({ isGlobalInviteModalOpen: true }),
+  closeGlobalInviteModal: () => set({ isGlobalInviteModalOpen: false }),
+
+  openCreateTaskModal: () => set({ isCreateTaskModalOpen: true }),
+  closeCreateTaskModal: () => set({ isCreateTaskModalOpen: false }),
+}));
