@@ -1,10 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { tasks } from "@/lib/db/schema";
+import { tasks, lists, projectMembers, users } from "@/lib/db/schema";
 import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";import { auth } from "@clerk/nextjs/server";
+import { eq, asc } from "drizzle-orm";import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
 
 export async function createTaskAction(formData: unknown, projectId: string) {
@@ -73,5 +73,40 @@ export async function updateTaskStatus(taskId: string, newListId: string, projec
   } catch (error) {
     console.error("Failed to update task status:", error);
     return { success: false, error: "Failed to move task." };
+  }
+}
+
+export async function getTaskDefaultsAction(projectId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const projectLists = await db
+      .select()
+      .from(lists)
+      .where(eq(lists.projectId, projectId))
+      .orderBy(asc(lists.order));
+    
+    const defaultList = projectLists.find(l => l.name.toLowerCase() === "to do") || projectLists[0];
+
+    const members = await db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+      })
+      .from(projectMembers)
+      .innerJoin(users, eq(projectMembers.userId, users.id))
+      .where(eq(projectMembers.projectId, projectId));
+
+    return { 
+      success: true, 
+      listId: defaultList?.id, 
+      team: members 
+    };
+  } catch (error) {
+    console.error("Failed to load project details:", error);
+    return { success: false, error: "Failed to load project details." };
   }
 }
