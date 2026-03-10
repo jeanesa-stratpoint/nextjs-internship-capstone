@@ -70,6 +70,7 @@ interface CreateTaskModalProps {
   projectId?: string;
   projectName?: string;
   projectTeam?: UnifiedTeamMember[];
+  projectDueDate?: Date | null;
 
   // Props for Global Mode (Quick Actions)
   userProjects?: Project[];
@@ -82,6 +83,7 @@ export default function CreateTaskModal({
   projectId: initialProjectId,
   projectName: initialProjectName,
   projectTeam: initialProjectTeam,
+  projectDueDate: initialProjectDueDate,
   userProjects,
 }: CreateTaskModalProps) {
   const router = useRouter();
@@ -99,7 +101,10 @@ export default function CreateTaskModal({
   // Dynamic Data State
   const [dynamicListId, setDynamicListId] = useState(initialListId || "");
   const [dynamicTeam, setDynamicTeam] = useState<UnifiedTeamMember[]>(initialProjectTeam || []);
+
+  const [dynamicProjectDueDate, setDynamicProjectDueDate] = useState<Date | null | undefined>(initialProjectDueDate);
   const [isLoadingContext, setIsLoadingContext] = useState(false);
+
 
   // UI State
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,6 +117,7 @@ export default function CreateTaskModal({
       setSelectedProjectId(initialProjectId || "");
       setDynamicListId(initialListId || "");
       setDynamicTeam(initialProjectTeam || []);
+      setDynamicProjectDueDate(initialProjectDueDate);
       setTitle("");
       setDescription("");
       setPriority("medium");
@@ -182,6 +188,10 @@ export default function CreateTaskModal({
   };
 
   if (!isOpen) return null;
+
+  const maxDateString = dynamicProjectDueDate 
+      ? new Date(dynamicProjectDueDate).toISOString().split('T')[0] 
+      : undefined;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
@@ -278,7 +288,14 @@ export default function CreateTaskModal({
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Due Date</label>
-                  <input type="date" value={dueDate} min={getTodayString()} onChange={(e) => setDueDate(e.target.value)} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-gray-600" />
+                  <input 
+                    type="date" 
+                    value={dueDate} 
+                    min={getTodayString()} 
+                    max={maxDateString}
+                    onChange={(e) => setDueDate(e.target.value)} 
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-gray-600" 
+                  />
                 </div>
               </div>
 

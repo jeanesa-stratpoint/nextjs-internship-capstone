@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { tasks, lists, projectMembers, users } from "@/lib/db/schema";
+import { tasks, lists, projectMembers, users, projects } from "@/lib/db/schema";
 import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { eq, asc } from "drizzle-orm";import { auth } from "@clerk/nextjs/server";
@@ -35,6 +35,16 @@ export async function createTaskAction(formData: unknown, projectId: string) {
     }
 
     const validatedData = validationResult.data;
+    if (validatedData.dueDate) {
+      const [project] = await db.select({ dueDate: projects.dueDate }).from(projects).where(eq(projects.id, projectId)).limit(1);
+      
+      if (project?.dueDate && validatedData.dueDate > project.dueDate) {
+        return { 
+          success: false, 
+          error: "Task due date cannot be later than the project's due date." 
+        };
+      }
+    }
 
     const [newTask] = await db.insert(tasks).values({
         title: validatedData.title,
@@ -81,6 +91,13 @@ export async function getTaskDefaultsAction(projectId: string) {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
+    // Fetch the project to get its due date
+    const [project] = await db
+      .select({ dueDate: projects.dueDate })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
     const projectLists = await db
       .select()
       .from(lists)
@@ -90,12 +107,7 @@ export async function getTaskDefaultsAction(projectId: string) {
     const defaultList = projectLists.find(l => l.name.toLowerCase() === "to do") || projectLists[0];
 
     const members = await db
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-      })
+      .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email })
       .from(projectMembers)
       .innerJoin(users, eq(projectMembers.userId, users.id))
       .where(eq(projectMembers.projectId, projectId));
@@ -103,10 +115,11 @@ export async function getTaskDefaultsAction(projectId: string) {
     return { 
       success: true, 
       listId: defaultList?.id, 
-      team: members 
+      team: members,
+      projectDueDate: project?.dueDate // <-- Pass this to the frontend!
     };
   } catch (error) {
-    console.error("Failed to load project details:", error);
+    console.error(`Failed to fetch task defaults for project ${projectId}:`, error);
     return { success: false, error: "Failed to load project details." };
   }
 }
