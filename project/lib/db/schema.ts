@@ -44,7 +44,7 @@ export const users = pgTable('users', {
 // export const comments = "TODO: Implement comments table schema";
 
 import { relations } from 'drizzle-orm';
-import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer, boolean } from 'drizzle-orm/pg-core';
 
 // RBAC
 export const roles = pgTable('roles', {
@@ -115,6 +115,32 @@ export const tasks = pgTable('tasks', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const taskActivities = pgTable("task_activities", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  taskId: uuid("task_id")
+    .notNull()
+    .references(() => tasks.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  actionType: varchar("action_type", { length: 50 }).notNull(), // e.g., 'created', 'assigned', 'moved', 'updated'
+  oldValue: text("old_value"), 
+  newValue: text("new_value"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const comments = pgTable("comments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  taskId: uuid("task_id")
+    .notNull()
+    .references(() => tasks.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  content: text("content").notNull(),
+
+  isEdited: boolean("is_edited").default(false).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, {
@@ -124,6 +150,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   ownedProjects: many(projects),
   projectMemberships: many(projectMembers),
   assignedTasks: many(tasks),
+  activities: many(taskActivities),
+  comments: many(comments),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -154,7 +182,7 @@ export const listsRelations = relations(lists, ({ one, many }) => ({
   tasks: many(tasks),
 }));
 
-export const tasksRelations = relations(tasks, ({ one }) => ({
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
   list: one(lists, {
     fields: [tasks.listId],
     references: [lists.id],
@@ -163,6 +191,8 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
     fields: [tasks.assigneeId],
     references: [users.id],
   }),
+  activities: many(taskActivities),
+  comments: many(comments),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -182,5 +212,27 @@ export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => 
   permission: one(permissions, {
     fields: [rolePermissions.permissionId],
     references: [permissions.id],
+  }),
+}));
+
+export const taskActivitiesRelations = relations(taskActivities, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskActivities.taskId],
+    references: [tasks.id],
+  }),
+  user: one(users, {
+    fields: [taskActivities.userId],
+    references: [users.id],
+  }),
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [comments.taskId],
+    references: [tasks.id],
+  }),
+  user: one(users, {
+    fields: [comments.userId],
+    references: [users.id],
   }),
 }));
