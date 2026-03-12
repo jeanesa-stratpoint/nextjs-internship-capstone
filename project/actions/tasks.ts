@@ -1,10 +1,11 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { tasks, lists, projectMembers, users, projects } from "@/lib/db/schema";
+import { tasks, lists, projectMembers, users, projects, comments, taskActivities } from "@/lib/db/schema";
 import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
-import { eq, asc } from "drizzle-orm";import { auth } from "@clerk/nextjs/server";
+import { eq, asc, desc } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
 
 export async function createTaskAction(formData: unknown, projectId: string) {
@@ -73,10 +74,8 @@ export async function createTaskAction(formData: unknown, projectId: string) {
 
 export async function updateTaskStatus(taskId: string, newListId: string, projectId: string) {
   try {
-    // Update the task's listId in the Neon database
     await db.update(tasks).set({ listId: newListId }).where(eq(tasks.id, taskId));
 
-    // Clear the Next.js cache so the board stays perfectly in sync
     revalidatePath(`/projects/${projectId}`);
 
     return { success: true };
@@ -91,7 +90,6 @@ export async function getTaskDefaultsAction(projectId: string) {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    // Fetch the project to get its due date
     const [project] = await db
       .select({ dueDate: projects.dueDate })
       .from(projects)
@@ -121,5 +119,65 @@ export async function getTaskDefaultsAction(projectId: string) {
   } catch (error) {
     console.error(`Failed to fetch task defaults for project ${projectId}:`, error);
     return { success: false, error: "Failed to load project details." };
+  }
+}
+
+export async function getFullTaskDetailsAction(taskId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
+    if (!task) return { success: false, error: "Task not found" };
+
+    const [list] = await db.select().from(lists).where(eq(lists.id, task.listId)).limit(1);
+    const [project] = await db.select().from(projects).where(eq(projects.id, list.projectId)).limit(1);
+
+    const team = await db
+      .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email })
+      .from(projectMembers)
+      .innerJoin(users, eq(projectMembers.userId, users.id))
+      .where(eq(projectMembers.projectId, project.id));
+
+
+    const taskComments = await db
+      .select({
+        id: comments.id,
+        content: comments.content,
+        createdAt: comments.createdAt,
+        isEdited: comments.isEdited,
+        user: { id: users.id, firstName: users.firstName, lastName: users.lastName }
+      })
+      .from(comments)
+      .leftJoin(users, eq(comments.userId, users.id))
+      .where(eq(comments.taskId, taskId))
+      .orderBy(desc(comments.createdAt));
+
+    const activities = await db
+      .select({
+        id: taskActivities.id,
+        actionType: taskActivities.actionType,
+        oldValue: taskActivities.oldValue,
+        newValue: taskActivities.newValue,
+        createdAt: taskActivities.createdAt,
+        user: { id: users.id, firstName: users.firstName, lastName: users.lastName }
+      })
+      .from(taskActivities)
+      .leftJoin(users, eq(taskActivities.userId, users.id))
+      .where(eq(taskActivities.taskId, taskId))
+      .orderBy(desc(taskActivities.createdAt));
+
+    return {
+      success: true,
+      task,
+      project: { id: project.id, name: project.name, dueDate: project.dueDate },
+      team,
+      comments: taskComments,
+      activities
+    };
+
+  } catch (error) {
+    console.error("Failed to fetch task details:", error);
+    return { success: false, error: "Failed to load task details." };
   }
 }

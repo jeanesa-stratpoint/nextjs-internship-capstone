@@ -5,6 +5,7 @@ import CreateProjectModal from "@/components/modals/create-project-modal";
 import GlobalInviteModal from "@/components/modals/global-invite-modal";
 import CreateTaskModal from "@/components/modals/create-task-modal"; 
 import { useUIStore } from "@/stores/ui-store";
+import TaskDetailModal from "@/components/modals/task-detail-modal";
 
 interface Project { id: string; name: string; }
 interface QuickActionsProps { canCreateProject: boolean; canInviteMember: boolean; userProjects: Project[]; }
@@ -30,6 +31,7 @@ export default function QuickActions({ canCreateProject, canInviteMember, userPr
           onClose={closeCreateTaskModal} 
           userProjects={userProjects} 
         />
+        <TaskDetailModal />
 
         {canCreateProject && (
           <button 

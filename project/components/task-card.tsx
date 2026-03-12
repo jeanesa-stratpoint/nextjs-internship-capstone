@@ -55,6 +55,7 @@ import { Task } from "@/stores/board-store";
 import { CheckCircle2, Clock, Circle, CheckCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { TeamMember } from "./kanban-board"; 
+import { useUIStore } from "@/stores/ui-store";
 
 interface TaskCardProps {
   task: Task;
@@ -109,6 +110,7 @@ const getInitials = (name?: string) => {
 };
 
 export default function TaskCard({ task, projectName, columnName, projectTeam }: TaskCardProps) {
+  const { openTaskDetailModal } = useUIStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { type: "Task", task },
@@ -137,6 +139,7 @@ export default function TaskCard({ task, projectName, columnName, projectTeam }:
       style={style}
       {...attributes}
       {...listeners}
+      onClick={() => openTaskDetailModal(task.id)}
       className="p-4 bg-white border border-gray-200 shadow-sm hover:shadow-md rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none"
     >
       <div className="flex justify-between items-start mb-1">

@@ -138,20 +138,20 @@
 //   );
 // }
 
-import { db } from "@/lib/db";
-import { projects, lists, tasks, projectMembers } from "@/lib/db/schema"; // <-- Added lists import
-import { eq, asc, inArray } from "drizzle-orm"; // <-- Added asc import
-import { notFound } from "next/navigation";
 import Link from "next/link";
+import { db } from "@/lib/db";
+import { projects, lists, tasks, projectMembers } from "@/lib/db/schema";
+import { eq, asc, inArray } from "drizzle-orm";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Users, CalendarDays } from "lucide-react";
 import KanbanBoard from "@/components/kanban-board";
 import { clerkClient } from "@clerk/nextjs/server";
+import TaskDetailModal from "@/components/modals/task-detail-modal";
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const projectId = resolvedParams.id;
 
-  // 1. Fetch the project
   const projectResult = await db.select().from(projects).where(eq(projects.id, projectId));
 
   const project = projectResult[0];
@@ -160,7 +160,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  // 1. FETCH THE REAL TEAM MEMBERS FROM CLERK
   const membersData = await db
     .select()
     .from(projectMembers)
@@ -170,7 +169,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const client = await clerkClient();
   const clerkUsers = await client.users.getUserList({ userId: memberIds });
 
-  // Clean up the data for the frontend
   const projectTeam = clerkUsers.data.map((u) => ({
     id: u.id,
     name: u.firstName
@@ -179,14 +177,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     imageUrl: u.imageUrl,
   }));
 
-  // 2. Fetch the real columns (lists) for this project
   let boardLists = await db
     .select()
     .from(lists)
     .where(eq(lists.projectId, projectId))
     .orderBy(asc(lists.order));
 
-  // 3. If the project has no columns, auto-generate the 4 defaults!
   if (boardLists.length === 0) {
     boardLists = await db
       .insert(lists)
@@ -199,10 +195,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       .returning();
   }
 
-  // 3. NEW: Extract the IDs of the columns we just fetched
   const listIds = boardLists.map((list) => list.id);
 
-  // 4. NEW: Fetch all tasks that belong to these columns
   const boardTasks = await db
     .select()
     .from(tasks)
@@ -212,7 +206,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="h-full flex flex-col text-black overflow-hidden">
-      {/* HEADER ROW RESTORED! */}
       <div className="flex items-start justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
           <Link href="/projects" className="p-2 hover:bg-gray-200 rounded-full transition-colors">
@@ -231,12 +224,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      {/* DESCRIPTION RESTORED! */}
       <p className="text-gray-600 ml-14 max-w-4xl mb-8 flex-shrink-0">
         {project.description || "No description provided for this project."}
       </p>
 
-      {/* 5. NEW: Pass initialTasks to the KanbanBoard! */}
       <div className="flex-1 overflow-hidden ml-14">
         <KanbanBoard
           projectId={project.id}
@@ -246,6 +237,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           projectTeam={projectTeam}
         />
       </div>
+      <TaskDetailModal />
     </div>
   );
 }

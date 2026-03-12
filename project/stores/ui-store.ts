@@ -51,12 +51,13 @@ export const useUIStore = create<UIState>((set) => ({
 import { create } from 'zustand';
 
 interface UIState {
-  // Modal visibility states
   isCreateProjectModalOpen: boolean;
   isGlobalInviteModalOpen: boolean;
   isCreateTaskModalOpen: boolean;
+  isTaskDetailModalOpen: boolean;
+  selectedTaskId: string | null;
 
-  // Actions to open/close them
+  // actions
   openCreateProjectModal: () => void;
   closeCreateProjectModal: () => void;
   
@@ -65,15 +66,19 @@ interface UIState {
   
   openCreateTaskModal: () => void;
   closeCreateTaskModal: () => void;
+
+  openTaskDetailModal: (taskId: string) => void;
+  closeTaskDetailModal: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
-  // Default states
   isCreateProjectModalOpen: false,
   isGlobalInviteModalOpen: false,
   isCreateTaskModalOpen: false,
+  isTaskDetailModalOpen: false,
+  selectedTaskId: null,
 
-  // Actions
+  // actions
   openCreateProjectModal: () => set({ isCreateProjectModalOpen: true }),
   closeCreateProjectModal: () => set({ isCreateProjectModalOpen: false }),
 
@@ -82,4 +87,7 @@ export const useUIStore = create<UIState>((set) => ({
 
   openCreateTaskModal: () => set({ isCreateTaskModalOpen: true }),
   closeCreateTaskModal: () => set({ isCreateTaskModalOpen: false }),
+
+  openTaskDetailModal: (taskId) => set({ isTaskDetailModalOpen: true, selectedTaskId: taskId }),
+  closeTaskDetailModal: () => set({ isTaskDetailModalOpen: false, selectedTaskId: null }),
 }));
