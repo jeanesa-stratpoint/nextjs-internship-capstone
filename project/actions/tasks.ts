@@ -264,3 +264,18 @@ export async function updateTaskAction(
     return { success: false, error: "Failed to update task details." };
   }
 }
+
+export async function deleteTaskAction(taskId: string, projectId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    await db.delete(tasks).where(eq(tasks.id, taskId));
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete task:", error);
+    return { success: false, error: "Failed to delete task." };
+  }
+}

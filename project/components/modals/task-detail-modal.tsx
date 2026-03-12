@@ -12,8 +12,9 @@ import {
   Trash2,
   Activity,
   LayoutList,
+  AlertTriangle,
 } from "lucide-react";
-import { getFullTaskDetailsAction, updateTaskAction } from "@/actions/tasks";
+import { getFullTaskDetailsAction, updateTaskAction, deleteTaskAction } from "@/actions/tasks";
 import { useUIStore } from "@/stores/ui-store";
 import { getTodayString, formatDate } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -90,6 +91,8 @@ export default function TaskDetailModal() {
   const [statusId, setStatusId] = useState("");
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState("");
 
   const fetchTaskData = useCallback(async (taskId: string) => {
@@ -107,6 +110,7 @@ export default function TaskDetailModal() {
       setTitle(result.task.title);
       setDescription(result.task.description || "");
       setPriority(result.task.priority || "medium");
+      setStatusId(result.task.listId);
       setDueDate(
         result.task.dueDate ? new Date(result.task.dueDate).toISOString().split("T")[0] : ""
       );
@@ -160,6 +164,7 @@ export default function TaskDetailModal() {
       setDescription("");
       setFeed([]);
       setError("");
+      setShowDeleteConfirm(false);
     }, 300);
   };
 
@@ -188,6 +193,19 @@ export default function TaskDetailModal() {
     setIsSaving(false);
   };
 
+  const handleDeleteTask = async () => {
+    if (!selectedTaskId || !project) return;
+    setIsDeleting(true);
+    const result = await deleteTaskAction(selectedTaskId, project.id);
+
+    if (result.success) handleClose();
+    else {
+      setError(result.error as string);
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   if (!isTaskDetailModalOpen) return null;
 
   const maxDateString = project?.dueDate
@@ -197,6 +215,37 @@ export default function TaskDetailModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-8">
       <div className="bg-[#F8F8F8] rounded-[24px] shadow-2xl w-full max-w-5xl max-h-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+            <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 max-w-md w-full text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                <AlertTriangle size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-black mb-2">Delete this task?</h3>
+              <p className="text-gray-500 mb-6 text-sm">
+                This action cannot be undone. All comments and activity logs will be permanently
+                removed.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteTask}
+                  disabled={isDeleting}
+                  className="flex-1 flex justify-center items-center gap-2 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {isDeleting ? <Loader2 size={18} className="animate-spin" /> : "Delete Task"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* HEADER */}
         <div className="flex items-center justify-between px-8 py-5 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex flex-col">
@@ -214,6 +263,7 @@ export default function TaskDetailModal() {
           </div>
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setShowDeleteConfirm(true)}
               className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
               title="Delete Task"
             >
