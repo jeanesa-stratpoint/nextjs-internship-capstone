@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Trash2,
   Activity,
+  LayoutList,
 } from "lucide-react";
 import { getFullTaskDetailsAction, updateTaskAction } from "@/actions/tasks";
 import { useUIStore } from "@/stores/ui-store";
@@ -64,6 +65,11 @@ interface ServerActivity {
   user: FeedUser | null;
 }
 
+interface ProjectList {
+  id: string;
+  name: string;
+}
+
 export default function TaskDetailModal() {
   const { isTaskDetailModalOpen, selectedTaskId, closeTaskDetailModal } = useUIStore();
 
@@ -71,6 +77,7 @@ export default function TaskDetailModal() {
   const [isLoading, setIsLoading] = useState(true);
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [projectLists, setProjectLists] = useState<ProjectList[]>([]);
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [createdAt, setCreatedAt] = useState<Date | null>(null);
 
@@ -80,11 +87,11 @@ export default function TaskDetailModal() {
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
+  const [statusId, setStatusId] = useState("");
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // 1. Define fetchTaskData OUTSIDE the useEffect using useCallback
   const fetchTaskData = useCallback(async (taskId: string) => {
     setIsLoading(true);
     setError("");
@@ -94,6 +101,7 @@ export default function TaskDetailModal() {
     if (result.success && result.task && result.project) {
       setProject(result.project as ProjectDetails);
       setTeam((result.team as TeamMember[]) || []);
+      setProjectLists(result.projectLists || []);
       setCreatedAt(result.task.createdAt);
 
       setTitle(result.task.title);
@@ -123,10 +131,8 @@ export default function TaskDetailModal() {
     }
 
     setIsLoading(false);
-  }, []); // <-- Empty dependency array keeps it stable
+  }, []);
 
-  // 2. Now the useEffect just calls it!
-  // 2a. Effect for CSS Scroll Lock (DOM Mutation)
   useEffect(() => {
     if (isTaskDetailModalOpen) {
       document.body.style.overflow = "hidden";
@@ -138,10 +144,8 @@ export default function TaskDetailModal() {
     };
   }, [isTaskDetailModalOpen]);
 
-  // 2b. Effect for Data Fetching (State Mutation)
   useEffect(() => {
     if (isTaskDetailModalOpen && selectedTaskId) {
-      // Wrapping it in an async function pushes it out of the synchronous render flow
       const loadData = async () => {
         await fetchTaskData(selectedTaskId);
       };
@@ -151,7 +155,6 @@ export default function TaskDetailModal() {
 
   const handleClose = () => {
     closeTaskDetailModal();
-    // Wait for animation before clearing to prevent UI flashes
     setTimeout(() => {
       setTitle("");
       setDescription("");
@@ -167,17 +170,16 @@ export default function TaskDetailModal() {
     setIsSaving(true);
     setError("");
 
-    // 1. Send the updated data to the server
     const result = await updateTaskAction(selectedTaskId, project.id, {
       title,
       description,
       priority,
       dueDate,
       assigneeId,
+      listId: statusId,
     });
 
     if (result.success) {
-      // 2. Instantly re-fetch the task data so the new activity logs pop up on the right side!
       await fetchTaskData(selectedTaskId);
     } else {
       setError(result.error as string);
@@ -188,7 +190,6 @@ export default function TaskDetailModal() {
 
   if (!isTaskDetailModalOpen) return null;
 
-  // Validation boundary for the calendar
   const maxDateString = project?.dueDate
     ? new Date(project.dueDate).toISOString().split("T")[0]
     : undefined;
@@ -258,6 +259,23 @@ export default function TaskDetailModal() {
                   />
                 </div>
 
+                <div>
+                  <label className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
+                    <LayoutList size={14} /> Status
+                  </label>
+                  <select
+                    value={statusId}
+                    onChange={(e) => setStatusId(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-black appearance-none cursor-pointer"
+                  >
+                    {projectLists.map((list) => (
+                      <option key={list.id} value={list.id}>
+                        {list.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
                   {/* Assignee */}
                   <div>
@@ -309,7 +327,7 @@ export default function TaskDetailModal() {
                     />
                   </div>
 
-                  {/* Created At (Read Only) */}
+                  {/* Created At */}
                   <div>
                     <label className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
                       <Clock size={14} /> Created

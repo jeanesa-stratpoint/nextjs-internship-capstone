@@ -132,6 +132,7 @@ export async function getFullTaskDetailsAction(taskId: string) {
 
     const [list] = await db.select().from(lists).where(eq(lists.id, task.listId)).limit(1);
     const [project] = await db.select().from(projects).where(eq(projects.id, list.projectId)).limit(1);
+    const projectLists = await db.select().from(lists).where(eq(lists.projectId, project.id)).orderBy(asc(lists.order));
 
     const team = await db
       .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email })
@@ -171,6 +172,7 @@ export async function getFullTaskDetailsAction(taskId: string) {
       success: true,
       task,
       project: { id: project.id, name: project.name, dueDate: project.dueDate },
+      projectLists,
       team,
       comments: taskComments,
       activities
@@ -191,6 +193,7 @@ export async function updateTaskAction(
     priority: string;
     dueDate?: string | null;
     assigneeId?: string | null;
+    listId: string;
   }
 ) {
   try {
@@ -208,6 +211,7 @@ export async function updateTaskAction(
       priority: data.priority,
       dueDate: formattedDueDate,
       assigneeId: data.assigneeId || null,
+      listId: data.listId,
     }).where(eq(tasks.id, taskId));
 
     const newActivities = [];
@@ -228,6 +232,13 @@ export async function updateTaskAction(
     const newDateStr = data.dueDate || null;
     if (oldDateStr !== newDateStr) {
       newActivities.push({ taskId, userId, actionType: "updated", oldValue: "due date" });
+    }
+
+    if (existingTask.listId !== data.listId) {
+       const [newList] = await db.select().from(lists).where(eq(lists.id, data.listId)).limit(1);
+       if (newList) {
+         newActivities.push({ taskId, userId, actionType: "moved", newValue: newList.name });
+       }
     }
 
     if ((existingTask.assigneeId || null) !== (data.assigneeId || null)) {
