@@ -181,3 +181,75 @@ export async function getFullTaskDetailsAction(taskId: string) {
     return { success: false, error: "Failed to load task details." };
   }
 }
+
+export async function updateTaskAction(
+  taskId: string,
+  projectId: string,
+  data: {
+    title: string;
+    description?: string;
+    priority: string;
+    dueDate?: string | null;
+    assigneeId?: string | null;
+  }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const [existingTask] = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
+    if (!existingTask) return { success: false, error: "Task not found." };
+
+    const formattedDueDate = data.dueDate ? new Date(data.dueDate) : null;
+
+    await db.update(tasks).set({
+      title: data.title,
+      description: data.description || null,
+      priority: data.priority,
+      dueDate: formattedDueDate,
+      assigneeId: data.assigneeId || null,
+    }).where(eq(tasks.id, taskId));
+
+    const newActivities = [];
+
+    if (existingTask.title !== data.title) {
+      newActivities.push({ taskId, userId, actionType: "updated", oldValue: "title" });
+    }
+
+    if ((existingTask.description || "") !== (data.description || "")) {
+      newActivities.push({ taskId, userId, actionType: "updated", oldValue: "description" });
+    }
+
+    if (existingTask.priority !== data.priority) {
+      newActivities.push({ taskId, userId, actionType: "updated", oldValue: "priority" });
+    }
+
+    const oldDateStr = existingTask.dueDate ? existingTask.dueDate.toISOString().split("T")[0] : null;
+    const newDateStr = data.dueDate || null;
+    if (oldDateStr !== newDateStr) {
+      newActivities.push({ taskId, userId, actionType: "updated", oldValue: "due date" });
+    }
+
+    if ((existingTask.assigneeId || null) !== (data.assigneeId || null)) {
+       let newAssigneeName = "Unassigned";
+       if (data.assigneeId) {
+         const [assignee] = await db.select().from(users).where(eq(users.id, data.assigneeId)).limit(1);
+         if (assignee) {
+           newAssigneeName = `${assignee.firstName || ""} ${assignee.lastName || ""}`.trim() || assignee.email;
+         }
+       }
+       newActivities.push({ taskId, userId, actionType: "assigned", newValue: newAssigneeName });
+    }
+
+    if (newActivities.length > 0) {
+      await db.insert(taskActivities).values(newActivities);
+    }
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true };
+
+  } catch (error) {
+    console.error("Failed to update task:", error);
+    return { success: false, error: "Failed to update task details." };
+  }
+}

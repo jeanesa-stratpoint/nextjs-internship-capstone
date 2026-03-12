@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   X,
   Loader2,
@@ -12,7 +12,7 @@ import {
   Trash2,
   Activity,
 } from "lucide-react";
-import { getFullTaskDetailsAction } from "@/actions/tasks";
+import { getFullTaskDetailsAction, updateTaskAction } from "@/actions/tasks";
 import { useUIStore } from "@/stores/ui-store";
 import { getTodayString, formatDate } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -84,58 +84,70 @@ export default function TaskDetailModal() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function fetchTaskData(taskId: string) {
-      setIsLoading(true);
-      setError("");
+  // 1. Define fetchTaskData OUTSIDE the useEffect using useCallback
+  const fetchTaskData = useCallback(async (taskId: string) => {
+    setIsLoading(true);
+    setError("");
 
-      const result = await getFullTaskDetailsAction(taskId);
+    const result = await getFullTaskDetailsAction(taskId);
 
-      if (result.success && result.task && result.project) {
-        setProject(result.project as ProjectDetails);
-        setTeam((result.team as TeamMember[]) || []);
-        setCreatedAt(result.task.createdAt);
+    if (result.success && result.task && result.project) {
+      setProject(result.project as ProjectDetails);
+      setTeam((result.team as TeamMember[]) || []);
+      setCreatedAt(result.task.createdAt);
 
-        setTitle(result.task.title);
-        setDescription(result.task.description || "");
-        setPriority(result.task.priority || "medium");
-        setDueDate(
-          result.task.dueDate ? new Date(result.task.dueDate).toISOString().split("T")[0] : ""
-        );
-        setAssigneeId(result.task.assigneeId || "");
+      setTitle(result.task.title);
+      setDescription(result.task.description || "");
+      setPriority(result.task.priority || "medium");
+      setDueDate(
+        result.task.dueDate ? new Date(result.task.dueDate).toISOString().split("T")[0] : ""
+      );
+      setAssigneeId(result.task.assigneeId || "");
 
-        const rawComments: FeedItem[] = (result.comments || []).map((c: ServerComment) => ({
-          ...c,
-          feedType: "comment",
-        }));
-        const rawActivities: FeedItem[] = (result.activities || []).map((a: ServerActivity) => ({
-          ...a,
-          feedType: "activity",
-        }));
+      const rawComments: FeedItem[] = (result.comments || []).map((c: ServerComment) => ({
+        ...c,
+        feedType: "comment",
+      }));
+      const rawActivities: FeedItem[] = (result.activities || []).map((a: ServerActivity) => ({
+        ...a,
+        feedType: "activity",
+      }));
 
-        const combinedFeed = [...rawComments, ...rawActivities].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+      const combinedFeed = [...rawComments, ...rawActivities].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
-        setFeed(combinedFeed);
-      } else {
-        setError("Failed to load task details.");
-      }
-
-      setIsLoading(false);
+      setFeed(combinedFeed);
+    } else {
+      setError("Failed to load task details.");
     }
 
-    if (isTaskDetailModalOpen && selectedTaskId) {
+    setIsLoading(false);
+  }, []); // <-- Empty dependency array keeps it stable
+
+  // 2. Now the useEffect just calls it!
+  // 2a. Effect for CSS Scroll Lock (DOM Mutation)
+  useEffect(() => {
+    if (isTaskDetailModalOpen) {
       document.body.style.overflow = "hidden";
-      fetchTaskData(selectedTaskId);
     } else {
       document.body.style.overflow = "unset";
     }
-
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isTaskDetailModalOpen, selectedTaskId]);
+  }, [isTaskDetailModalOpen]);
+
+  // 2b. Effect for Data Fetching (State Mutation)
+  useEffect(() => {
+    if (isTaskDetailModalOpen && selectedTaskId) {
+      // Wrapping it in an async function pushes it out of the synchronous render flow
+      const loadData = async () => {
+        await fetchTaskData(selectedTaskId);
+      };
+      loadData();
+    }
+  }, [isTaskDetailModalOpen, selectedTaskId, fetchTaskData]);
 
   const handleClose = () => {
     closeTaskDetailModal();
@@ -150,10 +162,28 @@ export default function TaskDetailModal() {
 
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedTaskId || !project) return;
+
     setIsSaving(true);
-    // TODO: Connect to updateTaskAction in Phase 2
-    console.log("Saving changes:", { title, description, priority, dueDate, assigneeId });
-    setTimeout(() => setIsSaving(false), 1000);
+    setError("");
+
+    // 1. Send the updated data to the server
+    const result = await updateTaskAction(selectedTaskId, project.id, {
+      title,
+      description,
+      priority,
+      dueDate,
+      assigneeId,
+    });
+
+    if (result.success) {
+      // 2. Instantly re-fetch the task data so the new activity logs pop up on the right side!
+      await fetchTaskData(selectedTaskId);
+    } else {
+      setError(result.error as string);
+    }
+
+    setIsSaving(false);
   };
 
   if (!isTaskDetailModalOpen) return null;
