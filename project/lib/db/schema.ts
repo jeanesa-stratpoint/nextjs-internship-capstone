@@ -44,7 +44,9 @@ export const users = pgTable('users', {
 // export const comments = "TODO: Implement comments table schema";
 
 import { relations } from 'drizzle-orm';
-import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer, boolean, pgEnum } from 'drizzle-orm/pg-core';
+
+export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high']);
 
 // RBAC
 export const roles = pgTable('roles', {
@@ -81,6 +83,7 @@ export const projects = pgTable('projects', {
   description: text('description'),
   ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   dueDate: timestamp('due_date'),
+  isArchived: boolean("is_archived").default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -100,6 +103,7 @@ export const lists = pgTable('lists', {
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   order: integer('order').notNull(),
+  isCompleteStage: boolean("is_complete_stage").default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -109,7 +113,7 @@ export const tasks = pgTable('tasks', {
   title: text('title').notNull(),
   description: text('description'),
   assigneeId: text('assignee_id').references(() => users.id, { onDelete: 'set null' }),
-  priority: varchar('priority', { length: 20 }).default('medium'), 
+  priority: priorityEnum('priority').default('medium'),
   dueDate: timestamp('due_date'),
   order: integer('order').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
