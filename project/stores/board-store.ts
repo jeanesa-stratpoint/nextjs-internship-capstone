@@ -88,18 +88,16 @@ export interface List {
   id: string;
   name: string;
   order: number;
+  projectId?: string;
 }
 
 interface BoardState {
   lists: List[];
   tasks: Task[];
-
   isLoading: boolean;
-
   setBoardData: (lists: List[], tasks: Task[]) => void;
-
-  moveTask: (taskId: string, newListId: string, newOrder: number) => void;
-  reorderTask: (taskId: string, newOrder: number) => void;
+  setLists: (lists: List[]) => void;
+  setTasks: (tasks: Task[]) => void;
 }
 
 export const useBoardStore = create<BoardState>((set) => ({
@@ -108,17 +106,6 @@ export const useBoardStore = create<BoardState>((set) => ({
   isLoading: false,
 
   setBoardData: (lists, tasks) => set({ lists, tasks }),
-
-  moveTask: (taskId, newListId, newOrder) =>
-    set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task.id === taskId ? { ...task, listId: newListId, order: newOrder } : task
-      ),
-    })),
-
-
-  reorderTask: (taskId, newOrder) =>
-    set((state) => ({
-      tasks: state.tasks.map((task) => (task.id === taskId ? { ...task, order: newOrder } : task)),
-    })),
+  setLists: (lists) => set({ lists }),
+  setTasks: (tasks) => set({ tasks }),
 }));

@@ -183,3 +183,24 @@ export async function deleteTaskAction(taskId: string, projectId: string) {
     return { success: false, error: "Failed to delete task." };
   }
 }
+
+export async function updateTaskOrderAction(projectId: string, taskUpdates: { id: string; order: number; listId: string }[]) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    await Promise.all(
+      taskUpdates.map((task) =>
+        db.update(tasks)
+          .set({ order: task.order, listId: task.listId })
+          .where(eq(tasks.id, task.id))
+      )
+    );
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to reorder tasks:", error);
+    return { success: false, error: "Failed to reorder tasks." };
+  }
+}

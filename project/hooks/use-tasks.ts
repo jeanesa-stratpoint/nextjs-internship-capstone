@@ -1,68 +1,6 @@
-// TODO: Task 4.4 - Build task creation and editing functionality
-// TODO: Task 5.4 - Implement optimistic UI updates for smooth interactions
-
-/*
-TODO: Implementation Notes for Interns:
-
-Custom hook for task data management:
-- Fetch tasks for a project
-- Create new task
-- Update task
-- Delete task
-- Move task between lists
-- Bulk operations
-
-Features:
-- Optimistic updates for smooth UX
-- Real-time synchronization
-- Conflict resolution
-- Undo functionality
-- Batch operations
-
-Example structure:
-export function useTasks(projectId: string) {
-  const queryClient = useQueryClient()
-  
-  const {
-    data: tasks,
-    isLoading,
-    error
-  } = useQuery({
-    queryKey: ['tasks', projectId],
-    queryFn: () => queries.tasks.getByProject(projectId),
-    enabled: !!projectId
-  })
-  
-  const createTask = useMutation({
-    mutationFn: queries.tasks.create,
-    onMutate: async (newTask) => {
-      // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] })
-      const previousTasks = queryClient.getQueryData(['tasks', projectId])
-      queryClient.setQueryData(['tasks', projectId], (old: Task[]) => [...old, { ...newTask, id: 'temp-' + Date.now() }])
-      return { previousTasks }
-    },
-    onError: (err, newTask, context) => {
-      // Rollback on error
-      queryClient.setQueryData(['tasks', projectId], context?.previousTasks)
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
-    }
-  })
-  
-  return {
-    tasks,
-    isLoading,
-    error,
-    createTask: createTask.mutate,
-    isCreating: createTask.isPending
-  }
-}
-*/
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus } from "@/actions/tasks";
+import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction } from "@/actions/tasks";
+import { updateListOrderAction } from "@/actions/lists";
 
 interface TaskPayload {
   title: string;
@@ -161,10 +99,32 @@ export function useTaskMutations(projectId: string) {
     onSuccess: invalidateBoard,
   });
 
+  const updateListOrder = useMutation({
+    mutationFn: async (listUpdates: { id: string; order: number }[]) => {
+      const result = await updateListOrderAction(projectId, listUpdates);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    // We don't strictly need to invalidate the board here because we do optimistic UI updates,
+    // but doing so ensures the server and client are perfectly synced.
+    onSuccess: invalidateBoard,
+  });
+
+  const updateTaskOrder = useMutation({
+    mutationFn: async (taskUpdates: { id: string; order: number; listId: string }[]) => {
+      const result = await updateTaskOrderAction(projectId, taskUpdates);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    onSuccess: invalidateBoard,
+  });
+
   return {
     createTask,
     updateTask,
     moveTaskStatus,
     deleteTask,
+    updateListOrder,
+    updateTaskOrder
   };
 }
