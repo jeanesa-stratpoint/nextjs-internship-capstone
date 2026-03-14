@@ -62,10 +62,19 @@ export const queries = {
 
       return userProjects.map(({ project, role }) => {
         const memberCount = allMembers.filter((m) => m.projectId === project.id).length;
-        const projectListIds = allLists.filter((l) => l.projectId === project.id).map((l) => l.id);
+        
+        const projectLists = allLists
+          .filter((l) => l.projectId === project.id)
+          .sort((a, b) => a.order - b.order); // Sort Left to Right
+
+        const projectListIds = projectLists.map((l) => l.id);
         const projectTasks = allTasks.filter((t) => projectListIds.includes(t.listId));
-        const doneListIds = allLists.filter((l) => l.projectId === project.id && l.name.toLowerCase() === "done").map((l) => l.id);
-        const completedTasks = projectTasks.filter((t) => doneListIds.includes(t.listId)).length;
+
+        const endListId = projectLists.length > 0 ? projectLists[projectLists.length - 1].id : null;
+        
+        const completedTasks = endListId 
+          ? projectTasks.filter((t) => t.listId === endListId).length 
+          : 0;
 
         return {
           project,

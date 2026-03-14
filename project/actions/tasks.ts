@@ -1,10 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { tasks, lists, users, taskActivities } from "@/lib/db/schema";
+import { tasks, lists, users, taskActivities, projects } from "@/lib/db/schema";
 import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
 import { queries } from "@/lib/db/queries/index";
@@ -58,9 +58,30 @@ export async function createTaskAction(formData: unknown, projectId: string) {
 
 export async function updateTaskStatus(taskId: string, newListId: string, projectId: string) {
   try {
+
     await db.update(tasks).set({ listId: newListId }).where(eq(tasks.id, taskId));
+    
+    const projectLists = await db.select()
+      .from(lists)
+      .where(eq(lists.projectId, projectId))
+      .orderBy(asc(lists.order));
+
+    if (projectLists.length === 0) return { success: true };
+
+    const endListId = projectLists[projectLists.length - 1].id;
+
+    const projectTasks = await db.select().from(tasks).where(inArray(tasks.listId, projectLists.map(l => l.id)));
+
+    const allTasksCompleted = projectTasks.length > 0 && projectTasks.every((t) => t.listId === endListId);
+
+    if (allTasksCompleted) {
+      await db.update(projects).set({ isArchived: true }).where(eq(projects.id, projectId));
+    } else {
+      await db.update(projects).set({ isArchived: false }).where(eq(projects.id, projectId));
+    }
+
     revalidatePath(`/projects/${projectId}`);
-    return { success: true };
+    return { success: true, isArchived: allTasksCompleted };
   } catch (error) {
     console.error("Failed to update task status:", error);
     return { success: false, error: "Failed to move task." };
