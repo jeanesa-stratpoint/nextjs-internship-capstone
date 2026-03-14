@@ -69,10 +69,7 @@ export default function TaskCard({ task, projectName, columnName, projectTeam }:
   const style = { transition, transform: CSS.Transform.toString(transform) };
   const colStyle = getColumnStyle(columnName);
   const StatusIcon = colStyle.icon;
-
   const assignee = projectTeam.find((member) => member.id === task.assigneeId);
-
-  // Update it to use the new exact properties:
   const initials = getInitials(assignee?.firstName, assignee?.lastName, assignee?.email);
   const fullName = assignee
     ? `${assignee.firstName || ""} ${assignee.lastName || ""}`.trim() || assignee.email
