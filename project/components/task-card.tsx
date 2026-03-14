@@ -1,52 +1,3 @@
-// TODO: Task 5.6 - Create task detail modals and editing interfaces
-
-/*
-TODO: Implementation Notes for Interns:
-
-This component should display:
-- Task title and description
-- Priority indicator
-- Assignee avatar
-- Due date
-- Labels/tags
-- Comments count
-- Drag handle for reordering
-
-Props interface:
-interface TaskCardProps {
-  task: {
-    id: string
-    title: string
-    description?: string
-    priority: 'low' | 'medium' | 'high'
-    assignee?: User
-    dueDate?: Date
-    labels: string[]
-    commentsCount: number
-  }
-  isDragging?: boolean
-  onEdit?: (id: string) => void
-  onDelete?: (id: string) => void
-}
-
-Features to implement:
-- Drag and drop support
-- Click to open task modal
-- Priority color coding
-- Overdue indicators
-- Responsive design
-*/
-
-// export function TaskCard() {
-//   return (
-//     <div className="bg-white dark:bg-outer_space-300 p-4 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400">
-//       <p className="text-center text-payne's_gray-500 dark:text-french_gray-400 text-sm">
-//         TODO: Implement TaskCard component
-//       </p>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useSortable } from "@dnd-kit/sortable";
@@ -54,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Task } from "@/stores/board-store";
 import { CheckCircle2, Clock, Circle, CheckCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { TeamMember } from "./kanban-board"; 
+import { TeamMember } from "./kanban-board";
 import { useUIStore } from "@/stores/ui-store";
 
 interface TaskCardProps {
@@ -100,13 +51,12 @@ const getPriorityStyle = (priority?: string | null) => {
   return "bg-[#D2E9FF] text-[#15538D] border-[#15538D]";
 };
 
-const getInitials = (name?: string) => {
-  if (!name) return "UN"; 
-  const parts = name.split(" ");
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
+const getInitials = (firstName?: string | null, lastName?: string | null, email?: string) => {
+  if (firstName && lastName) return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  if (firstName) return firstName.substring(0, 2).toUpperCase();
+  if (lastName) return lastName.substring(0, 2).toUpperCase();
+  if (email) return email.substring(0, 2).toUpperCase();
+  return "UN";
 };
 
 export default function TaskCard({ task, projectName, columnName, projectTeam }: TaskCardProps) {
@@ -121,7 +71,12 @@ export default function TaskCard({ task, projectName, columnName, projectTeam }:
   const StatusIcon = colStyle.icon;
 
   const assignee = projectTeam.find((member) => member.id === task.assigneeId);
-  const initials = getInitials(assignee?.name);
+
+  // Update it to use the new exact properties:
+  const initials = getInitials(assignee?.firstName, assignee?.lastName, assignee?.email);
+  const fullName = assignee
+    ? `${assignee.firstName || ""} ${assignee.lastName || ""}`.trim() || assignee.email
+    : "Unassigned";
 
   if (isDragging) {
     return (
@@ -150,7 +105,7 @@ export default function TaskCard({ task, projectName, columnName, projectTeam }:
 
         <div
           className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${colStyle.avatarBg} ${colStyle.avatarText}`}
-          title={assignee?.name || "Unassigned"}
+          title={fullName}
         >
           {initials}
         </div>
