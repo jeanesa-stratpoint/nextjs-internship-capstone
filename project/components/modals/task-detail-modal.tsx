@@ -85,7 +85,7 @@ export default function TaskDetailModal() {
   // Editable Form States
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("medium");
+  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [statusId, setStatusId] = useState("");
@@ -353,7 +353,7 @@ export default function TaskDetailModal() {
                     </label>
                     <select
                       value={priority}
-                      onChange={(e) => setPriority(e.target.value)}
+                      onChange={(e) => setPriority(e.target.value as "low" | "medium" | "high")}
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-black appearance-none"
                     >
                       <option value="low">Low</option>

@@ -190,7 +190,7 @@ export async function updateTaskAction(
   data: {
     title: string;
     description?: string;
-    priority: string;
+    priority: "low" | "medium" | "high";
     dueDate?: string | null;
     assigneeId?: string | null;
     listId: string;
