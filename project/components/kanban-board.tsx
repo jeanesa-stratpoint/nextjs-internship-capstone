@@ -1,38 +1,3 @@
-// TODO: Task 5.1 - Design responsive Kanban board layout
-// TODO: Task 5.2 - Implement drag-and-drop functionality with dnd-kit
-
-/*
-TODO: Implementation Notes for Interns:
-
-This is the main Kanban board component that should:
-- Display columns (lists) horizontally
-- Allow drag and drop of tasks between columns
-- Support adding new tasks and columns
-- Handle real-time updates
-- Be responsive on mobile
-
-Key dependencies to install:
-- @dnd-kit/core
-- @dnd-kit/sortable
-- @dnd-kit/utilities
-
-Features to implement:
-- Drag and drop tasks between columns
-- Drag and drop to reorder tasks within columns
-- Add new task button in each column
-- Add new column functionality
-- Optimistic updates (Task 5.4)
-- Real-time persistence (Task 5.5)
-- Mobile responsive design
-- Loading states
-- Error handling
-
-State management:
-- Use Zustand store for board state (Task 5.3)
-- Implement optimistic updates
-- Handle conflicts with server state
-*/
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -48,9 +13,9 @@ import {
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus, Circle, Clock, CheckCircle2, CheckCircle, Loader2 } from "lucide-react";
 import { useBoardStore, List, Task } from "@/stores/board-store";
+import { useProjectBoard, useTaskMutations } from "@/hooks/use-tasks";
 import TaskCard from "@/components/task-card";
 import CreateTaskModal from "./modals/create-task-modal";
-import { useProjectBoard, useTaskMutations } from "@/hooks/use-tasks"; // <-- React Query!
 
 export type TeamMember = {
   id: string;
@@ -69,17 +34,12 @@ const getColumnStyling = (name: string) => {
 };
 
 export default function KanbanBoard({ projectId }: { projectId: string }) {
-  // 1. REACT QUERY FETCHING!
   const { data, isLoading, error } = useProjectBoard(projectId);
   const { moveTaskStatus } = useTaskMutations(projectId);
-
-  // 2. ZUSTAND FOR LOCAL DRAG STATE (Smooth animations)
   const { tasks, setBoardData, moveTask } = useBoardStore();
-
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  // 3. Sync React Query data into Zustand when it arrives
   useEffect(() => {
     if (data?.lists && data?.tasks) {
       setBoardData(data.lists, data.tasks);
@@ -118,14 +78,10 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
     }
 
     if (activeTask.listId !== targetListId) {
-      // Optimistic Local Update (Instant Visual Feedback)
       moveTask(taskId, targetListId, 0);
-
-      // Background Server Save via React Query
       try {
         await moveTaskStatus.mutateAsync({ taskId, newListId: targetListId });
       } catch (err) {
-        // FIXED: Now we actually use the 'err' variable by logging it!
         console.error("Failed to save move:", err);
       }
     }
