@@ -1,49 +1,40 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { tasks, lists, projectMembers, users, projects, comments, taskActivities } from "@/lib/db/schema";
+import { tasks, lists, users, taskActivities } from "@/lib/db/schema";
 import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
-import { eq, asc, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
+import { queries } from "@/lib/db/queries/index";
 
 export async function createTaskAction(formData: unknown, projectId: string) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in." 
-      };
+      return { success: false, error: "Unauthorized: You must be logged in." };
     }
 
     const canCreateTask = await hasSystemPermission(userId, "task:create");
     if (!canCreateTask) {
-      return { 
-        success: false, 
-        error: "Access Denied: Your role cannot create tasks." 
-      };
+      return { success: false, error: "Access Denied: Your role cannot create tasks." };
     }
 
     const validationResult = taskSchema.safeParse(formData);
 
     if (!validationResult.success) {
-      return { 
-        success: false, 
-        error: validationResult.error.issues[0].message 
-      };
+      return { success: false, error: validationResult.error.issues[0].message };
     }
 
     const validatedData = validationResult.data;
+
     if (validatedData.dueDate) {
-      const [project] = await db.select({ dueDate: projects.dueDate }).from(projects).where(eq(projects.id, projectId)).limit(1);
+      // CHANGED: Using your clean query layer instead of db.select()
+      const project = await queries.projects.getById(projectId);
       
       if (project?.dueDate && validatedData.dueDate > project.dueDate) {
-        return { 
-          success: false, 
-          error: "Task due date cannot be later than the project's due date." 
-        };
+        return { success: false, error: "Task due date cannot be later than the project's due date." };
       }
     }
 
@@ -58,129 +49,21 @@ export async function createTaskAction(formData: unknown, projectId: string) {
       }).returning();
 
     revalidatePath(`/projects/${projectId}`);
-    return { 
-      success: true, 
-      task: newTask 
-    };
+    return { success: true, task: newTask };
 
   } catch (error: unknown) {
-    console.error("Failed to create task:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Failed to create task. Please check your inputs." 
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Failed to create task. Please check your inputs." };
   }
 }
 
 export async function updateTaskStatus(taskId: string, newListId: string, projectId: string) {
   try {
     await db.update(tasks).set({ listId: newListId }).where(eq(tasks.id, taskId));
-
     revalidatePath(`/projects/${projectId}`);
-
     return { success: true };
   } catch (error) {
     console.error("Failed to update task status:", error);
     return { success: false, error: "Failed to move task." };
-  }
-}
-
-export async function getTaskDefaultsAction(projectId: string) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return { success: false, error: "Unauthorized" };
-
-    const [project] = await db
-      .select({ dueDate: projects.dueDate })
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .limit(1);
-
-    const projectLists = await db
-      .select()
-      .from(lists)
-      .where(eq(lists.projectId, projectId))
-      .orderBy(asc(lists.order));
-    
-    const defaultList = projectLists.find(l => l.name.toLowerCase() === "to do") || projectLists[0];
-
-    const members = await db
-      .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email })
-      .from(projectMembers)
-      .innerJoin(users, eq(projectMembers.userId, users.id))
-      .where(eq(projectMembers.projectId, projectId));
-
-    return { 
-      success: true, 
-      listId: defaultList?.id, 
-      team: members,
-      projectDueDate: project?.dueDate // <-- Pass this to the frontend!
-    };
-  } catch (error) {
-    console.error(`Failed to fetch task defaults for project ${projectId}:`, error);
-    return { success: false, error: "Failed to load project details." };
-  }
-}
-
-export async function getFullTaskDetailsAction(taskId: string) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return { success: false, error: "Unauthorized" };
-
-    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
-    if (!task) return { success: false, error: "Task not found" };
-
-    const [list] = await db.select().from(lists).where(eq(lists.id, task.listId)).limit(1);
-    const [project] = await db.select().from(projects).where(eq(projects.id, list.projectId)).limit(1);
-    const projectLists = await db.select().from(lists).where(eq(lists.projectId, project.id)).orderBy(asc(lists.order));
-
-    const team = await db
-      .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email })
-      .from(projectMembers)
-      .innerJoin(users, eq(projectMembers.userId, users.id))
-      .where(eq(projectMembers.projectId, project.id));
-
-
-    const taskComments = await db
-      .select({
-        id: comments.id,
-        content: comments.content,
-        createdAt: comments.createdAt,
-        isEdited: comments.isEdited,
-        user: { id: users.id, firstName: users.firstName, lastName: users.lastName }
-      })
-      .from(comments)
-      .leftJoin(users, eq(comments.userId, users.id))
-      .where(eq(comments.taskId, taskId))
-      .orderBy(desc(comments.createdAt));
-
-    const activities = await db
-      .select({
-        id: taskActivities.id,
-        actionType: taskActivities.actionType,
-        oldValue: taskActivities.oldValue,
-        newValue: taskActivities.newValue,
-        createdAt: taskActivities.createdAt,
-        user: { id: users.id, firstName: users.firstName, lastName: users.lastName }
-      })
-      .from(taskActivities)
-      .leftJoin(users, eq(taskActivities.userId, users.id))
-      .where(eq(taskActivities.taskId, taskId))
-      .orderBy(desc(taskActivities.createdAt));
-
-    return {
-      success: true,
-      task,
-      project: { id: project.id, name: project.name, dueDate: project.dueDate },
-      projectLists,
-      team,
-      comments: taskComments,
-      activities
-    };
-
-  } catch (error) {
-    console.error("Failed to fetch task details:", error);
-    return { success: false, error: "Failed to load task details." };
   }
 }
 
@@ -200,7 +83,7 @@ export async function updateTaskAction(
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const [existingTask] = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
+    const existingTask = await queries.tasks.getById(taskId);
     if (!existingTask) return { success: false, error: "Task not found." };
 
     const formattedDueDate = data.dueDate ? new Date(data.dueDate) : null;

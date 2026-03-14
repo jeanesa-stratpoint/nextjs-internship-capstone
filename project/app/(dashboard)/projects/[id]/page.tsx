@@ -140,69 +140,23 @@
 
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { projects, lists, tasks, projectMembers } from "@/lib/db/schema";
-import { eq, asc, inArray } from "drizzle-orm";
+import { projects } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Users, CalendarDays } from "lucide-react";
 import KanbanBoard from "@/components/kanban-board";
-import { clerkClient } from "@clerk/nextjs/server";
 import TaskDetailModal from "@/components/modals/task-detail-modal";
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const projectId = resolvedParams.id;
 
+  // We only fetch the project details here so the page header loads instantly (SEO/SSR).
+  // The KanbanBoard will fetch the heavy relational data via React Query!
   const projectResult = await db.select().from(projects).where(eq(projects.id, projectId));
-
   const project = projectResult[0];
 
-  if (!project) {
-    notFound();
-  }
-
-  const membersData = await db
-    .select()
-    .from(projectMembers)
-    .where(eq(projectMembers.projectId, projectId));
-  const memberIds = membersData.map((m) => m.userId);
-
-  const client = await clerkClient();
-  const clerkUsers = await client.users.getUserList({ userId: memberIds });
-
-  const projectTeam = clerkUsers.data.map((u) => ({
-    id: u.id,
-    name: u.firstName
-      ? `${u.firstName} ${u.lastName || ""}`.trim()
-      : u.emailAddresses[0].emailAddress,
-    imageUrl: u.imageUrl,
-  }));
-
-  let boardLists = await db
-    .select()
-    .from(lists)
-    .where(eq(lists.projectId, projectId))
-    .orderBy(asc(lists.order));
-
-  if (boardLists.length === 0) {
-    boardLists = await db
-      .insert(lists)
-      .values([
-        { name: "To Do", projectId: projectId, order: 0 },
-        { name: "In Progress", projectId: projectId, order: 1 },
-        { name: "Review", projectId: projectId, order: 2 },
-        { name: "Done", projectId: projectId, order: 3 },
-      ])
-      .returning();
-  }
-
-  const listIds = boardLists.map((list) => list.id);
-
-  const boardTasks = await db
-    .select()
-    .from(tasks)
-    .where(inArray(tasks.listId, listIds))
-    .orderBy(asc(tasks.order));
-  console.log(" SERVER FETCHED TASKS:", boardTasks);
+  if (!project) notFound();
 
   return (
     <div className="h-full flex flex-col text-black overflow-hidden">
@@ -229,14 +183,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       </p>
 
       <div className="flex-1 overflow-hidden ml-14">
-        <KanbanBoard
-          projectId={project.id}
-          projectName={project.name}
-          initialLists={boardLists}
-          initialTasks={boardTasks}
-          projectTeam={projectTeam}
-        />
+        {/* We only pass the ID now! */}
+        <KanbanBoard projectId={project.id} />
       </div>
+
       <TaskDetailModal />
     </div>
   );

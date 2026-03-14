@@ -46,51 +46,58 @@ import {
   useDroppable,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Plus, Circle, Clock, CheckCircle2, CheckCircle } from "lucide-react";
+import { Plus, Circle, Clock, CheckCircle2, CheckCircle, Loader2 } from "lucide-react";
 import { useBoardStore, List, Task } from "@/stores/board-store";
 import TaskCard from "@/components/task-card";
 import CreateTaskModal from "./modals/create-task-modal";
-import { updateTaskStatus } from "@/actions/tasks";
+import { useProjectBoard, useTaskMutations } from "@/hooks/use-tasks"; // <-- React Query!
 
-export type TeamMember = { id: string; name: string; imageUrl: string };
+export type TeamMember = {
+  id: string;
+  name?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string;
+  imageUrl?: string;
+};
 
 const getColumnStyling = (name: string) => {
   if (name === "In Progress") return { icon: Clock, color: "text-amber-500" };
-  if (name === "Review") return { icon: CheckCircle2, color: "textemerald-500" };
+  if (name === "Review") return { icon: CheckCircle2, color: "text-emerald-500" };
   if (name === "Done") return { icon: CheckCircle, color: "text-rose-500" };
   return { icon: Circle, color: "text-gray-400" };
 };
 
-export default function KanbanBoard({
-  projectId,
-  projectName,
-  initialLists,
-  initialTasks,
-  projectTeam, 
-}: {
-  projectId: string;
-  projectName: string;
-  initialLists: List[];
-  initialTasks: Task[];
-  projectTeam: TeamMember[]; 
-}) {
-  const { tasks, setBoardData, moveTask } = useBoardStore();
-  const [isMounted, setIsMounted] = useState(false);
-  const [activeListId, setActiveListId] = useState<string | null>(null);
+export default function KanbanBoard({ projectId }: { projectId: string }) {
+  // 1. REACT QUERY FETCHING!
+  const { data, isLoading, error } = useProjectBoard(projectId);
+  const { moveTaskStatus } = useTaskMutations(projectId);
 
+  // 2. ZUSTAND FOR LOCAL DRAG STATE (Smooth animations)
+  const { tasks, setBoardData, moveTask } = useBoardStore();
+
+  const [activeListId, setActiveListId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
+  // 3. Sync React Query data into Zustand when it arrives
   useEffect(() => {
-    const timeout = setTimeout(() => setIsMounted(true), 0);
-    return () => clearTimeout(timeout);
-  }, []);
+    if (data?.lists && data?.tasks) {
+      setBoardData(data.lists, data.tasks);
+    }
+  }, [data, setBoardData]);
 
-  useEffect(() => {
-    if (!isMounted) return;
-    setBoardData(initialLists, initialTasks);
-  }, [setBoardData, initialLists, initialTasks, isMounted]);
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-gray-400 mb-4" />
+        <p className="text-gray-500 font-medium">Loading Board...</p>
+      </div>
+    );
+  }
 
-  if (!isMounted) return null;
+  if (error || !data) {
+    return <div className="p-4 text-red-500 bg-red-50 rounded-xl">Failed to load board data.</div>;
+  }
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -99,34 +106,35 @@ export default function KanbanBoard({
     const taskId = active.id as string;
     const overId = over.id as string;
     const activeTask = tasks.find((t) => t.id === taskId);
-
     if (!activeTask) return;
 
-    const isOverList = initialLists.some((list) => list.id === overId);
+    const isOverList = data.lists.some((list: List) => list.id === overId);
     let targetListId = overId;
 
     if (!isOverList) {
       const overTask = tasks.find((t) => t.id === overId);
-      if (overTask) {
-        targetListId = overTask.listId;
-      } else {
-        return;
-      }
+      if (overTask) targetListId = overTask.listId;
+      else return;
     }
 
     if (activeTask.listId !== targetListId) {
+      // Optimistic Local Update (Instant Visual Feedback)
       moveTask(taskId, targetListId, 0);
-      await updateTaskStatus(taskId, targetListId, projectId);
+
+      // Background Server Save via React Query
+      try {
+        await moveTaskStatus.mutateAsync({ taskId, newListId: targetListId });
+      } catch (err) {
+        // FIXED: Now we actually use the 'err' variable by logging it!
+        console.error("Failed to save move:", err);
+      }
     }
   };
 
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
-      <div
-        className="flex h-full gap-6 overflow-x-auto pb-4 items-start"
-        data-project-id={projectId}
-      >
-        {initialLists.map((column) => {
+      <div className="flex h-full gap-6 overflow-x-auto pb-4 items-start">
+        {data.lists.map((column: List) => {
           const columnTasks = tasks.filter((task) => task.listId === column.id);
           return (
             <KanbanColumn
@@ -134,8 +142,8 @@ export default function KanbanBoard({
               column={column}
               columnTasks={columnTasks}
               setActiveListId={setActiveListId}
-              projectName={projectName}
-              projectTeam={projectTeam} 
+              projectName={data.project.name}
+              projectTeam={data.team}
             />
           );
         })}
@@ -146,8 +154,8 @@ export default function KanbanBoard({
         onClose={() => setActiveListId(null)}
         listId={activeListId || ""}
         projectId={projectId}
-        projectName={projectName}
-        projectTeam={projectTeam} 
+        projectName={data.project.name}
+        projectTeam={data.team}
       />
     </DndContext>
   );
@@ -158,13 +166,13 @@ function KanbanColumn({
   columnTasks,
   setActiveListId,
   projectName,
-  projectTeam, 
+  projectTeam,
 }: {
   column: List;
   columnTasks: Task[];
   setActiveListId: (id: string) => void;
   projectName: string;
-  projectTeam: TeamMember[]; 
+  projectTeam: TeamMember[];
 }) {
   const { setNodeRef } = useDroppable({
     id: column.id,
@@ -203,7 +211,7 @@ function KanbanColumn({
                 task={task}
                 projectName={projectName}
                 columnName={column.name}
-                projectTeam={projectTeam} 
+                projectTeam={projectTeam}
               />
             ))
           )}

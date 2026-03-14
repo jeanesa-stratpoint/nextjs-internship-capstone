@@ -57,7 +57,7 @@ export default function ProjectCard({
   project,
   index,
   isActive,
-  memberCount, 
+  memberCount,
   taskCount,
   completedTaskCount,
   ownerName,

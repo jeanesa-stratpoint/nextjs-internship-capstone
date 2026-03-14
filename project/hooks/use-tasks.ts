@@ -61,17 +61,110 @@ export function useTasks(projectId: string) {
 }
 */
 
-// Placeholder to prevent import errors
-export function useTasks(projectId: string) {
-  console.log(`TODO: Implement useTasks hook for project ${projectId}`);
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus } from "@/actions/tasks";
+
+interface TaskPayload {
+  title: string;
+  description?: string;
+  priority: "low" | "medium" | "high";
+  dueDate?: string | null;
+  listId: string;
+  assigneeId?: string | null;
+}
+
+export function useProjectBoard(projectId: string) {
+  return useQuery({
+    queryKey: ["projectBoard", projectId],
+    queryFn: async () => {
+      const res = await fetch(`/api/projects/${projectId}/board`);
+      if (!res.ok) throw new Error("Failed to fetch project board");
+      return res.json();
+    },
+    enabled: !!projectId,
+  });
+}
+
+// QUERIES (READS)
+
+export function useTaskDefaults(projectId: string | null) {
+  return useQuery({
+    queryKey: ["taskDefaults", projectId],
+    queryFn: async () => {
+      const res = await fetch(`/api/projects/${projectId}/task-defaults`);
+      if (!res.ok) throw new Error("Failed to fetch defaults");
+      return res.json();
+    },
+    enabled: !!projectId, 
+  });
+}
+
+export function useTaskDetails(taskId: string | null) {
+  return useQuery({
+    queryKey: ["taskDetails", taskId],
+    queryFn: async () => {
+      const res = await fetch(`/api/tasks/${taskId}`);
+      if (!res.ok) throw new Error("Failed to fetch task details");
+      return res.json();
+    },
+    enabled: !!taskId,
+  });
+}
+
+// MUTATIONS (WRITES)
+
+export function useTaskMutations(projectId: string) {
+  const queryClient = useQueryClient();
+
+  const invalidateBoard = () => {
+    // Refresh the Edit Modal
+    queryClient.invalidateQueries({ queryKey: ["taskDetails"] });
+    // Refresh the Kanban Board!
+    queryClient.invalidateQueries({ queryKey: ["projectBoard", projectId] });
+  };
+
+  const createTask = useMutation({
+    // 2. Replaced 'any' with TaskPayload
+    mutationFn: async (data: TaskPayload) => {
+      const result = await createTaskAction(data, projectId);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    onSuccess: invalidateBoard,
+  });
+
+  const updateTask = useMutation({
+    // 3. Replaced 'any' with TaskPayload
+    mutationFn: async ({ taskId, data }: { taskId: string; data: TaskPayload }) => {
+      const result = await updateTaskAction(taskId, projectId, data);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    onSuccess: invalidateBoard,
+  });
+
+  const moveTaskStatus = useMutation({
+    mutationFn: async ({ taskId, newListId }: { taskId: string; newListId: string }) => {
+      const result = await updateTaskStatus(taskId, newListId, projectId);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    onSuccess: invalidateBoard,
+  });
+
+  const deleteTask = useMutation({
+    mutationFn: async (taskId: string) => {
+      const result = await deleteTaskAction(taskId, projectId);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    onSuccess: invalidateBoard,
+  });
+
   return {
-    tasks: [],
-    isLoading: false,
-    error: null,
-    createTask: (data: any) => console.log("TODO: Create task", data),
-    updateTask: (id: string, data: any) => console.log(`TODO: Update task ${id}`, data),
-    deleteTask: (id: string) => console.log(`TODO: Delete task ${id}`),
-    moveTask: (taskId: string, newListId: string, position: number) =>
-      console.log(`TODO: Move task ${taskId} to list ${newListId} at position ${position}`),
+    createTask,
+    updateTask,
+    moveTaskStatus,
+    deleteTask,
   };
 }
