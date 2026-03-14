@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { projects, projectMembers, lists, tasks, comments, taskActivities, users } from "@/lib/db/schema";
+import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles } from "@/lib/db/schema";
 import { eq, desc, inArray, asc } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 
@@ -133,5 +133,18 @@ export const queries = {
         .where(eq(taskActivities.taskId, taskId))
         .orderBy(desc(taskActivities.createdAt));
     }
-  }
+  },
+
+  users: {
+    getRoleName: async (userId: string) => {
+      const dbUser = await db
+        .select({ roleName: roles.name })
+        .from(users)
+        .innerJoin(roles, eq(users.roleId, roles.id))
+        .where(eq(users.id, userId))
+        .limit(1);
+        
+      return dbUser[0]?.roleName || "Standard User";
+    }
+  },
 };
