@@ -2,10 +2,20 @@
 
 import { db } from "@/lib/db";
 import { lists, tasks } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { hasSystemPermission } from "@/lib/rbac";
+
+async function syncCompleteStage(projectId: string) {
+  const projectLists = await db.select().from(lists).where(eq(lists.projectId, projectId)).orderBy(asc(lists.order));
+  if (projectLists.length === 0) return;
+
+  const lastListId = projectLists[projectLists.length - 1].id;
+
+  await db.update(lists).set({ isCompleteStage: false }).where(eq(lists.projectId, projectId));
+  await db.update(lists).set({ isCompleteStage: true }).where(eq(lists.id, lastListId));
+}
 
 export async function createListAction(projectId: string, name: string, newOrder: number, color: string) {
   try {
@@ -25,6 +35,7 @@ export async function createListAction(projectId: string, name: string, newOrder
       isCompleteStage: false, 
     }).returning();
 
+    await syncCompleteStage(projectId);
     revalidatePath(`/projects/${projectId}`);
     return { success: true, list: newList };
   } catch (error) {
@@ -33,7 +44,6 @@ export async function createListAction(projectId: string, name: string, newOrder
   }
 }
 
-// ✨ NEW ACTION FOR REVISION 4
 export async function updateListDetailsAction(projectId: string, listId: string, name: string, color: string) {
   try {
     const { userId } = await auth();
@@ -68,6 +78,7 @@ export async function updateListOrderAction(projectId: string, listUpdates: { id
       )
     );
 
+    await syncCompleteStage(projectId);
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {
@@ -86,6 +97,7 @@ export async function deleteListAction(projectId: string, listId: string) {
 
     await db.delete(lists).where(eq(lists.id, listId));
 
+    await syncCompleteStage(projectId);
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {
@@ -99,7 +111,7 @@ export async function clearListTasksAction(projectId: string, listId: string) {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const canEdit = await hasSystemPermission(userId, "task:edit");
+    const canEdit = await hasSystemPermission(userId, "list:edit");
     if (!canEdit) return { success: false, error: "Access Denied" };
 
     await db.delete(tasks).where(eq(tasks.listId, listId));
