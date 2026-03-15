@@ -198,6 +198,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 column={column}
                 columnTasks={columnTasks}
                 setActiveListId={setActiveListId}
+                projectId={projectId}
                 projectName={data.project.name}
                 projectTeam={data.team}
                 isFirst={lists[0]?.id === column.id}
@@ -217,6 +218,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 column={activeColumn}
                 columnTasks={tasks.filter((t) => t.listId === activeColumn.id)}
                 setActiveListId={() => {}}
+                projectId={projectId}
                 projectName={data.project.name}
                 projectTeam={data.team}
                 isOverlay
@@ -225,6 +227,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
             {activeTask && (
               <TaskCard
                 task={activeTask}
+                projectId={projectId}
                 projectName={data.project.name}
                 columnName={lists.find((l) => l.id === activeTask.listId)?.name || ""}
                 projectTeam={data.team}
@@ -250,6 +253,7 @@ function KanbanColumn({
   column,
   columnTasks,
   setActiveListId,
+  projectId,
   projectName,
   projectTeam,
   isOverlay = false,
@@ -259,6 +263,7 @@ function KanbanColumn({
   column: List;
   columnTasks: Task[];
   setActiveListId: (id: string) => void;
+  projectId: string;
   projectName: string;
   projectTeam: TeamMember[];
   isOverlay?: boolean;
@@ -370,6 +375,7 @@ function KanbanColumn({
               <TaskCard
                 key={task.id}
                 task={task}
+                projectId={projectId}
                 projectName={projectName}
                 columnName={column.name}
                 projectTeam={projectTeam}
