@@ -45,16 +45,16 @@ export type TeamMember = {
   imageUrl?: string;
 };
 
-const getColumnStyling = (name: string) => {
-  if (name === "In Progress") return { icon: Clock, color: "text-amber-500" };
-  if (name === "Review") return { icon: CheckCircle2, color: "text-emerald-500" };
-  if (name === "Done") return { icon: CheckCircle, color: "text-rose-500" };
-  return { icon: Circle, color: "text-gray-400" };
+const getColumnStyling = (column: List) => {
+  if (column.name === "In Progress") return { icon: Clock, color: "#F59E0B" };
+  if (column.name === "Review") return { icon: CheckCircle2, color: "#10B981" };
+  if (column.name === "Done") return { icon: CheckCircle, color: "#F43F5E" };
+  return { icon: Circle, color: column.color || "#9CA3AF" };
 };
 
 export default function KanbanBoard({ projectId }: { projectId: string }) {
   const { data, isLoading, error } = useProjectBoard(projectId);
-  const { updateListOrder, updateTaskOrder } = useTaskMutations(projectId);
+  const { updateListOrder, updateTaskOrder, createList } = useTaskMutations(projectId);
 
   const { lists, tasks, setLists, setTasks, setBoardData } = useBoardStore();
   const [activeListId, setActiveListId] = useState<string | null>(null);
@@ -64,6 +64,37 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const [isAddingList, setIsAddingList] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [newListColor, setNewListColor] = useState("#3B82F6");
+
+  const PRESET_COLORS = [
+    "#EF4444",
+    "#F97316",
+    "#F59E0B",
+    "#10B981",
+    "#3B82F6",
+    "#8B5CF6",
+    "#EC4899",
+    "#6B7280",
+  ];
+
+  const handleCreateList = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newListName.trim()) return;
+    try {
+      await createList.mutateAsync({
+        name: newListName,
+        order: data.lists.length,
+        color: newListColor,
+      });
+      setNewListName("");
+      setIsAddingList(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     if (data?.lists && data?.tasks) {
@@ -114,12 +145,10 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
       const overIndex = tasks.findIndex((t) => t.id === over.id);
 
       if (tasks[activeIndex].listId !== tasks[overIndex].listId) {
-        // Moved to a new column
         const newTasks = [...tasks];
         newTasks[activeIndex].listId = tasks[overIndex].listId;
         setTasks(arrayMove(newTasks, activeIndex, overIndex));
       } else {
-        // Reordering in the same column
         setTasks(arrayMove(tasks, activeIndex, overIndex));
       }
     }
@@ -140,7 +169,6 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
     const { active, over } = event;
     if (!over) return;
 
-    // Finished dragging a COLUMN
     if (active.data.current?.type === "Column") {
       if (active.id !== over.id) {
         const activeIndex = lists.findIndex((l) => l.id === active.id);
@@ -149,7 +177,6 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
         const newLists = arrayMove(lists, activeIndex, overIndex);
         setLists(newLists);
 
-        // Map array to database format: { id, order }
         const listUpdates = newLists.map((list, index) => ({ id: list.id, order: index }));
 
         try {
@@ -161,7 +188,6 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
       return;
     }
 
-    // 2. Finished dragging a TASK
     if (active.data.current?.type === "Task") {
       const updatedTasks = tasks.map((task) => {
         const tasksInList = tasks.filter((t) => t.listId === task.listId);
@@ -208,6 +234,64 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
             );
           })}
         </SortableContext>
+
+        <div className="flex-shrink-0 w-[320px]">
+          {!isAddingList ? (
+            <button
+              onClick={() => setIsAddingList(true)}
+              className="w-full h-[60px] rounded-[20px] bg-[#F0F0F0]/50 border-2 border-dashed border-[#BDBDBD] flex items-center justify-center gap-2 text-gray-500 font-medium hover:bg-[#F0F0F0] hover:text-black transition-all"
+            >
+              <Plus size={18} /> Add List
+            </button>
+          ) : (
+            <form
+              onSubmit={handleCreateList}
+              className="bg-[#F0F0F0] p-4 rounded-[20px] shadow-sm border border-[#BDBDBD] flex flex-col gap-3"
+            >
+              <input
+                autoFocus
+                type="text"
+                placeholder="List name..."
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black text-black"
+              />
+
+              <div className="flex justify-between items-center px-1">
+                {PRESET_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setNewListColor(color)}
+                    className={`w-5 h-5 rounded-full transition-transform ${newListColor === color ? "scale-125 ring-2 ring-offset-2 ring-black" : "hover:scale-110"}`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+
+              <div className="flex gap-2 mt-2">
+                <button
+                  type="submit"
+                  disabled={createList.isPending || !newListName.trim()}
+                  className="flex-1 bg-black text-white text-xs font-bold py-2.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 flex justify-center"
+                >
+                  {createList.isPending ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    "Save List"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingList(false)}
+                  className="px-4 bg-gray-200 text-gray-600 rounded-xl hover:bg-gray-300 font-bold text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
 
       {/* DRAG OVERLAY */}
@@ -288,7 +372,7 @@ function KanbanColumn({
     transform: CSS.Translate.toString(transform),
   };
 
-  const colStyle = getColumnStyling(column.name);
+  const colStyle = getColumnStyling(column);
   const Icon = colStyle.icon;
 
   const handleMoveColumn = async (direction: "left" | "right") => {
@@ -335,9 +419,9 @@ function KanbanColumn({
         isOpen={showDeleteListModal}
         onClose={() => setShowDeleteListModal(false)}
         onConfirm={handleDeleteList}
-        title="Delete Column"
-        description={`Are you sure you want to delete "${column.name}"? ALL tasks inside this column will also be permanently deleted.`}
-        confirmText="Delete Column"
+        title="Delete List"
+        description={`Are you sure you want to delete "${column.name}"? ALL tasks inside this list will also be permanently deleted.`}
+        confirmText="Delete List"
         isLoading={deleteList.isPending}
       />
 
@@ -362,7 +446,7 @@ function KanbanColumn({
           className="flex items-center justify-between p-5 border-b border-gray-50/50 cursor-grab active:cursor-grabbing group relative touch-none"
         >
           <div className="flex items-center gap-2">
-            <Icon size={18} className={colStyle.color} />
+            <Icon size={18} style={{ color: colStyle.color }} />
             <h3 className="font-bold text-black">{column.name}</h3>
             <span className="text-xs font-bold text-gray-400 ml-1">{columnTasks.length}</span>
           </div>
@@ -389,7 +473,7 @@ function KanbanColumn({
                   Move left
                   {isFirst && (
                     <span className="block text-[10px] text-gray-400 mt-0.5">
-                      This is the left-most column
+                      This is the left-most list
                     </span>
                   )}
                 </button>
@@ -401,7 +485,7 @@ function KanbanColumn({
                   Move right
                   {isLast && (
                     <span className="block text-[10px] text-gray-400 mt-0.5">
-                      This is the right-most column
+                      This is the right-most list
                     </span>
                   )}
                 </button>

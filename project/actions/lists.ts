@@ -64,3 +64,29 @@ export async function clearListTasksAction(projectId: string, listId: string) {
     return { success: false, error: "Failed to clear tasks." };
   }
 }
+
+export async function createListAction(projectId: string, name: string, newOrder: number, color: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canEdit = await hasSystemPermission(userId, "task:edit");
+    if (!canEdit) return { success: false, error: "Access Denied" };
+
+    if (!name.trim()) return { success: false, error: "List name is required" };
+
+    const [newList] = await db.insert(lists).values({
+      projectId,
+      name: name.trim(),
+      order: newOrder,
+      color: color, 
+      isCompleteStage: false, 
+    }).returning();
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true, list: newList };
+  } catch (error) {
+    console.error("Failed to create list:", error);
+    return { success: false, error: "Failed to create list" };
+  }
+}

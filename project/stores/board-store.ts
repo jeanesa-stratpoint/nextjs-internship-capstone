@@ -89,6 +89,7 @@ export interface List {
   name: string;
   order: number;
   projectId?: string;
+  color?: string | null;
 }
 
 interface BoardState {

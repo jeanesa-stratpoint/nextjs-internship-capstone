@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction } from "@/actions/tasks";
-import { updateListOrderAction, deleteListAction, clearListTasksAction } from "@/actions/lists";
+import { updateListOrderAction, deleteListAction, clearListTasksAction, createListAction } from "@/actions/lists";
 
 interface TaskPayload {
   title: string;
@@ -131,6 +131,15 @@ export function useTaskMutations(projectId: string) {
     onSuccess: invalidateBoard,
   });
 
+  const createList = useMutation({
+    mutationFn: async ({ name, order, color }: { name: string; order: number; color: string }) => {
+      const result = await createListAction(projectId, name, order, color);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    onSuccess: invalidateBoard,
+  });
+
   return {
     createTask,
     updateTask,
@@ -140,5 +149,6 @@ export function useTaskMutations(projectId: string) {
     updateTaskOrder,
     deleteList,
     clearListTasks,
+    createList,
   };
 }
