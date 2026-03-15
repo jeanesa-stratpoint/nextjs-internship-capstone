@@ -21,17 +21,10 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  Plus,
-  Circle,
-  Clock,
-  CheckCircle2,
-  CheckCircle,
-  Loader2,
-  MoreHorizontal,
-} from "lucide-react";
+import { Plus, Circle, Loader2, MoreHorizontal } from "lucide-react";
 import { useBoardStore, List, Task } from "@/stores/board-store";
 import { useProjectBoard, useTaskMutations } from "@/hooks/use-tasks";
+import { useListMutations } from "@/hooks/use-lists";
 import TaskCard from "@/components/task-card";
 import CreateTaskModal from "./modals/create-task-modal";
 import ConfirmActionModal from "./modals/confirm-action-modal";
@@ -46,20 +39,35 @@ export type TeamMember = {
 };
 
 const getColumnStyling = (column: List) => {
-  if (column.name === "In Progress") return { icon: Clock, color: "#F59E0B" };
-  if (column.name === "Review") return { icon: CheckCircle2, color: "#10B981" };
-  if (column.name === "Done") return { icon: CheckCircle, color: "#F43F5E" };
-  return { icon: Circle, color: column.color || "#9CA3AF" };
+  let color = column.color || "#9CA3AF";
+  // fallbacks
+  if (column.name === "In Progress" && !column.color) color = "#F59E0B";
+  if (column.name === "Review" && !column.color) color = "#10B981";
+  if (column.name === "Done" && !column.color) color = "#F43F5E";
+  return { icon: Circle, color };
 };
+
+const PRESET_COLORS = [
+  "#EF4444",
+  "#F97316",
+  "#F59E0B",
+  "#10B981",
+  "#3B82F6",
+  "#8B5CF6",
+  "#EC4899",
+  "#6B7280",
+];
 
 export default function KanbanBoard({ projectId }: { projectId: string }) {
   const { data, isLoading, error } = useProjectBoard(projectId);
-  const { updateListOrder, updateTaskOrder, createList } = useTaskMutations(projectId);
+  const { updateTaskOrder } = useTaskMutations(projectId);
+  const { createList, updateListOrder } = useListMutations(projectId);
 
   const { lists, tasks, setLists, setTasks, setBoardData } = useBoardStore();
   const [activeListId, setActiveListId] = useState<string | null>(null);
 
-  // OVERLAY STATE
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
   const [activeColumn, setActiveColumn] = useState<List | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -69,16 +77,17 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
   const [newListName, setNewListName] = useState("");
   const [newListColor, setNewListColor] = useState("#3B82F6");
 
-  const PRESET_COLORS = [
-    "#EF4444",
-    "#F97316",
-    "#F59E0B",
-    "#10B981",
-    "#3B82F6",
-    "#8B5CF6",
-    "#EC4899",
-    "#6B7280",
-  ];
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuId(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (data?.lists && data?.tasks) {
+      setBoardData(data.lists, data.tasks);
+    }
+  }, [data, setBoardData]);
 
   const handleCreateList = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,44 +105,27 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
     }
   };
 
-  useEffect(() => {
-    if (data?.lists && data?.tasks) {
-      setBoardData(data.lists, data.tasks);
-    }
-  }, [data, setBoardData]);
-
   const listIds = useMemo(() => lists.map((l) => l.id), [lists]);
 
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="h-full flex flex-col items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-gray-400 mb-4" />
-        <p className="text-gray-500 font-medium">Loading Board...</p>
+      <div className="h-full flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-gray-400" />
       </div>
     );
-  }
+  if (error || !data)
+    return <div className="p-4 text-red-500 bg-red-50">Failed to load board data.</div>;
 
-  if (error || !data) {
-    return <div className="p-4 text-red-500 bg-red-50 rounded-xl">Failed to load board data.</div>;
-  }
-
-  // DRAG START
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    if (active.data.current?.type === "Column") {
-      setActiveColumn(active.data.current.column);
-    }
-    if (active.data.current?.type === "Task") {
-      setActiveTask(active.data.current.task);
-    }
+    if (active.data.current?.type === "Column") setActiveColumn(active.data.current.column);
+    if (active.data.current?.type === "Task") setActiveTask(active.data.current.task);
+    setOpenMenuId(null);
   };
 
-  // DRAG OVER
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over) return;
-    if (active.id === over.id) return;
-
+    if (!over || active.id === over.id) return;
     const isActiveTask = active.data.current?.type === "Task";
     const isOverTask = over.data.current?.type === "Task";
     const isOverColumn = over.data.current?.type === "Column";
@@ -143,7 +135,6 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
     if (isActiveTask && isOverTask) {
       const activeIndex = tasks.findIndex((t) => t.id === active.id);
       const overIndex = tasks.findIndex((t) => t.id === over.id);
-
       if (tasks[activeIndex].listId !== tasks[overIndex].listId) {
         const newTasks = [...tasks];
         newTasks[activeIndex].listId = tasks[overIndex].listId;
@@ -161,7 +152,6 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
     }
   };
 
-  // DRAG END
   const handleDragEnd = async (event: DragEndEvent) => {
     setActiveColumn(null);
     setActiveTask(null);
@@ -173,16 +163,13 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
       if (active.id !== over.id) {
         const activeIndex = lists.findIndex((l) => l.id === active.id);
         const overIndex = lists.findIndex((l) => l.id === over.id);
-
         const newLists = arrayMove(lists, activeIndex, overIndex);
         setLists(newLists);
-
         const listUpdates = newLists.map((list, index) => ({ id: list.id, order: index }));
-
         try {
           await updateListOrder.mutateAsync(listUpdates);
         } catch (err) {
-          console.error("Failed to save column order:", err);
+          console.error(err);
         }
       }
       return;
@@ -194,14 +181,12 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
         const order = tasksInList.findIndex((t) => t.id === task.id);
         return { ...task, order };
       });
-
       setTasks(updatedTasks);
       const taskUpdates = updatedTasks.map((t) => ({ id: t.id, order: t.order, listId: t.listId }));
-
       try {
         await updateTaskOrder.mutateAsync(taskUpdates);
       } catch (err) {
-        console.error("Failed to save task order:", err);
+        console.error(err);
       }
     }
   };
@@ -215,7 +200,6 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full gap-6 overflow-x-auto pb-4 items-start">
-        {/* HORIZONTAL SORTABLE CONTEXT (For Columns) */}
         <SortableContext items={listIds} strategy={horizontalListSortingStrategy}>
           {lists.map((column: List) => {
             const columnTasks = tasks.filter((task) => task.listId === column.id);
@@ -230,6 +214,8 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 projectTeam={data.team}
                 isFirst={lists[0]?.id === column.id}
                 isLast={lists[lists.length - 1]?.id === column.id}
+                isMenuOpen={openMenuId === column.id}
+                setMenuOpen={(isOpen) => setOpenMenuId(isOpen ? column.id : null)}
               />
             );
           })}
@@ -239,9 +225,12 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
           {!isAddingList ? (
             <button
               onClick={() => setIsAddingList(true)}
-              className="w-full h-[60px] rounded-[20px] bg-[#F0F0F0]/50 border-2 border-dashed border-[#BDBDBD] flex items-center justify-center gap-2 text-gray-500 font-medium hover:bg-[#F0F0F0] hover:text-black transition-all"
+              className="w-12 h-12 rounded-[16px] bg-[#F0F0F0]/50 border-2 border-dashed border-[#BDBDBD] flex items-center justify-center text-gray-500 hover:bg-[#F0F0F0] hover:text-black transition-all hover:w-full group overflow-hidden relative"
             >
-              <Plus size={18} /> Add List
+              <Plus size={20} className="flex-shrink-0" />
+              <span className="absolute left-12 opacity-0 group-hover:opacity-100 transition-opacity font-medium whitespace-nowrap">
+                Add another list
+              </span>
             </button>
           ) : (
             <form
@@ -256,8 +245,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 onChange={(e) => setNewListName(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black text-black"
               />
-
-              <div className="flex justify-between items-center px-1">
+              <div className="flex justify-between items-center px-1 mt-1">
                 {PRESET_COLORS.map((color) => (
                   <button
                     key={color}
@@ -268,15 +256,14 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                   />
                 ))}
               </div>
-
               <div className="flex gap-2 mt-2">
                 <button
                   type="submit"
                   disabled={createList.isPending || !newListName.trim()}
-                  className="flex-1 bg-black text-white text-xs font-bold py-2.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 flex justify-center"
+                  className="flex-1 bg-black text-white text-xs font-bold py-2.5 rounded-xl hover:bg-gray-800 disabled:opacity-50"
                 >
                   {createList.isPending ? (
-                    <Loader2 size={14} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin mx-auto" />
                   ) : (
                     "Save List"
                   )}
@@ -294,7 +281,6 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      {/* DRAG OVERLAY */}
       {typeof window !== "undefined" &&
         createPortal(
           <DragOverlay>
@@ -307,6 +293,8 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 projectName={data.project.name}
                 projectTeam={data.team}
                 isOverlay
+                setMenuOpen={() => {}}
+                isMenuOpen={false}
               />
             )}
             {activeTask && (
@@ -344,6 +332,8 @@ function KanbanColumn({
   isOverlay = false,
   isFirst = false,
   isLast = false,
+  isMenuOpen,
+  setMenuOpen,
 }: {
   column: List;
   columnTasks: Task[];
@@ -354,6 +344,8 @@ function KanbanColumn({
   isOverlay?: boolean;
   isFirst?: boolean;
   isLast?: boolean;
+  isMenuOpen: boolean;
+  setMenuOpen: (isOpen: boolean) => void;
 }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: column.id,
@@ -361,25 +353,35 @@ function KanbanColumn({
   });
 
   const { lists, setLists } = useBoardStore();
-  const { deleteList, clearListTasks, updateListOrder } = useTaskMutations(projectId);
+  const { deleteList, clearListTasks, updateListOrder, updateListDetails } =
+    useListMutations(projectId);
 
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeleteListModal, setShowDeleteListModal] = useState(false);
   const [showClearTasksModal, setShowClearTasksModal] = useState(false);
 
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
-  };
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(column.name);
+  const [editColor, setEditColor] = useState(column.color || "#9CA3AF");
 
+  const PRESET_COLORS = [
+    "#EF4444",
+    "#F97316",
+    "#F59E0B",
+    "#10B981",
+    "#3B82F6",
+    "#8B5CF6",
+    "#EC4899",
+    "#6B7280",
+  ];
+
+  const style = { transition, transform: CSS.Translate.toString(transform) };
   const colStyle = getColumnStyling(column);
   const Icon = colStyle.icon;
 
   const handleMoveColumn = async (direction: "left" | "right") => {
-    setIsMenuOpen(false);
+    setMenuOpen(false);
     const currentIndex = lists.findIndex((l) => l.id === column.id);
     const newIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
-
     if (newIndex < 0 || newIndex >= lists.length) return;
 
     const newLists = arrayMove(lists, currentIndex, newIndex);
@@ -393,17 +395,18 @@ function KanbanColumn({
     }
   };
 
-  const handleDeleteList = async () => {
-    await deleteList.mutateAsync(column.id);
-    setShowDeleteListModal(false);
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) return;
+    try {
+      await updateListDetails.mutateAsync({ listId: column.id, name: editName, color: editColor });
+      setIsEditing(false);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleClearTasks = async () => {
-    await clearListTasks.mutateAsync(column.id);
-    setShowClearTasksModal(false);
-  };
-
-  if (isDragging) {
+  if (isDragging)
     return (
       <div
         ref={setNodeRef}
@@ -411,26 +414,30 @@ function KanbanColumn({
         className="flex-shrink-0 w-[320px] bg-gray-100 border-2 border-dashed border-gray-300 rounded-[20px] h-[500px] opacity-50"
       />
     );
-  }
 
   return (
     <>
       <ConfirmActionModal
         isOpen={showDeleteListModal}
         onClose={() => setShowDeleteListModal(false)}
-        onConfirm={handleDeleteList}
+        onConfirm={async () => {
+          await deleteList.mutateAsync(column.id);
+          setShowDeleteListModal(false);
+        }}
         title="Delete List"
-        description={`Are you sure you want to delete "${column.name}"? ALL tasks inside this list will also be permanently deleted.`}
+        description={`Are you sure you want to delete "${column.name}"?`}
         confirmText="Delete List"
         isLoading={deleteList.isPending}
       />
-
       <ConfirmActionModal
         isOpen={showClearTasksModal}
         onClose={() => setShowClearTasksModal(false)}
-        onConfirm={handleClearTasks}
+        onConfirm={async () => {
+          await clearListTasks.mutateAsync(column.id);
+          setShowClearTasksModal(false);
+        }}
         title="Clear All Tasks"
-        description={`Are you sure you want to permanently delete all ${columnTasks.length} tasks in "${column.name}"?`}
+        description={`Delete all ${columnTasks.length} tasks in "${column.name}"?`}
         confirmText="Clear Tasks"
         isLoading={clearListTasks.isPending}
       />
@@ -440,79 +447,121 @@ function KanbanColumn({
         style={style}
         className={`flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px] ${isOverlay ? "rotate-2 scale-105 shadow-2xl cursor-grabbing" : ""}`}
       >
-        <div
-          {...attributes}
-          {...listeners}
-          className="flex items-center justify-between p-5 border-b border-gray-50/50 cursor-grab active:cursor-grabbing group relative touch-none"
-        >
-          <div className="flex items-center gap-2">
-            <Icon size={18} style={{ color: colStyle.color }} />
-            <h3 className="font-bold text-black">{column.name}</h3>
-            <span className="text-xs font-bold text-gray-400 ml-1">{columnTasks.length}</span>
-          </div>
-
-          <div
-            className="relative"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
+        {isEditing ? (
+          <form
+            onSubmit={handleSaveEdit}
+            className="p-4 border-b border-gray-50/50 bg-white rounded-t-[20px]"
           >
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-1.5 text-gray-400 hover:text-black hover:bg-white rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-            >
-              <MoreHorizontal size={18} />
-            </button>
+            <input
+              autoFocus
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="w-full px-2 py-1.5 text-sm font-bold border border-gray-300 rounded-lg mb-3"
+            />
+            <div className="flex justify-between items-center px-1 mb-3">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setEditColor(c)}
+                  className={`w-4 h-4 rounded-full transition-transform ${editColor === c ? "scale-125 ring-2 ring-offset-2 ring-black" : ""}`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={updateListDetails.isPending}
+                className="flex-1 bg-black text-white text-xs font-bold py-1.5 rounded-lg"
+              >
+                {updateListDetails.isPending ? "Saving..." : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="px-3 bg-gray-200 text-xs font-bold rounded-lg"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div
+            {...attributes}
+            {...listeners}
+            className="flex items-center justify-between p-5 border-b border-gray-50/50 cursor-grab active:cursor-grabbing group relative touch-none"
+          >
+            <div className="flex items-center gap-2">
+              <Icon size={18} fill={colStyle.color} style={{ color: colStyle.color }} />
+              <h3 className="font-bold text-black">{column.name}</h3>
+              <span className="text-xs font-bold text-gray-400 ml-1">{columnTasks.length}</span>
+            </div>
 
-            {isMenuOpen && (
-              <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-                <button
-                  onClick={() => handleMoveColumn("left")}
-                  disabled={isFirst}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Move left
-                  {isFirst && (
-                    <span className="block text-[10px] text-gray-400 mt-0.5">
-                      This is the left-most list
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleMoveColumn("right")}
-                  disabled={isLast}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Move right
-                  {isLast && (
-                    <span className="block text-[10px] text-gray-400 mt-0.5">
-                      This is the right-most list
-                    </span>
-                  )}
-                </button>
-                <div className="h-px bg-gray-100 my-1"></div>
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    setShowClearTasksModal(true);
-                  }}
-                  disabled={columnTasks.length === 0}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium disabled:opacity-50"
-                >
-                  Delete all tasks
-                </button>
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    setShowDeleteListModal(true);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
-                >
-                  Delete this list
-                </button>
-              </div>
-            )}
+            <div
+              className="relative"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setMenuOpen(!isMenuOpen)}
+                className="p-1.5 text-gray-400 hover:text-black hover:bg-white rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+              >
+                <MoreHorizontal size={18} />
+              </button>
+
+              {isMenuOpen && (
+                <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                  <button
+                    onClick={() => {
+                      setIsEditing(true);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Edit details
+                  </button>
+                  <div className="h-px bg-gray-100 my-1"></div>
+                  <button
+                    onClick={() => handleMoveColumn("left")}
+                    disabled={isFirst}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Move left
+                  </button>
+                  <button
+                    onClick={() => handleMoveColumn("right")}
+                    disabled={isLast}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Move right
+                  </button>
+                  <div className="h-px bg-gray-100 my-1"></div>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setShowClearTasksModal(true);
+                    }}
+                    disabled={columnTasks.length === 0}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium disabled:opacity-50"
+                  >
+                    Delete all tasks
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setShowDeleteListModal(true);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
+                  >
+                    Delete this list
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
           <SortableContext
