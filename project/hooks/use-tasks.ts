@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction } from "@/actions/tasks";
-import { updateListOrderAction } from "@/actions/lists";
+import { updateListOrderAction, deleteListAction, clearListTasksAction } from "@/actions/lists";
 
 interface TaskPayload {
   title: string;
@@ -55,14 +55,11 @@ export function useTaskMutations(projectId: string) {
   const queryClient = useQueryClient();
 
   const invalidateBoard = () => {
-    // Refresh the Edit Modal
     queryClient.invalidateQueries({ queryKey: ["taskDetails"] });
-    // Refresh the Kanban Board!
     queryClient.invalidateQueries({ queryKey: ["projectBoard", projectId] });
   };
 
   const createTask = useMutation({
-    // 2. Replaced 'any' with TaskPayload
     mutationFn: async (data: TaskPayload) => {
       const result = await createTaskAction(data, projectId);
       if (!result.success) throw new Error(result.error as string);
@@ -72,7 +69,6 @@ export function useTaskMutations(projectId: string) {
   });
 
   const updateTask = useMutation({
-    // 3. Replaced 'any' with TaskPayload
     mutationFn: async ({ taskId, data }: { taskId: string; data: TaskPayload }) => {
       const result = await updateTaskAction(taskId, projectId, data);
       if (!result.success) throw new Error(result.error as string);
@@ -105,8 +101,6 @@ export function useTaskMutations(projectId: string) {
       if (!result.success) throw new Error(result.error as string);
       return result;
     },
-    // We don't strictly need to invalidate the board here because we do optimistic UI updates,
-    // but doing so ensures the server and client are perfectly synced.
     onSuccess: invalidateBoard,
   });
 
@@ -119,12 +113,32 @@ export function useTaskMutations(projectId: string) {
     onSuccess: invalidateBoard,
   });
 
+  const deleteList = useMutation({
+    mutationFn: async (listId: string) => {
+      const result = await deleteListAction(projectId, listId);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    onSuccess: invalidateBoard,
+  });
+
+  const clearListTasks = useMutation({
+    mutationFn: async (listId: string) => {
+      const result = await clearListTasksAction(projectId, listId);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    onSuccess: invalidateBoard,
+  });
+
   return {
     createTask,
     updateTask,
     moveTaskStatus,
     deleteTask,
     updateListOrder,
-    updateTaskOrder
+    updateTaskOrder,
+    deleteList,
+    clearListTasks,
   };
 }

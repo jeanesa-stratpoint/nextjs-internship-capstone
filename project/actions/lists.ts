@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { lists } from "@/lib/db/schema";
+import { lists, tasks } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
@@ -26,5 +26,41 @@ export async function updateListOrderAction(projectId: string, listUpdates: { id
   } catch (error) {
     console.error("Failed to reorder lists:", error);
     return { success: false, error: "Failed to reorder columns." };
+  }
+}
+
+export async function deleteListAction(projectId: string, listId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canDeleteList = await hasSystemPermission(userId, "list:delete"); 
+    if (!canDeleteList) return { success: false, error: "Access Denied: You do not have permission to delete columns." };
+
+    await db.delete(lists).where(eq(lists.id, listId));
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete list:", error);
+    return { success: false, error: "Failed to delete column." };
+  }
+}
+
+export async function clearListTasksAction(projectId: string, listId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canEdit = await hasSystemPermission(userId, "task:edit");
+    if (!canEdit) return { success: false, error: "Access Denied" };
+
+    await db.delete(tasks).where(eq(tasks.listId, listId));
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to clear tasks:", error);
+    return { success: false, error: "Failed to clear tasks." };
   }
 }

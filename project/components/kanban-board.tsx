@@ -34,6 +34,7 @@ import { useBoardStore, List, Task } from "@/stores/board-store";
 import { useProjectBoard, useTaskMutations } from "@/hooks/use-tasks";
 import TaskCard from "@/components/task-card";
 import CreateTaskModal from "./modals/create-task-modal";
+import ConfirmActionModal from "./modals/confirm-action-modal";
 
 export type TeamMember = {
   id: string;
@@ -275,7 +276,12 @@ function KanbanColumn({
     data: { type: "Column", column },
   });
 
+  const { lists, setLists } = useBoardStore();
+  const { deleteList, clearListTasks, updateListOrder } = useTaskMutations(projectId);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDeleteListModal, setShowDeleteListModal] = useState(false);
+  const [showClearTasksModal, setShowClearTasksModal] = useState(false);
 
   const style = {
     transition,
@@ -284,6 +290,34 @@ function KanbanColumn({
 
   const colStyle = getColumnStyling(column.name);
   const Icon = colStyle.icon;
+
+  const handleMoveColumn = async (direction: "left" | "right") => {
+    setIsMenuOpen(false);
+    const currentIndex = lists.findIndex((l) => l.id === column.id);
+    const newIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
+
+    if (newIndex < 0 || newIndex >= lists.length) return;
+
+    const newLists = arrayMove(lists, currentIndex, newIndex);
+    setLists(newLists);
+
+    const listUpdates = newLists.map((list, index) => ({ id: list.id, order: index }));
+    try {
+      await updateListOrder.mutateAsync(listUpdates);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteList = async () => {
+    await deleteList.mutateAsync(column.id);
+    setShowDeleteListModal(false);
+  };
+
+  const handleClearTasks = async () => {
+    await clearListTasks.mutateAsync(column.id);
+    setShowClearTasksModal(false);
+  };
 
   if (isDragging) {
     return (
@@ -296,104 +330,139 @@ function KanbanColumn({
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px] ${isOverlay ? "rotate-2 scale-105 shadow-2xl cursor-grabbing" : ""}`}
-    >
+    <>
+      <ConfirmActionModal
+        isOpen={showDeleteListModal}
+        onClose={() => setShowDeleteListModal(false)}
+        onConfirm={handleDeleteList}
+        title="Delete Column"
+        description={`Are you sure you want to delete "${column.name}"? ALL tasks inside this column will also be permanently deleted.`}
+        confirmText="Delete Column"
+        isLoading={deleteList.isPending}
+      />
+
+      <ConfirmActionModal
+        isOpen={showClearTasksModal}
+        onClose={() => setShowClearTasksModal(false)}
+        onConfirm={handleClearTasks}
+        title="Clear All Tasks"
+        description={`Are you sure you want to permanently delete all ${columnTasks.length} tasks in "${column.name}"?`}
+        confirmText="Clear Tasks"
+        isLoading={clearListTasks.isPending}
+      />
+
       <div
-        {...attributes}
-        {...listeners}
-        className="flex items-center justify-between p-5 border-b border-gray-50/50 cursor-grab active:cursor-grabbing group relative touch-none"
+        ref={setNodeRef}
+        style={style}
+        className={`flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px] ${isOverlay ? "rotate-2 scale-105 shadow-2xl cursor-grabbing" : ""}`}
       >
-        <div className="flex items-center gap-2">
-          <Icon size={18} className={colStyle.color} />
-          <h3 className="font-bold text-black">{column.name}</h3>
-          <span className="text-xs font-bold text-gray-400 ml-1">{columnTasks.length}</span>
-        </div>
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex items-center justify-between p-5 border-b border-gray-50/50 cursor-grab active:cursor-grabbing group relative touch-none"
+        >
+          <div className="flex items-center gap-2">
+            <Icon size={18} className={colStyle.color} />
+            <h3 className="font-bold text-black">{column.name}</h3>
+            <span className="text-xs font-bold text-gray-400 ml-1">{columnTasks.length}</span>
+          </div>
 
-        {/* COLUMN MENU */}
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMenuOpen(!isMenuOpen);
-            }}
-            className="p-1.5 text-gray-400 hover:text-black hover:bg-white rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+          <div
+            className="relative"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            <MoreHorizontal size={18} />
-          </button>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-1.5 text-gray-400 hover:text-black hover:bg-white rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+            >
+              <MoreHorizontal size={18} />
+            </button>
 
-          {isMenuOpen && (
-            <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-              <button
-                disabled={isFirst}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Move left
-                {isFirst && (
-                  <span className="block text-[10px] text-gray-400">
-                    This is the left-most column
-                  </span>
-                )}
-              </button>
-              <button
-                disabled={isLast}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Move right
-                {isLast && (
-                  <span className="block text-[10px] text-gray-400">
-                    This is the right-most column
-                  </span>
-                )}
-              </button>
-              <div className="h-px bg-gray-100 my-1"></div>
-              <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium">
-                Delete all tasks
-              </button>
-              <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium">
-                Delete this list
-              </button>
-            </div>
-          )}
+            {isMenuOpen && (
+              <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                <button
+                  onClick={() => handleMoveColumn("left")}
+                  disabled={isFirst}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Move left
+                  {isFirst && (
+                    <span className="block text-[10px] text-gray-400 mt-0.5">
+                      This is the left-most column
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleMoveColumn("right")}
+                  disabled={isLast}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Move right
+                  {isLast && (
+                    <span className="block text-[10px] text-gray-400 mt-0.5">
+                      This is the right-most column
+                    </span>
+                  )}
+                </button>
+                <div className="h-px bg-gray-100 my-1"></div>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setShowClearTasksModal(true);
+                  }}
+                  disabled={columnTasks.length === 0}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium disabled:opacity-50"
+                >
+                  Delete all tasks
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setShowDeleteListModal(true);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
+                >
+                  Delete this list
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          <SortableContext
+            items={columnTasks.map((t) => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {columnTasks.length === 0 ? (
+              <div className="border-2 border-dashed border-gray-200 rounded-xl h-24 flex items-center justify-center text-sm text-gray-400 font-medium bg-gray-50/50">
+                Drop tasks here
+              </div>
+            ) : (
+              columnTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  projectId={projectId}
+                  projectName={projectName}
+                  columnName={column.name}
+                  projectTeam={projectTeam}
+                />
+              ))
+            )}
+          </SortableContext>
+        </div>
+
+        <div className="p-3 mt-auto border-t border-gray-50/50">
+          <button
+            onClick={() => setActiveListId(column.id)}
+            className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 hover:text-black hover:bg-white rounded-xl transition-colors"
+          >
+            <Plus size={16} /> Add task
+          </button>
         </div>
       </div>
-
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {/* VERTICAL SORTABLE CONTEXT (For Tasks) */}
-        <SortableContext
-          items={columnTasks.map((t) => t.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {columnTasks.length === 0 ? (
-            <div className="border-2 border-dashed border-gray-200 rounded-xl h-24 flex items-center justify-center text-sm text-gray-400 font-medium bg-gray-50/50">
-              Drop tasks here
-            </div>
-          ) : (
-            columnTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                projectId={projectId}
-                projectName={projectName}
-                columnName={column.name}
-                projectTeam={projectTeam}
-              />
-            ))
-          )}
-        </SortableContext>
-      </div>
-
-      <div className="p-3 mt-auto border-t border-gray-50/50">
-        <button
-          onClick={() => setActiveListId(column.id)}
-          className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 hover:text-black hover:bg-white rounded-xl transition-colors"
-        >
-          <Plus size={16} />
-          Add task
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
