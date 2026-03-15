@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction } from "@/actions/tasks";
-import { updateListOrderAction, deleteListAction, clearListTasksAction, createListAction } from "@/actions/lists";
 
 interface TaskPayload {
   title: string;
@@ -95,15 +94,6 @@ export function useTaskMutations(projectId: string) {
     onSuccess: invalidateBoard,
   });
 
-  const updateListOrder = useMutation({
-    mutationFn: async (listUpdates: { id: string; order: number }[]) => {
-      const result = await updateListOrderAction(projectId, listUpdates);
-      if (!result.success) throw new Error(result.error as string);
-      return result;
-    },
-    onSuccess: invalidateBoard,
-  });
-
   const updateTaskOrder = useMutation({
     mutationFn: async (taskUpdates: { id: string; order: number; listId: string }[]) => {
       const result = await updateTaskOrderAction(projectId, taskUpdates);
@@ -113,42 +103,12 @@ export function useTaskMutations(projectId: string) {
     onSuccess: invalidateBoard,
   });
 
-  const deleteList = useMutation({
-    mutationFn: async (listId: string) => {
-      const result = await deleteListAction(projectId, listId);
-      if (!result.success) throw new Error(result.error as string);
-      return result;
-    },
-    onSuccess: invalidateBoard,
-  });
-
-  const clearListTasks = useMutation({
-    mutationFn: async (listId: string) => {
-      const result = await clearListTasksAction(projectId, listId);
-      if (!result.success) throw new Error(result.error as string);
-      return result;
-    },
-    onSuccess: invalidateBoard,
-  });
-
-  const createList = useMutation({
-    mutationFn: async ({ name, order, color }: { name: string; order: number; color: string }) => {
-      const result = await createListAction(projectId, name, order, color);
-      if (!result.success) throw new Error(result.error as string);
-      return result;
-    },
-    onSuccess: invalidateBoard,
-  });
 
   return {
     createTask,
     updateTask,
     moveTaskStatus,
     deleteTask,
-    updateListOrder,
     updateTaskOrder,
-    deleteList,
-    clearListTasks,
-    createList,
   };
 }
