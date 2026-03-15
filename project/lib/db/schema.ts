@@ -1,48 +1,3 @@
-// TODO: Task 3.1 - Design database schema for users, projects, lists, and tasks
-// TODO: Task 3.3 - Set up Drizzle ORM with type-safe schema definitions
-
-/*
-TODO: Implementation Notes for Interns:
-
-1. Install Drizzle ORM dependencies:
-   - drizzle-orm
-   - drizzle-kit
-   - @vercel/postgres (if using Vercel Postgres)
-   - OR pg + @types/pg (if using regular PostgreSQL)
-
-2. Define schemas for:
-   - users (id, clerkId, email, name, createdAt, updatedAt)
-   - projects (id, name, description, ownerId, createdAt, updatedAt, dueDate)
-   - lists (id, name, projectId, position, createdAt, updatedAt)
-   - tasks (id, title, description, listId, assigneeId, priority, dueDate, position, createdAt, updatedAt)
-   - comments (id, content, taskId, authorId, createdAt, updatedAt)
-
-3. Set up proper relationships between tables
-4. Add indexes for performance
-5. Configure migrations
-
-Example structure:
-import { pgTable, text, timestamp, integer, uuid } from 'drizzle-orm/pg-core'
-
-export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  clerkId: text('clerk_id').notNull().unique(),
-  email: text('email').notNull(),
-  name: text('name').notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-})
-
-// ... other tables
-*/
-
-// Placeholder exports to prevent import errors
-// export const users = "TODO: Implement users table schema";
-// export const projects = "TODO: Implement projects table schema";
-// export const lists = "TODO: Implement lists table schema";
-// export const tasks = "TODO: Implement tasks table schema";
-// export const comments = "TODO: Implement comments table schema";
-
 import { relations } from 'drizzle-orm';
 import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer, boolean, pgEnum } from 'drizzle-orm/pg-core';
 
@@ -59,28 +14,22 @@ export const permissions = pgTable("permissions", {
   action: text("action").notNull().unique(), // e.g., 'create:project', 'delete:task'
 });
 
-export const rolePermissions = pgTable(
-  "role_permissions",
-  {
-    roleId: uuid("role_id")
-      .notNull()
-      .references(() => roles.id, { onDelete: "cascade" }),
-    permissionId: uuid("permission_id")
-      .notNull()
-      .references(() => permissions.id, { onDelete: "cascade" }),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.roleId, t.permissionId] }),
-  })
-);
+export const rolePermissions = pgTable('role_permissions', {
+  roleId: uuid('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+  permissionId: uuid('permission_id').notNull().references(() => permissions.id, { onDelete: 'cascade' }),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.roleId, t.permissionId] }),
+}));
 
-export const users = pgTable("users", {
-  id: text("id").primaryKey(), // Clerk's string IDs
-  email: text("email").notNull().unique(),
-  firstName: varchar("first_name", { length: 255 }),
-  lastName: varchar("last_name", { length: 255 }),
-  roleId: uuid("role_id").references(() => roles.id, { onDelete: "set null" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+
+
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  firstName: varchar('first_name', { length: 255 }),
+  lastName: varchar('last_name', { length: 255 }),
+  roleId: uuid('role_id').references(() => roles.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export const projects = pgTable('projects', {
@@ -93,21 +42,15 @@ export const projects = pgTable('projects', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const projectMembers = pgTable(
-  "project_members",
-  {
-    projectId: uuid("project_id")
-      .references(() => projects.id, { onDelete: "cascade" })
-      .notNull(),
-    userId: text("user_id").notNull(), // The Clerk User ID
-    role: text("role").notNull().default("member"), // Can be 'owner', 'admin', or 'member'
-    joinedAt: timestamp("joined_at").defaultNow().notNull(),
-  },
-  (t) => [
-    // user can only be added to a specific project once
-    primaryKey({ columns: [t.projectId, t.userId] }),
-  ]
-);
+export const projectMembers = pgTable('project_members', {
+  projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  userId: text('user_id').notNull(), 
+  role: text('role').notNull().default('member'), // Can be 'owner', 'admin', or 'member'
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
+}, (t) => [
+  // user can only be added to a specific project once
+  primaryKey({ columns: [t.projectId, t.userId] }), 
+]);
 
 // KANBAN
 export const lists = pgTable('lists', {
@@ -115,6 +58,7 @@ export const lists = pgTable('lists', {
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   order: integer('order').notNull(),
+  color: text('color').default('#6B7280'),
   isCompleteStage: boolean("is_complete_stage").default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
