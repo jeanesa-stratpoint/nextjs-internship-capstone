@@ -1,14 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction } from "@/actions/tasks";
-
-interface TaskPayload {
-  title: string;
-  description?: string;
-  priority: "low" | "medium" | "high";
-  dueDate?: string | null;
-  listId: string;
-  assigneeId?: string | null;
-}
+import { TaskPayload } from "@/lib/validations";
 
 export function useProjectBoard(projectId: string) {
   return useQuery({

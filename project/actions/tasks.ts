@@ -1,7 +1,6 @@
 "use server";
 
-import { z } from "zod";
-import { taskSchema } from "@/lib/validations";
+import { taskSchema, type TaskPayload } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
@@ -80,12 +79,11 @@ export async function updateTaskStatus(taskId: string, newListId: string, projec
   }
 }
 
-type TaskUpdatePayload = z.infer<typeof taskSchema>;
 
 export async function updateTaskAction(
   taskId: string,
   projectId: string,
-  data: TaskUpdatePayload
+  data: TaskPayload
 ) {
   try {
     const { userId } = await auth();
@@ -115,23 +113,23 @@ export async function updateTaskAction(
 
     const newActivities: { taskId: string; userId: string; actionType: string; oldValue?: string; newValue?: string }[] = [];
 
-    if (existingTask.title !== data.title) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "title" });
-    if ((existingTask.description || "") !== (data.description || "")) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "description" });
-    if (existingTask.priority !== data.priority) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "priority" });
+    if (existingTask.title !== validatedData.title) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "title" });
+    if ((existingTask.description || "") !== (validatedData.description || "")) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "description" });
+    if (existingTask.priority !== validatedData.priority) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "priority" });
 
     const oldDateStr = existingTask.dueDate ? existingTask.dueDate.toISOString().split("T")[0] : null;
-    const newDateStr = data.dueDate || null;
+    const newDateStr = validatedData.dueDate ? validatedData.dueDate.toISOString().split("T")[0] : null;
     if (oldDateStr !== newDateStr) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "due date" });
 
-    if (existingTask.listId !== data.listId) {
-       const newList = await queries.tasks.getListById(data.listId);
+    if (existingTask.listId !== validatedData.listId) {
+       const newList = await queries.tasks.getListById(validatedData.listId);
        if (newList) newActivities.push({ taskId, userId, actionType: "moved", newValue: newList.name });
     }
 
-    if ((existingTask.assigneeId || null) !== (data.assigneeId || null)) {
+    if ((existingTask.assigneeId || null) !== (validatedData.assigneeId || null)) {
        let newAssigneeName = "Unassigned";
-       if (data.assigneeId) {
-         const assignee = await queries.users.getById(data.assigneeId);
+       if (validatedData.assigneeId) {
+         const assignee = await queries.users.getById(validatedData.assigneeId);
          if (assignee) {
            newAssigneeName = `${assignee.firstName || ""} ${assignee.lastName || ""}`.trim() || assignee.email;
          }
