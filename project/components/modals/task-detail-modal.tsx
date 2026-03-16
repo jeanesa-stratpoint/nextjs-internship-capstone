@@ -18,9 +18,6 @@ import { getTodayString } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useTaskDetails, useTaskMutations } from "@/hooks/use-tasks";
 
-// ==========================================
-// 1. STRICT TYPES (Eliminating 'any')
-// ==========================================
 interface TeamMember {
   id: string;
   firstName: string | null;
@@ -85,9 +82,6 @@ interface TaskData {
   activities: ServerActivity[];
 }
 
-// ==========================================
-// 2. THE WRAPPER COMPONENT
-// ==========================================
 export default function TaskDetailModal() {
   const { isTaskDetailModalOpen, selectedTaskId, closeTaskDetailModal } = useUIStore();
   const { data, isLoading } = useTaskDetails(isTaskDetailModalOpen ? selectedTaskId : null);
@@ -105,14 +99,12 @@ export default function TaskDetailModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-8">
       <div className="bg-[#F8F8F8] rounded-[24px] shadow-2xl w-full max-w-5xl max-h-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col relative">
-        {/* Loading State */}
         {isLoading || !data ? (
           <div className="flex-1 flex flex-col items-center justify-center p-20">
             <Loader2 size={32} className="animate-spin text-gray-400 mb-4" />
             <p className="text-gray-500 font-medium">Loading task details...</p>
           </div>
         ) : (
-          /* MAGIC TRICK: The 'key' forces React to initialize fresh state when the ID changes! */
           <TaskDetailContent
             key={selectedTaskId}
             data={data as TaskData}
@@ -125,9 +117,6 @@ export default function TaskDetailModal() {
   );
 }
 
-// ==========================================
-// 3. THE INNER CONTENT COMPONENT
-// ==========================================
 function TaskDetailContent({
   data,
   taskId,
@@ -137,10 +126,8 @@ function TaskDetailContent({
   taskId: string;
   onClose: () => void;
 }) {
-  // We can pull in the mutations here because we safely have the projectId!
   const { updateTask, deleteTask } = useTaskMutations(data.project.id);
 
-  // Initialize state directly from data! NO useEffect required!
   const [title, setTitle] = useState(data.task.title);
   const [description, setDescription] = useState(data.task.description || "");
   const [priority, setPriority] = useState<"low" | "medium" | "high">(
@@ -155,7 +142,13 @@ function TaskDetailContent({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState("");
 
-  // Safely map and combine feeds
+  const [prevDataListId, setPrevDataListId] = useState(data.task.listId);
+
+  if (data.task.listId !== prevDataListId) {
+    setPrevDataListId(data.task.listId);
+    setStatusId(data.task.listId);
+  }
+
   const rawComments: FeedItem[] = (data.comments || []).map((c: ServerComment) => ({
     ...c,
     feedType: "comment",
@@ -204,7 +197,6 @@ function TaskDetailContent({
 
   return (
     <>
-      {/* DELETE CONFIRMATION OVERLAY */}
       {showDeleteConfirm && (
         <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
           <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 max-w-md w-full text-center">
