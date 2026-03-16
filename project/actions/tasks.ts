@@ -57,10 +57,16 @@ export async function updateTaskStatus(taskId: string, newListId: string, projec
     await queries.tasks.updateStatus(taskId, newListId);
 
     if (existingTask.listId !== newListId) {
+       const oldList = await queries.tasks.getListById(existingTask.listId);
        const newList = await queries.tasks.getListById(newListId);
-       if (newList) {
+       
+       if (oldList && newList) {
          await queries.tasks.logActivity({
-           taskId, userId, actionType: "moved", newValue: newList.name,
+           taskId, 
+           userId, 
+           actionType: "moved", 
+           oldValue: oldList.name,
+           newValue: newList.name,
          });
        }
     }
@@ -114,31 +120,64 @@ export async function updateTaskAction(
       listId: validatedData.listId,
     });
 
-    const newActivities: { taskId: string; userId: string; actionType: string; oldValue?: string; newValue?: string }[] = [];
+    const newActivities: { taskId: string; userId: string; actionType: string; oldValue?: string | null; newValue?: string | null }[] = [];
 
-    if (existingTask.title !== validatedData.title) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "title" });
-    if ((existingTask.description || "") !== (validatedData.description || "")) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "description" });
-    if (existingTask.priority !== validatedData.priority) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "priority" });
+    if (existingTask.priority !== validatedData.priority) {
+      newActivities.push({ 
+        taskId, userId, 
+        actionType: "updated_priority",
+        oldValue: existingTask.priority || "none", 
+        newValue: validatedData.priority 
+      });
+    }
 
     const oldDateStr = existingTask.dueDate ? existingTask.dueDate.toISOString().split("T")[0] : null;
     const newDateStr = validatedData.dueDate ? validatedData.dueDate.toISOString().split("T")[0] : null;
-    if (oldDateStr !== newDateStr) newActivities.push({ taskId, userId, actionType: "updated", oldValue: "due date" });
-
+    if (oldDateStr !== newDateStr) {
+      newActivities.push({ 
+        taskId, userId, 
+        actionType: "updated_dueDate", 
+        oldValue: oldDateStr || "no date", 
+        newValue: newDateStr || "no date" 
+      });
+    }
+    
     if (existingTask.listId !== validatedData.listId) {
+       const oldList = await queries.tasks.getListById(existingTask.listId);
        const newList = await queries.tasks.getListById(validatedData.listId);
-       if (newList) newActivities.push({ taskId, userId, actionType: "moved", newValue: newList.name });
+       if (newList && oldList) {
+         newActivities.push({ 
+           taskId, userId, 
+           actionType: "moved", 
+           oldValue: oldList.name,
+           newValue: newList.name 
+         });
+       }
     }
 
     if ((existingTask.assigneeId || null) !== (validatedData.assigneeId || null)) {
+       let oldAssigneeName = "Unassigned";
        let newAssigneeName = "Unassigned";
-       if (validatedData.assigneeId) {
-         const assignee = await queries.users.getById(validatedData.assigneeId);
-         if (assignee) {
-           newAssigneeName = `${assignee.firstName || ""} ${assignee.lastName || ""}`.trim() || assignee.email;
-         }
+
+       if (existingTask.assigneeId) {
+         const oldAssignee = await queries.users.getById(existingTask.assigneeId);
+         if (oldAssignee) oldAssigneeName = `${oldAssignee.firstName || ""} ${oldAssignee.lastName || ""}`.trim() || oldAssignee.email;
        }
-       newActivities.push({ taskId, userId, actionType: "assigned", newValue: newAssigneeName });
+       if (validatedData.assigneeId) {
+         const newAssignee = await queries.users.getById(validatedData.assigneeId);
+         if (newAssignee) newAssigneeName = `${newAssignee.firstName || ""} ${newAssignee.lastName || ""}`.trim() || newAssignee.email;
+       }
+
+       newActivities.push({ 
+         taskId, userId, 
+         actionType: "assigned", 
+         oldValue: oldAssigneeName, 
+         newValue: newAssigneeName 
+       });
     }
+
+    if (existingTask.title !== validatedData.title) newActivities.push({ taskId, userId, actionType: "updated_title" });
+    if ((existingTask.description || "") !== (validatedData.description || "")) newActivities.push({ taskId, userId, actionType: "updated_description" });
 
     await queries.tasks.logBulkActivities(newActivities);
 
@@ -183,16 +222,24 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
     const projectLists = await queries.tasks.getListsByProject(projectId);
     const listNameMap = new Map(projectLists.map(l => [l.id, l.name]));
 
-    const newActivities: { taskId: string; userId: string; actionType: string; newValue: string }[] = [];
+    const newActivities: { taskId: string; userId: string; actionType: string; oldValue?: string; newValue: string }[] = [];
 
     await Promise.all(
       taskUpdates.map((taskUpdate) => {
         const oldListId = existingMap.get(taskUpdate.id);
         
         if (oldListId && oldListId !== taskUpdate.listId) {
+          const oldListName = listNameMap.get(oldListId);
           const newListName = listNameMap.get(taskUpdate.listId);
-          if (newListName) {
-            newActivities.push({ taskId: taskUpdate.id, userId, actionType: "moved", newValue: newListName });
+          
+          if (oldListName && newListName) {
+            newActivities.push({ 
+              taskId: taskUpdate.id, 
+              userId, 
+              actionType: "moved", 
+              oldValue: oldListName,
+              newValue: newListName 
+            });
           }
         }
         return queries.tasks.updateOrderAndStatus(taskUpdate.id, taskUpdate.order, taskUpdate.listId);

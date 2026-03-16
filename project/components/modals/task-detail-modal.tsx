@@ -418,9 +418,45 @@ function TaskDetailContent({
                       <div className="text-sm text-gray-600">
                         <span className="font-semibold text-black">{userName}</span>{" "}
                         {item.actionType === "created" && `added this task to ${data.project.name}`}
-                        {item.actionType === "moved" && `moved this to ${item.newValue}`}
-                        {item.actionType === "assigned" && `assigned this to ${item.newValue}`}
-                        {item.actionType === "updated" && `updated the ${item.oldValue}`}
+                        {item.actionType === "moved" && (
+                          <>
+                            {" "}
+                            moved this from{" "}
+                            <span className="font-medium text-black">{item.oldValue}</span> to{" "}
+                            <span className="font-medium text-black">{item.newValue}</span>
+                          </>
+                        )}
+                        {item.actionType === "assigned" && (
+                          <>
+                            {" "}
+                            changed assignee from{" "}
+                            <span className="font-medium text-black">{item.oldValue}</span> to{" "}
+                            <span className="font-medium text-black">{item.newValue}</span>
+                          </>
+                        )}
+                        {item.actionType === "updated_priority" && (
+                          <>
+                            {" "}
+                            changed priority from{" "}
+                            <span className="font-medium text-black capitalize">
+                              {item.oldValue}
+                            </span>{" "}
+                            to{" "}
+                            <span className="font-medium text-black capitalize">
+                              {item.newValue}
+                            </span>
+                          </>
+                        )}
+                        {item.actionType === "updated_dueDate" && (
+                          <>
+                            {" "}
+                            changed the due date from{" "}
+                            <span className="font-medium text-black">{item.oldValue}</span> to{" "}
+                            <span className="font-medium text-black">{item.newValue}</span>
+                          </>
+                        )}
+                        {item.actionType === "updated_title" && " updated the title"}
+                        {item.actionType === "updated_description" && " updated the description"}
                         <span className="text-xs text-gray-400 ml-2">{timeAgo}</span>
                       </div>
                     </div>
