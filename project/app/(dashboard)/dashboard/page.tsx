@@ -22,7 +22,7 @@ export default async function DashboardPage() {
         <QuickActions
           canCreateProject={canCreateProject}
           canInviteMember={canInviteMember}
-          userProjects={userProjects.map((p) => ({ id: p.project.id, name: p.project.name }))}
+          userProjects={userProjects.map((p) => p.project)}
         />
       </div>
 

@@ -48,10 +48,7 @@ export default async function ProjectsPage() {
         <QuickActions
           canCreateProject={canCreateProject}
           canInviteMember={canInviteMember}
-          userProjects={projectsWithMetrics.map((p) => ({
-            id: p.project.id,
-            name: p.project.name,
-          }))}
+          userProjects={projectsWithMetrics.map((p) => p.project)}
         />
       </div>
 
