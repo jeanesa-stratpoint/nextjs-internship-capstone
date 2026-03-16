@@ -48,6 +48,9 @@ export async function updateTaskStatus(taskId: string, newListId: string, projec
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
+    const canEdit = await hasSystemPermission(userId, "task:edit");
+    if (!canEdit) return { success: false, error: "Access Denied: You do not have permission to move tasks." };
+
     const existingTask = await queries.tasks.getById(taskId);
     if (!existingTask) return { success: false, error: "Task not found." };
 
@@ -151,6 +154,8 @@ export async function deleteTaskAction(taskId: string, projectId: string) {
   try {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
+    const canDelete = await hasSystemPermission(userId, "task:delete"); 
+    if (!canDelete) return { success: false, error: "Access Denied: You do not have permission to delete tasks." };
 
     await queries.tasks.delete(taskId);
 
@@ -167,6 +172,9 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
     if (taskUpdates.length === 0) return { success: true };
+
+    const canEdit = await hasSystemPermission(userId, "task:edit");
+    if (!canEdit) return { success: false, error: "Access Denied" };
 
     const taskIds = taskUpdates.map(t => t.id);
     const existingTasks = await queries.tasks.getByIds(taskIds);
