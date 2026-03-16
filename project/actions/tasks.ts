@@ -58,9 +58,26 @@ export async function createTaskAction(formData: unknown, projectId: string) {
 
 export async function updateTaskStatus(taskId: string, newListId: string, projectId: string) {
   try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const existingTask = await queries.tasks.getById(taskId);
+    if (!existingTask) return { success: false, error: "Task not found." };
 
     await db.update(tasks).set({ listId: newListId }).where(eq(tasks.id, taskId));
-    
+
+    if (existingTask.listId !== newListId) {
+       const newList = await queries.tasks.getListById(newListId);
+       if (newList) {
+         await db.insert(taskActivities).values({
+           taskId,
+           userId,
+           actionType: "moved",
+           newValue: newList.name,
+         });
+       }
+    }
+
     const projectLists = await db.select()
       .from(lists)
       .where(eq(lists.projectId, projectId))
@@ -189,13 +206,55 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
+    if (taskUpdates.length === 0) return { success: true };
+
+    const taskIds = taskUpdates.map(t => t.id);
+    const existingTasks = await db.select({ id: tasks.id, listId: tasks.listId }).from(tasks).where(inArray(tasks.id, taskIds));
+    const existingMap = new Map(existingTasks.map(t => [t.id, t.listId]));
+
+    const projectLists = await db.select().from(lists).where(eq(lists.projectId, projectId)).orderBy(asc(lists.order));
+    const listNameMap = new Map(projectLists.map(l => [l.id, l.name]));
+
+    const newActivities: { taskId: string; userId: string; actionType: string; newValue: string }[] = [];
+
     await Promise.all(
-      taskUpdates.map((task) =>
-        db.update(tasks)
-          .set({ order: task.order, listId: task.listId })
-          .where(eq(tasks.id, task.id))
-      )
+      taskUpdates.map((taskUpdate) => {
+        const oldListId = existingMap.get(taskUpdate.id);
+        
+        if (oldListId && oldListId !== taskUpdate.listId) {
+          const newListName = listNameMap.get(taskUpdate.listId);
+          if (newListName) {
+            newActivities.push({
+              taskId: taskUpdate.id,
+              userId,
+              actionType: "moved",
+              newValue: newListName,
+            });
+          }
+        }
+
+        return db.update(tasks)
+          .set({ order: taskUpdate.order, listId: taskUpdate.listId })
+          .where(eq(tasks.id, taskUpdate.id));
+      })
     );
+
+    if (newActivities.length > 0) {
+      await db.insert(taskActivities).values(newActivities);
+    }
+
+    if (projectLists.length > 0) {
+      const endListId = projectLists[projectLists.length - 1].id;
+      const allProjectTasks = await db.select().from(tasks).where(inArray(tasks.listId, projectLists.map(l => l.id)));
+      
+      const allTasksCompleted = allProjectTasks.length > 0 && allProjectTasks.every((t) => t.listId === endListId);
+
+      if (allTasksCompleted) {
+        await db.update(projects).set({ isArchived: true }).where(eq(projects.id, projectId));
+      } else {
+        await db.update(projects).set({ isArchived: false }).where(eq(projects.id, projectId));
+      }
+    }
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
