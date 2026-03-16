@@ -18,17 +18,20 @@ import { getTodayString } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useTaskDetails, useTaskMutations } from "@/hooks/use-tasks";
 
-interface TeamMember {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string;
-}
+// ✨ FIXED: Correct import path to the central hub!
+import { DbProject, DbList, DbComment, DbActivity, DbTask, TeamMember } from "@/types";
+
+// ✨ Re-create the small FeedUser for the activity log mapping
 interface FeedUser {
   id: string;
   firstName: string | null;
   lastName: string | null;
 }
+
+// ✨ Combine the strict Database Types with the User relational data returned by your API
+type ServerComment = DbComment & { user: FeedUser | null };
+type ServerActivity = DbActivity & { user: FeedUser | null };
+
 interface FeedItem {
   id: string;
   feedType: "comment" | "activity";
@@ -39,44 +42,12 @@ interface FeedItem {
   newValue?: string | null;
   user?: FeedUser | null;
 }
-interface ProjectDetails {
-  id: string;
-  name: string;
-  dueDate?: Date | null;
-}
-interface ServerComment {
-  id: string;
-  content: string;
-  createdAt: Date | string;
-  isEdited: boolean;
-  user: FeedUser | null;
-}
-interface ServerActivity {
-  id: string;
-  actionType: string;
-  oldValue: string | null;
-  newValue: string | null;
-  createdAt: Date | string;
-  user: FeedUser | null;
-}
-interface ProjectList {
-  id: string;
-  name: string;
-}
 
+// ✨ Perfectly clean TaskData utilizing the Single Source of Truth
 interface TaskData {
-  task: {
-    id: string;
-    title: string;
-    description: string | null;
-    priority: "low" | "medium" | "high";
-    listId: string;
-    dueDate: Date | string | null;
-    assigneeId: string | null;
-    createdAt: Date | string;
-  };
-  project: ProjectDetails;
-  projectLists: ProjectList[];
+  task: DbTask;
+  project: DbProject;
+  projectLists: DbList[];
   team: TeamMember[];
   comments: ServerComment[];
   activities: ServerActivity[];
@@ -297,7 +268,7 @@ function TaskDetailContent({
                   onChange={(e) => setStatusId(e.target.value)}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-black appearance-none cursor-pointer"
                 >
-                  {data.projectLists.map((list: ProjectList) => (
+                  {data.projectLists.map((list: DbList) => (
                     <option key={list.id} value={list.id}>
                       {list.name}
                     </option>
