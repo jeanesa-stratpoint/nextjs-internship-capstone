@@ -1,21 +1,9 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { lists, tasks } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { hasSystemPermission } from "@/lib/rbac";
-
-async function syncCompleteStage(projectId: string) {
-  const projectLists = await db.select().from(lists).where(eq(lists.projectId, projectId)).orderBy(asc(lists.order));
-  if (projectLists.length === 0) return;
-
-  const lastListId = projectLists[projectLists.length - 1].id;
-
-  await db.update(lists).set({ isCompleteStage: false }).where(eq(lists.projectId, projectId));
-  await db.update(lists).set({ isCompleteStage: true }).where(eq(lists.id, lastListId));
-}
+import { queries } from "@/lib/db/queries";
 
 export async function createListAction(projectId: string, name: string, newOrder: number, color: string) {
   try {
@@ -24,18 +12,13 @@ export async function createListAction(projectId: string, name: string, newOrder
 
     const canCreate = await hasSystemPermission(userId, "list:create");
     if (!canCreate) return { success: false, error: "Access Denied" };
-
     if (!name.trim()) return { success: false, error: "List name is required" };
 
-    const [newList] = await db.insert(lists).values({
-      projectId,
-      name: name.trim(),
-      order: newOrder,
-      color: color, 
-      isCompleteStage: false, 
-    }).returning();
+    const newList = await queries.lists.create({
+      projectId, name: name.trim(), order: newOrder, color, isCompleteStage: false
+    });
 
-    await syncCompleteStage(projectId);
+    await queries.lists.syncCompleteStage(projectId);
     revalidatePath(`/projects/${projectId}`);
     return { success: true, list: newList };
   } catch (error) {
@@ -51,15 +34,14 @@ export async function updateListDetailsAction(projectId: string, listId: string,
 
     const canEdit = await hasSystemPermission(userId, "list:edit");
     if (!canEdit) return { success: false, error: "Access Denied" };
-
     if (!name.trim()) return { success: false, error: "List name is required" };
 
-    await db.update(lists).set({ name: name.trim(), color }).where(eq(lists.id, listId));
+    await queries.lists.updateDetails(listId, name.trim(), color);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {
-    console.error("Failed to update list:", error);
+    console.error("Failed to update list details:", error);
     return { success: false, error: "Failed to update list details." };
   }
 }
@@ -72,17 +54,13 @@ export async function updateListOrderAction(projectId: string, listUpdates: { id
     const canEdit = await hasSystemPermission(userId, "list:edit");
     if (!canEdit) return { success: false, error: "Access Denied" };
 
-    await Promise.all(
-      listUpdates.map((list) =>
-        db.update(lists).set({ order: list.order }).where(eq(lists.id, list.id))
-      )
-    );
+    await Promise.all(listUpdates.map((list) => queries.lists.updateOrder(list.id, list.order)));
 
-    await syncCompleteStage(projectId);
+    await queries.lists.syncCompleteStage(projectId);
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {
-    console.error("Failed to reorder lists:", error);
+    console.error("Failed to reorder columns:", error);
     return { success: false, error: "Failed to reorder columns." };
   }
 }
@@ -93,15 +71,15 @@ export async function deleteListAction(projectId: string, listId: string) {
     if (!userId) return { success: false, error: "Unauthorized" };
 
     const canDeleteList = await hasSystemPermission(userId, "list:delete"); 
-    if (!canDeleteList) return { success: false, error: "Access Denied: You do not have permission to delete columns." };
+    if (!canDeleteList) return { success: false, error: "Access Denied" };
 
-    await db.delete(lists).where(eq(lists.id, listId));
+    await queries.lists.delete(listId);
+    await queries.lists.syncCompleteStage(projectId);
 
-    await syncCompleteStage(projectId); 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {
-    console.error("Failed to delete list:", error);
+    console.error("Failed to delete column:", error);
     return { success: false, error: "Failed to delete column." };
   }
 }
@@ -114,7 +92,7 @@ export async function clearListTasksAction(projectId: string, listId: string) {
     const canEdit = await hasSystemPermission(userId, "list:edit");
     if (!canEdit) return { success: false, error: "Access Denied" };
 
-    await db.delete(tasks).where(eq(tasks.listId, listId));
+    await queries.tasks.deleteAllInList(listId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
