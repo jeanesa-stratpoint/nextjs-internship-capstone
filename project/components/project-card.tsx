@@ -1,57 +1,9 @@
-// TODO: Task 4.5 - Design and implement project cards and layouts
-
-/*
-TODO: Implementation Notes for Interns:
-
-This component should display:
-- Project name and description
-- Progress indicator
-- Team member count
-- Due date
-- Status badge
-- Actions menu (edit, delete, etc.)
-
-Props interface:
-interface ProjectCardProps {
-  project: {
-    id: string
-    name: string
-    description?: string
-    progress: number
-    memberCount: number
-    dueDate?: Date
-    status: 'active' | 'completed' | 'on-hold'
-  }
-  onEdit?: (id: string) => void
-  onDelete?: (id: string) => void
-}
-
-Features to implement:
-- Hover effects
-- Click to navigate to project board
-- Responsive design
-- Loading states
-- Error states
-*/
-
-// export function ProjectCard() {
-//   return (
-//     <div className="bg-white dark:bg-outer_space-500 p-6 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400">
-//       <p className="text-center text-payne's_gray-500 dark:text-french_gray-400">
-//         TODO: Implement ProjectCard component
-//       </p>
-//     </div>
-//   );
-// }
-
 "use client";
 
-import { projects } from "@/lib/db/schema";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { MoreHorizontal } from "lucide-react";
-
-type Project = typeof projects.$inferSelect;
+import { DbProject } from "@/types/index";
 
 export default function ProjectCard({
   project,
@@ -63,7 +15,7 @@ export default function ProjectCard({
   ownerName,
   isOwner,
 }: {
-  project: Project;
+  project: DbProject;
   index: number;
   isActive: boolean;
   memberCount: number;
@@ -112,7 +64,7 @@ export default function ProjectCard({
     <div className="relative group block h-full">
       <Link
         href={`/projects/${project.id}`}
-        className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden block"
+        className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden"
       >
         <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${colors[colorIndex]}`}></div>
 

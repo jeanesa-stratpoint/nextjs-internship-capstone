@@ -3,24 +3,24 @@
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Task, List } from "@/stores/board-store";
+import { StoreList, StoreTask } from "@/stores/board-store";
 import { Circle, MoreVertical, Trash2, ArrowRightLeft } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { TeamMember } from "./kanban-board";
+import { TeamMember } from "@/types/index";
 import { useUIStore } from "@/stores/ui-store";
 import { useBoardStore } from "@/stores/board-store";
 import { useTaskMutations } from "@/hooks/use-tasks";
 import ConfirmActionModal from "./modals/confirm-action-modal";
 
 interface TaskCardProps {
-  task: Task;
+  task: StoreTask;
   projectId: string;
   projectName: string;
-  column: List;
+  column: StoreList;
   projectTeam: TeamMember[];
 }
 
-const getColumnStyle = (column: List) => {
+const getColumnStyle = (column: StoreList) => {
   let hexColor = column.color || "#6B7280";
   let avatarBg = hexColor;
   let avatarText = "#FFFFFF";

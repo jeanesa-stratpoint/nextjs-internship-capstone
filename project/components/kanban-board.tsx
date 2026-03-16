@@ -22,23 +22,15 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Plus, Circle, Loader2, MoreHorizontal } from "lucide-react";
-import { useBoardStore, List, Task } from "@/stores/board-store";
+import { useBoardStore, StoreList, StoreTask } from "@/stores/board-store";
 import { useProjectBoard, useTaskMutations } from "@/hooks/use-tasks";
 import { useListMutations } from "@/hooks/use-lists";
+import { TeamMember } from "@/types/index";
 import TaskCard from "@/components/task-card";
 import CreateTaskModal from "./modals/create-task-modal";
 import ConfirmActionModal from "./modals/confirm-action-modal";
 
-export type TeamMember = {
-  id: string;
-  name?: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  email?: string;
-  imageUrl?: string;
-};
-
-const getColumnStyling = (column: List) => {
+const getColumnStyling = (column: StoreList) => {
   let color = column.color || "#6B7280";
 
   if (column.name === "In Progress" && color === "#6B7280") color = "#FFA724";
@@ -68,8 +60,8 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  const [activeColumn, setActiveColumn] = useState<List | null>(null);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [activeColumn, setActiveColumn] = useState<StoreList | null>(null);
+  const [activeTask, setActiveTask] = useState<StoreTask | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -201,7 +193,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
     >
       <div className="flex h-full gap-6 overflow-x-auto pb-4 items-start">
         <SortableContext items={listIds} strategy={horizontalListSortingStrategy}>
-          {lists.map((column: List) => {
+          {lists.map((column: StoreList) => {
             const columnTasks = tasks.filter((task) => task.listId === column.id);
             return (
               <KanbanColumn
@@ -337,8 +329,8 @@ function KanbanColumn({
   isMenuOpen,
   setMenuOpen,
 }: {
-  column: List;
-  columnTasks: Task[];
+  column: StoreList;
+  columnTasks: StoreTask[];
   setActiveListId: (id: string) => void;
   projectId: string;
   projectName: string;
