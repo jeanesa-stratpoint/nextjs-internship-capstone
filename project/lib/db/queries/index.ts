@@ -118,6 +118,11 @@ export const queries = {
       return result[0] || null;
     },
 
+    getByIds: async (taskIds: string[]) => {
+      if (taskIds.length === 0) return [];
+      return await db.select().from(tasks).where(inArray(tasks.id, taskIds));
+    },
+
     getListById: async (id: string) => {
       const result = await db.select().from(lists).where(eq(lists.id, id)).limit(1);
       return result[0] || null;
@@ -229,6 +234,11 @@ export const queries = {
         .limit(1);
         
       return dbUser[0]?.roleName || "Standard User";
+    },
+
+    getById: async (userId: string) => {
+      const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      return result[0] || null;
     }
   },
 };
