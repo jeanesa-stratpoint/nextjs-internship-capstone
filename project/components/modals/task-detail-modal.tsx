@@ -17,18 +17,14 @@ import { useUIStore } from "@/stores/ui-store";
 import { getTodayString } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useTaskDetails, useTaskMutations } from "@/hooks/use-tasks";
-
-// ✨ FIXED: Correct import path to the central hub!
 import { DbProject, DbList, DbComment, DbActivity, DbTask, TeamMember } from "@/types";
 
-// ✨ Re-create the small FeedUser for the activity log mapping
 interface FeedUser {
   id: string;
   firstName: string | null;
   lastName: string | null;
 }
 
-// ✨ Combine the strict Database Types with the User relational data returned by your API
 type ServerComment = DbComment & { user: FeedUser | null };
 type ServerActivity = DbActivity & { user: FeedUser | null };
 
@@ -43,7 +39,6 @@ interface FeedItem {
   user?: FeedUser | null;
 }
 
-// ✨ Perfectly clean TaskData utilizing the Single Source of Truth
 interface TaskData {
   task: DbTask;
   project: DbProject;

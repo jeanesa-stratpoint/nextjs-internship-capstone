@@ -1,74 +1,10 @@
-// TODO: Task 4.4 - Build task creation and editing functionality
-// TODO: Task 5.6 - Create task detail modals and editing interfaces
-
-/*
-TODO: Implementation Notes for Interns:
-
-Modal for creating and editing tasks.
-
-Features to implement:
-- Task title and description
-- Priority selection
-- Assignee selection
-- Due date picker
-- Labels/tags
-- Attachments
-- Comments section (for edit mode)
-- Activity history (for edit mode)
-
-Form fields:
-- Title (required)
-- Description (rich text editor)
-- Priority (low/medium/high)
-- Assignee (team member selector)
-- Due date (date picker)
-- Labels (tag input)
-- Attachments (file upload)
-
-Integration:
-- Use task validation schema
-- Call task creation/update API
-- Update board state optimistically
-- Handle file uploads
-- Real-time updates for comments
-*/
-
-// export function CreateTaskModal() {
-//   return (
-//     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-//       <div className="bg-white dark:bg-outer_space-500 rounded-lg p-6 w-full max-w-2xl mx-4">
-//         <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">
-//           TODO: Create/Edit Task Modal
-//         </h3>
-//         <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded border border-yellow-200 dark:border-yellow-800">
-//           <p className="text-sm text-yellow-800 dark:text-yellow-200">
-//             📋 Implement task creation/editing form with rich features
-//           </p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useState, useEffect } from "react";
 import { X, Loader2, FolderDot, CheckCircle2, FolderKanban } from "lucide-react";
 import { getTodayString } from "@/lib/utils";
 import { useTaskDefaults, useTaskMutations } from "@/hooks/use-tasks";
-
-interface Project {
-  id: string;
-  name: string;
-}
-// 1. UPDATED INTERFACE: Added 'email' so TypeScript knows it exists
-interface UnifiedTeamMember {
-  id: string;
-  name?: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  email?: string;
-}
+import { DbProject, TeamMember } from "@/types/index";
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -76,9 +12,9 @@ interface CreateTaskModalProps {
   listId?: string;
   projectId?: string;
   projectName?: string;
-  projectTeam?: UnifiedTeamMember[];
+  projectTeam?: TeamMember[];
   projectDueDate?: Date | null;
-  userProjects?: Project[];
+  userProjects?: DbProject[];
 }
 
 export default function CreateTaskModal({
@@ -158,7 +94,6 @@ export default function CreateTaskModal({
 
       setSuccessTaskName(title);
     } catch (err: unknown) {
-      // 2. FIXED: Safely checking the error type instead of using 'any'
       if (err instanceof Error) setError(err.message);
       else setError("Failed to create task");
     }
@@ -166,9 +101,8 @@ export default function CreateTaskModal({
 
   if (!isOpen) return null;
 
-  const currentTeam: UnifiedTeamMember[] = isGlobalMode
-    ? defaults?.team || []
-    : initialProjectTeam || [];
+  const currentTeam: TeamMember[] = isGlobalMode ? defaults?.team || [] : initialProjectTeam || [];
+
   const activeDueDate = isGlobalMode ? defaults?.projectDueDate : initialProjectDueDate;
   const maxDateString = activeDueDate
     ? new Date(activeDueDate).toISOString().split("T")[0]
@@ -260,12 +194,9 @@ export default function CreateTaskModal({
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm appearance-none disabled:bg-gray-100 disabled:text-gray-400 text-black cursor-pointer"
                 >
                   <option value="">Unassigned</option>
-                  {/* 3. FIXED: Used the UnifiedTeamMember type instead of 'any' */}
-                  {currentTeam.map((member: UnifiedTeamMember) => (
+                  {currentTeam.map((member: TeamMember) => (
                     <option key={member.id} value={member.id}>
-                      {member.name ||
-                        `${member.firstName || ""} ${member.lastName || ""}`.trim() ||
-                        member.email}
+                      {`${member.firstName || ""} ${member.lastName || ""}`.trim() || member.email}
                     </option>
                   ))}
                 </select>
@@ -303,7 +234,6 @@ export default function CreateTaskModal({
                   <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
                     Priority
                   </label>
-                  {/* 4. FIXED: Cast to strict priority literal union instead of 'any' */}
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as "low" | "medium" | "high")}
