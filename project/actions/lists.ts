@@ -97,7 +97,7 @@ export async function deleteListAction(projectId: string, listId: string) {
 
     await db.delete(lists).where(eq(lists.id, listId));
 
-    await syncCompleteStage(projectId);
+    await syncCompleteStage(projectId); 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {

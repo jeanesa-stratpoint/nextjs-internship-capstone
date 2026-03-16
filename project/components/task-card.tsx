@@ -3,16 +3,8 @@
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Task } from "@/stores/board-store";
-import {
-  CheckCircle2,
-  Clock,
-  Circle,
-  CheckCircle,
-  MoreVertical,
-  Trash2,
-  ArrowRightLeft,
-} from "lucide-react";
+import { Task, List } from "@/stores/board-store";
+import { Circle, MoreVertical, Trash2, ArrowRightLeft } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { TeamMember } from "./kanban-board";
 import { useUIStore } from "@/stores/ui-store";
@@ -24,38 +16,30 @@ interface TaskCardProps {
   task: Task;
   projectId: string;
   projectName: string;
-  columnName: string;
+  column: List;
   projectTeam: TeamMember[];
 }
 
-const getColumnStyle = (name: string) => {
-  if (name === "In Progress")
-    return {
-      icon: Clock,
-      iconColor: "text-amber-500",
-      avatarBg: "bg-[#FFA724]",
-      avatarText: "text-[#FFDAA2]",
-    };
-  if (name === "Review")
-    return {
-      icon: CheckCircle2,
-      iconColor: "text-emerald-500",
-      avatarBg: "bg-[#007B50]",
-      avatarText: "text-[#B3D8B8]",
-    };
-  if (name === "Done")
-    return {
-      icon: CheckCircle,
-      iconColor: "text-rose-500",
-      avatarBg: "bg-[#FF8B81]",
-      avatarText: "text-[#FFFFFF]",
-    };
-  return {
-    icon: Circle,
-    iconColor: "text-gray-400",
-    avatarBg: "bg-[#7E7E7E]",
-    avatarText: "text-[#BDBDBD]",
-  };
+const getColumnStyle = (column: List) => {
+  let hexColor = column.color || "#6B7280";
+  let avatarBg = hexColor;
+  let avatarText = "#FFFFFF";
+
+  if (column.name === "In Progress" && hexColor === "#6B7280") {
+    hexColor = "#FFA724";
+    avatarBg = "#FFA724";
+    avatarText = "#FFDAA2";
+  } else if (column.name === "Review" && hexColor === "#6B7280") {
+    hexColor = "#007B50";
+    avatarBg = "#007B50";
+    avatarText = "#B3D8B8";
+  } else if (column.name === "Done" && hexColor === "#6B7280") {
+    hexColor = "#FF8B81";
+    avatarBg = "#FF8B81";
+    avatarText = "#FFFFFF";
+  }
+
+  return { icon: Circle, hexColor, avatarBg, avatarText };
 };
 
 const getPriorityStyle = (priority?: string | null) => {
@@ -76,7 +60,7 @@ export default function TaskCard({
   task,
   projectId,
   projectName,
-  columnName,
+  column,
   projectTeam,
 }: TaskCardProps) {
   const { openTaskDetailModal } = useUIStore();
@@ -93,7 +77,7 @@ export default function TaskCard({
   });
 
   const style = { transition, transform: CSS.Transform.toString(transform) };
-  const colStyle = getColumnStyle(columnName);
+  const colStyle = getColumnStyle(column);
   const StatusIcon = colStyle.icon;
 
   const assignee = projectTeam.find((member) => member.id === task.assigneeId);
@@ -147,29 +131,30 @@ export default function TaskCard({
       >
         <div className="flex justify-between items-start mb-1">
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-            <StatusIcon size={12} className={colStyle.iconColor} />
+            <StatusIcon size={12} style={{ color: colStyle.hexColor }} />
             <span className="truncate max-w-[150px]">{projectName}</span>
           </div>
 
-          {/* ✨ UPDATED: Smooth sliding avatar container ✨ */}
           <div className="relative flex items-center justify-end h-6 min-w-[24px]">
-            {/* Avatar - physically slides left when hovered OR when menu is open */}
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${colStyle.avatarBg} ${colStyle.avatarText} transition-transform duration-200 z-10 ${
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-transform duration-200 z-10 ${
                 isMenuOpen ? "-translate-x-7" : "group-hover:-translate-x-7"
               }`}
+              style={{ backgroundColor: colStyle.avatarBg, color: colStyle.avatarText }}
               title={fullName}
             >
               {initials}
             </div>
 
-            {/* Menu Button - fades in on hover, absolute positioned to not break layout */}
             <div
               className={`absolute right-0 top-0 transition-opacity duration-200 z-20 ${
                 isMenuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
               }`}
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+              }}
             >
               <button
                 onClick={() => {

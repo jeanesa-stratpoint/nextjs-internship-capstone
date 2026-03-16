@@ -39,11 +39,12 @@ export type TeamMember = {
 };
 
 const getColumnStyling = (column: List) => {
-  let color = column.color || "#9CA3AF";
-  // fallbacks
-  if (column.name === "In Progress" && !column.color) color = "#F59E0B";
-  if (column.name === "Review" && !column.color) color = "#10B981";
-  if (column.name === "Done" && !column.color) color = "#F43F5E";
+  let color = column.color || "#6B7280";
+
+  if (column.name === "In Progress" && color === "#6B7280") color = "#FFA724";
+  if (column.name === "Review" && color === "#6B7280") color = "#007B50";
+  if (column.name === "Done" && color === "#6B7280") color = "#FF8B81";
+
   return { icon: Circle, color };
 };
 
@@ -65,7 +66,6 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
 
   const { lists, tasks, setLists, setTasks, setBoardData } = useBoardStore();
   const [activeListId, setActiveListId] = useState<string | null>(null);
-
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const [activeColumn, setActiveColumn] = useState<List | null>(null);
@@ -221,21 +221,23 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
           })}
         </SortableContext>
 
-        <div className="flex-shrink-0 w-[320px]">
+        <div
+          className={`flex-shrink-0 transition-all duration-300 ease-in-out ${isAddingList ? "w-[320px]" : "w-[60px]"}`}
+        >
           {!isAddingList ? (
             <button
               onClick={() => setIsAddingList(true)}
-              className="w-12 h-12 rounded-[16px] bg-[#F0F0F0]/50 border-2 border-dashed border-[#BDBDBD] flex items-center justify-center text-gray-500 hover:bg-[#F0F0F0] hover:text-black transition-all hover:w-full group overflow-hidden relative"
+              className="w-[60px] h-[60px] rounded-[20px] bg-[#F0F0F0]/50 border-2 border-dashed border-[#BDBDBD] flex items-center justify-start px-[18px] text-gray-500 hover:bg-[#F0F0F0] hover:text-black transition-all duration-300 hover:w-[200px] group overflow-hidden"
             >
               <Plus size={20} className="flex-shrink-0" />
-              <span className="absolute left-12 opacity-0 group-hover:opacity-100 transition-opacity font-medium whitespace-nowrap">
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity font-medium whitespace-nowrap ml-3">
                 Add another list
               </span>
             </button>
           ) : (
             <form
               onSubmit={handleCreateList}
-              className="bg-[#F0F0F0] p-4 rounded-[20px] shadow-sm border border-[#BDBDBD] flex flex-col gap-3"
+              className="bg-[#F0F0F0] p-4 rounded-[20px] shadow-sm border border-[#BDBDBD] flex flex-col gap-3 w-[320px]"
             >
               <input
                 autoFocus
@@ -302,7 +304,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 task={activeTask}
                 projectId={projectId}
                 projectName={data.project.name}
-                columnName={lists.find((l) => l.id === activeTask.listId)?.name || ""}
+                column={lists.find((l) => l.id === activeTask.listId)!}
                 projectTeam={data.team}
               />
             )}
@@ -457,7 +459,7 @@ function KanbanColumn({
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm font-bold border border-gray-300 rounded-lg mb-3"
+              className="w-full px-2 py-1.5 text-sm font-bold border border-gray-300 rounded-lg mb-3 text-black"
             />
             <div className="flex justify-between items-center px-1 mb-3">
               {PRESET_COLORS.map((c) => (
@@ -474,14 +476,14 @@ function KanbanColumn({
               <button
                 type="submit"
                 disabled={updateListDetails.isPending}
-                className="flex-1 bg-black text-white text-xs font-bold py-1.5 rounded-lg"
+                className="flex-1 bg-black text-white text-xs font-bold py-1.5 rounded-2xl hover:bg-gray-800"
               >
                 {updateListDetails.isPending ? "Saving..." : "Save"}
               </button>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-3 bg-gray-200 text-xs font-bold rounded-lg"
+                className="px-3 bg-gray-200 text-gray-600 text-xs font-bold rounded-2xl hover:bg-gray-300"
               >
                 Cancel
               </button>
@@ -494,7 +496,7 @@ function KanbanColumn({
             className="flex items-center justify-between p-5 border-b border-gray-50/50 cursor-grab active:cursor-grabbing group relative touch-none"
           >
             <div className="flex items-center gap-2">
-              <Icon size={18} fill={colStyle.color} style={{ color: colStyle.color }} />
+              <Icon size={18} style={{ color: colStyle.color }} />
               <h3 className="font-bold text-black">{column.name}</h3>
               <span className="text-xs font-bold text-gray-400 ml-1">{columnTasks.length}</span>
             </div>
@@ -502,11 +504,14 @@ function KanbanColumn({
             <div
               className="relative"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+              }}
             >
               <button
                 onClick={() => setMenuOpen(!isMenuOpen)}
-                className="p-1.5 text-gray-400 hover:text-black hover:bg-white rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                className={`p-1.5 rounded-md transition-colors focus:opacity-100 ${isMenuOpen ? "opacity-100 bg-white text-black shadow-sm" : "opacity-0 text-gray-400 hover:text-black hover:bg-white group-hover:opacity-100"}`}
               >
                 <MoreHorizontal size={18} />
               </button>
@@ -518,7 +523,7 @@ function KanbanColumn({
                       setIsEditing(true);
                       setMenuOpen(false);
                     }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-medium"
                   >
                     Edit details
                   </button>
@@ -579,7 +584,7 @@ function KanbanColumn({
                   task={task}
                   projectId={projectId}
                   projectName={projectName}
-                  columnName={column.name}
+                  column={column}
                   projectTeam={projectTeam}
                 />
               ))
