@@ -29,8 +29,6 @@ export const taskSchema = z.object({
   assigneeId: z.string().optional().nullable(), 
 });
 
-export type TaskPayload = z.input<typeof taskSchema>;
-
 // LIST (KANBAN COLUMN) VALIDATION
 export const listSchema = z.object({
   name: z.string().min(1, "Column name is required").max(50, "Name cannot exceed 50 characters"),

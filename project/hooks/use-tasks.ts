@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction } from "@/actions/tasks";
-import { TaskPayload } from "@/lib/validations";
+import { TaskPayload } from "@/types/index";
 
 export function useProjectBoard(projectId: string) {
   return useQuery({

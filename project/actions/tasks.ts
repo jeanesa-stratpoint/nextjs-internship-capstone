@@ -1,10 +1,11 @@
 "use server";
 
-import { taskSchema, type TaskPayload } from "@/lib/validations";
+import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
 import { queries } from "@/lib/db/queries/index";
+import { TaskPayload } from "@/types/index";
 
 export async function createTaskAction(formData: unknown, projectId: string) {
   try {
