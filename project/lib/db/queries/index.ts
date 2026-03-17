@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles } from "@/lib/db/schema";
-import { eq, desc, inArray, asc } from "drizzle-orm";
+import { eq, desc, inArray, asc, and } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 
 export const queries = {
@@ -97,8 +97,19 @@ export const queries = {
     addMembers: async (membersToInsert: { projectId: string; userId: string; role: string }[]) => {
       await db.insert(projectMembers).values(membersToInsert).onConflictDoNothing();
     },
-    updateArchiveStatus: async (projectId: string, isArchived: boolean) => {
-      await db.update(projects).set({ isArchived }).where(eq(projects.id, projectId));
+    updateStatus: async (projectId: string, status: "active" | "completed" | "on-hold") => {
+      await db.update(projects).set({ status }).where(eq(projects.id, projectId));
+    },
+    updateDetails: async (projectId: string, data: { name: string; description?: string | null; dueDate?: Date | null }) => {
+      await db.update(projects).set(data).where(eq(projects.id, projectId));
+    },
+    delete: async (projectId: string) => {
+      await db.delete(projects).where(eq(projects.id, projectId));
+    },
+    removeMember: async (projectId: string, userId: string) => {
+      await db.delete(projectMembers).where(
+        and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId))
+      );
     },
   },
 

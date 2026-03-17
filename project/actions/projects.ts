@@ -87,3 +87,127 @@ export async function inviteMembersAction(projectId: string, memberIds: string[]
     return { success: false, error: error instanceof Error ? error.message : "Failed to invite members." };
   }
 }
+
+export async function updateProjectDetailsAction(projectId: string, data: { name: string; description: string; dueDate: string | null }) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canEdit = await hasSystemPermission(userId, "project:edit");
+    if (!canEdit) return { success: false, error: "Access Denied" };
+
+    const validationResult = projectSchema.safeParse(data);
+    if (!validationResult.success) return { success: false, error: validationResult.error.issues[0].message };
+
+    await queries.projects.updateDetails(projectId, {
+      name: validationResult.data.name,
+      description: validationResult.data.description || null,
+      dueDate: validationResult.data.dueDate || null,
+    });
+
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath("/projects");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update project:", error);
+    return { success: false, error: "Failed to update project details." };
+  }
+}
+
+export async function updateProjectStatusAction(projectId: string, status: "active" | "on-hold") {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canEdit = await hasSystemPermission(userId, "project:edit");
+    if (!canEdit) return { success: false, error: "Access Denied" };
+
+    await queries.projects.updateStatus(projectId, status);
+
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath("/projects");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update project status:", error);
+    return { success: false, error: "Failed to update project status." };
+  }
+}
+
+export async function markProjectCompletedAction(projectId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canEdit = await hasSystemPermission(userId, "project:edit");
+    if (!canEdit) return { success: false, error: "Access Denied" };
+
+    const projectLists = await queries.tasks.getListsByProject(projectId);
+    if (projectLists.length === 0) return { success: false, error: "Project has no lists." };
+    const lastList = projectLists[projectLists.length - 1];
+
+    const allProjectTasks = await queries.tasks.getByListIds(projectLists.map(l => l.id));
+    const tasksToMove = allProjectTasks.filter(t => t.listId !== lastList.id);
+
+    if (tasksToMove.length > 0) {
+       await Promise.all(tasksToMove.map(t => queries.tasks.updateStatus(t.id, lastList.id)));
+
+       const newActivities = tasksToMove.map(t => {
+          const oldList = projectLists.find(l => l.id === t.listId);
+          return {
+             taskId: t.id,
+             userId,
+             actionType: "moved",
+             oldValue: oldList?.name || "Unknown",
+             newValue: lastList.name
+          };
+       });
+       await queries.tasks.logBulkActivities(newActivities);
+    }
+    await queries.projects.updateStatus(projectId, "completed");
+
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath("/projects");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to mark project completed:", error);
+    return { success: false, error: "Failed to complete project." };
+  }
+}
+
+export async function deleteProjectAction(projectId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canDelete = await hasSystemPermission(userId, "project:delete");
+    if (!canDelete) return { success: false, error: "Access Denied" };
+
+    await queries.projects.delete(projectId);
+
+    revalidatePath("/dashboard");
+    revalidatePath("/projects");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete project:", error);
+    return { success: false, error: "Failed to delete project." };
+  }
+}
+
+export async function removeMemberAction(projectId: string, memberId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canEdit = await hasSystemPermission(userId, "project:edit");
+    if (!canEdit) return { success: false, error: "Access Denied" };
+
+    await queries.projects.removeMember(projectId, memberId);
+
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath("/projects");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to remove member:", error);
+    return { success: false, error: "Failed to remove team member." };
+  }
+}

@@ -63,26 +63,15 @@ export async function updateTaskStatus(taskId: string, newListId: string, projec
        
        if (oldList && newList) {
          await queries.tasks.logActivity({
-           taskId, 
-           userId, 
-           actionType: "moved", 
-           oldValue: oldList.name,
-           newValue: newList.name,
+           taskId, userId, actionType: "moved", 
+           oldValue: oldList.name, newValue: newList.name,
          });
        }
     }
 
-    const projectLists = await queries.tasks.getListsByProject(projectId);
-    if (projectLists.length === 0) return { success: true };
-
-    const endListId = projectLists[projectLists.length - 1].id;
-    const projectTasks = await queries.tasks.getByListIds(projectLists.map(l => l.id));
-    const allTasksCompleted = projectTasks.length > 0 && projectTasks.every((t) => t.listId === endListId);
-
-    await queries.projects.updateArchiveStatus(projectId, allTasksCompleted);
 
     revalidatePath(`/projects/${projectId}`);
-    return { success: true, isArchived: allTasksCompleted };
+    return { success: true };
   } catch (error) {
     console.error("Failed to update task status:", error);
     return { success: false, error: "Failed to move task." };
@@ -248,14 +237,6 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
     );
 
     await queries.tasks.logBulkActivities(newActivities);
-
-    if (projectLists.length > 0) {
-      const endListId = projectLists[projectLists.length - 1].id;
-      const allProjectTasks = await queries.tasks.getByListIds(projectLists.map(l => l.id));
-      const allTasksCompleted = allProjectTasks.length > 0 && allProjectTasks.every((t) => t.listId === endListId);
-      
-      await queries.projects.updateArchiveStatus(projectId, allTasksCompleted);
-    }
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
