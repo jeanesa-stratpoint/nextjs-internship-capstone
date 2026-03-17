@@ -157,11 +157,13 @@ function TaskDetailContent({
     setError("");
 
     try {
+      const plainTextDescription = contentHtml.replace(/<[^>]*>?/gm, "").trim();
       await updateTask.mutateAsync({
         taskId,
         data: {
           title,
           contentHtml,
+          description: plainTextDescription || null,
           attachmentUrl,
           priority,
           dueDate,
@@ -268,7 +270,6 @@ function TaskDetailContent({
 
           <form id="edit-task-form" onSubmit={handleSaveChanges} className="space-y-6">
             <div>
-              {/* ✨ TIPTAP EDITOR */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
                   Description/Task Details
