@@ -11,7 +11,7 @@ import {
   DragOverEvent,
   DragEndEvent,
   DragOverlay,
-  closestCorners,
+  pointerWithin,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -229,7 +229,7 @@ export default function KanbanBoard({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
