@@ -102,6 +102,8 @@ export default function TaskCard({
     new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) &&
     column.name !== "Done";
 
+  const hasMenuAccess = permissions.canEditTask || permissions.canDeleteTask;
+
   const handleDelete = async () => {
     await deleteTask.mutateAsync(task.id);
     setShowDeleteConfirm(false);
@@ -151,22 +153,22 @@ export default function TaskCard({
             <span className="truncate max-w-[150px]">{projectName}</span>
           </div>
 
-          {(permissions.canEditTask || permissions.canDeleteTask) && (
-            <div className="relative flex items-center justify-end h-6 min-w-[24px]">
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-transform duration-200 z-10 ${
-                  isMenuOpen && (permissions.canEditTask || permissions.canDeleteTask)
-                    ? "-translate-x-7"
-                    : "group-hover:-translate-x-7"
-                }`}
-                style={{ backgroundColor: colStyle.avatarBg, color: colStyle.avatarText }}
-                title={fullName}
-              >
-                {initials}
-              </div>
+          <div className="relative flex items-center justify-end h-6 min-w-[24px]">
+            <div
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-transform duration-200 z-10 ${
+                hasMenuAccess ? (isMenuOpen ? "-translate-x-7" : "group-hover:-translate-x-7") : ""
+              }`}
+              style={{ backgroundColor: colStyle.avatarBg, color: colStyle.avatarText }}
+              title={fullName}
+            >
+              {initials}
+            </div>
 
+            {hasMenuAccess && (
               <div
-                className={`...`}
+                className={`absolute right-0 top-0 transition-opacity duration-200 z-20 ${
+                  isMenuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                }`}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -187,7 +189,6 @@ export default function TaskCard({
                   <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                     {!showMoveMenu ? (
                       <>
-                        {/* ✨ SECURE MENU ITEMS */}
                         {permissions.canEditTask && (
                           <button
                             onClick={() => setShowMoveMenu(true)}
@@ -231,8 +232,8 @@ export default function TaskCard({
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div>
@@ -249,7 +250,7 @@ export default function TaskCard({
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
           <div className="flex items-center gap-2">
             <span
-              className={`px-2 py-1 text-[10px] font-bold rounded-md capitalize border ${getPriorityStyle(task.priority)}`}
+              className={`px-2 py-1 text-[10px] font-bold rounded-xl capitalize border ${getPriorityStyle(task.priority)}`}
             >
               {task.priority || "Medium"}
             </span>
@@ -268,7 +269,7 @@ export default function TaskCard({
             </span>
           ) : (
             <span className="text-[10px] font-medium text-gray-400">
-              {formatDate(task.dueDate || task.createdAt)}
+              Created: {formatDate(task.dueDate || task.createdAt)}
             </span>
           )}
         </div>
