@@ -97,10 +97,11 @@ export default function TaskCard({
     ? `${assignee.firstName || ""} ${assignee.lastName || ""}`.trim() || assignee.email
     : "Unassigned";
 
+  const endListId = lists.length > 0 ? lists[lists.length - 1].id : null;
   const isOverdue =
     task.dueDate &&
     new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) &&
-    column.name !== "Done";
+    task.listId !== endListId;
 
   const hasMenuAccess = permissions.canEditTask || permissions.canDeleteTask;
 
