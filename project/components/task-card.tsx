@@ -4,7 +4,14 @@ import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { StoreList, StoreTask } from "@/stores/board-store";
-import { Circle, MoreVertical, Trash2, ArrowRightLeft } from "lucide-react";
+import {
+  Circle,
+  MoreVertical,
+  Trash2,
+  ArrowRightLeft,
+  MessageSquare,
+  AlertCircle,
+} from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { TeamMember } from "@/types/index";
 import { useUIStore } from "@/stores/ui-store";
@@ -90,6 +97,11 @@ export default function TaskCard({
     ? `${assignee.firstName || ""} ${assignee.lastName || ""}`.trim() || assignee.email
     : "Unassigned";
 
+  const isOverdue =
+    task.dueDate &&
+    new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) &&
+    column.name !== "Done";
+
   const handleDelete = async () => {
     await deleteTask.mutateAsync(task.id);
     setShowDeleteConfirm(false);
@@ -131,7 +143,7 @@ export default function TaskCard({
         {...attributes}
         {...listeners}
         onClick={() => openTaskDetailModal(task.id)}
-        className="p-4 bg-white border border-gray-200 shadow-sm hover:shadow-md rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none"
+        className={`p-4 bg-white border ${isOverdue ? "border-red-300 shadow-sm shadow-red-100" : "border-gray-200 shadow-sm hover:shadow-md"} rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none`}
       >
         <div className="flex justify-between items-start mb-1">
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -223,17 +235,42 @@ export default function TaskCard({
           )}
         </div>
 
-        <h4 className="text-sm font-bold text-black">{task.title}</h4>
+        <div>
+          <h4 className={`text-sm font-bold ${isOverdue ? "text-red-700" : "text-black"}`}>
+            {task.title}
+          </h4>
+          {task.description && (
+            <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
+              {task.description}
+            </p>
+          )}
+        </div>
 
-        <div className="flex items-center justify-between mt-3">
-          <span
-            className={`px-2.5 py-1 text-[10px] font-bold rounded-md capitalize border ${getPriorityStyle(task.priority)}`}
-          >
-            {task.priority || "Medium"}
-          </span>
-          <span className="text-[10px] font-medium text-gray-400">
-            Created {formatDate(task.createdAt)}
-          </span>
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-2 py-1 text-[10px] font-bold rounded-md capitalize border ${getPriorityStyle(task.priority)}`}
+            >
+              {task.priority || "Medium"}
+            </span>
+            <div
+              className="flex items-center gap-1.5 text-gray-400"
+              title={`${task.commentCount || 0} comments`}
+            >
+              <MessageSquare size={12} />
+              <span className="text-[10px] font-bold">{task.commentCount || 0}</span>
+            </div>
+          </div>
+
+          {isOverdue ? (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-md">
+              <AlertCircle size={10} /> Overdue
+            </span>
+          ) : (
+            <span className="text-[10px] font-medium text-gray-400">
+              {formatDate(task.dueDate || task.createdAt)}
+            </span>
+          )}
         </div>
       </div>
     </>

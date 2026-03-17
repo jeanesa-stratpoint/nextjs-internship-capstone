@@ -5,6 +5,7 @@ export type StoreTask = Omit<DbTask, "createdAt" | "updatedAt" | "dueDate"> & {
   createdAt?: string | Date;
   updatedAt?: string | Date;
   dueDate?: string | Date | null;
+  commentCount?: number;
 };
 
 export type StoreList = Omit<DbList, "createdAt" | "updatedAt"> & {
