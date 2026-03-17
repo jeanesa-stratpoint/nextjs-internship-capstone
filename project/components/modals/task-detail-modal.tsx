@@ -12,12 +12,16 @@ import {
   Activity,
   LayoutList,
   AlertTriangle,
+  Paperclip,
+  Download,
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
 import { getTodayString } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useTaskDetails, useTaskMutations } from "@/hooks/use-tasks";
 import { DbProject, DbList, DbComment, DbActivity, DbTask, TeamMember } from "@/types";
+import { UploadDropzone } from "@/lib/uploadthing";
+import RichTextEditor from "@/components/rich-text-editor";
 
 interface FeedUser {
   id: string;
@@ -107,10 +111,11 @@ function TaskDetailContent({
   const { updateTask, deleteTask } = useTaskMutations(data.project.id);
 
   const [title, setTitle] = useState(data.task.title);
-  const [description, setDescription] = useState(data.task.description || "");
   const [priority, setPriority] = useState<"low" | "medium" | "high">(
     data.task.priority || "medium"
   );
+  const [attachmentUrl, setAttachmentUrl] = useState(data.task.attachmentUrl || "");
+  const [contentHtml, setContentHtml] = useState(data.task.contentHtml || "");
   const [dueDate, setDueDate] = useState(
     data.task.dueDate ? new Date(data.task.dueDate).toISOString().split("T")[0] : ""
   );
@@ -154,7 +159,15 @@ function TaskDetailContent({
     try {
       await updateTask.mutateAsync({
         taskId,
-        data: { title, description, priority, dueDate, assigneeId, listId: statusId },
+        data: {
+          title,
+          contentHtml,
+          attachmentUrl,
+          priority,
+          dueDate,
+          assigneeId,
+          listId: statusId,
+        },
       });
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
@@ -255,16 +268,67 @@ function TaskDetailContent({
 
           <form id="edit-task-form" onSubmit={handleSaveChanges} className="space-y-6">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                Description
-              </label>
-              <textarea
-                rows={5}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Add a more detailed description..."
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm resize-y text-black"
-              />
+              {/* ✨ TIPTAP EDITOR */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                  Description/Task Details
+                </label>
+                {canEditTask ? (
+                  <RichTextEditor
+                    value={contentHtml}
+                    onChange={setContentHtml}
+                    placeholder="Add a more detailed description..."
+                  />
+                ) : (
+                  <div
+                    className="text-sm p-4 bg-gray-50 border border-gray-200 rounded-xl [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 space-y-2 text-black"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        contentHtml || "<p class='text-gray-400 italic'>No details provided.</p>",
+                    }}
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-700 mt-2 mb-2 uppercase tracking-wide flex items-center gap-2">
+                  <Paperclip size={14} /> Attachment
+                </label>
+                {attachmentUrl ? (
+                  <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl group">
+                    <a
+                      href={attachmentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline truncate"
+                    >
+                      <Download size={16} /> View/Download Attachment
+                    </a>
+                    {canEditTask && (
+                      <button
+                        type="button"
+                        onClick={() => setAttachmentUrl("")}
+                        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                ) : canEditTask ? (
+                  <UploadDropzone
+                    endpoint="taskAttachment"
+                    onClientUploadComplete={(res) => {
+                      if (res && res[0]) setAttachmentUrl(res[0].url);
+                    }}
+                    onUploadError={(error: Error) => setError(`Upload failed: ${error.message}`)}
+                    className="ut-button:bg-black ut-button:ut-readying:bg-black/80 ut-label:text-black ut-allowed-content:text-gray-500 border-gray-300 border-dashed rounded-xl bg-gray-50 py-4 cursor-pointer"
+                  />
+                ) : (
+                  <div className="text-sm text-gray-400 italic p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    No file attached.
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-gray-100">

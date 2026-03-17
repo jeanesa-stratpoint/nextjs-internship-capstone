@@ -175,6 +175,8 @@ export const queries = {
       listId: string; 
       order: number; 
       description?: string | null; 
+      contentHtml?: string | null;    
+      attachmentUrl?: string | null;   
       priority?: "low" | "medium" | "high"; 
       dueDate?: Date | null; 
       assigneeId?: string | null; 
@@ -188,6 +190,8 @@ export const queries = {
     updateDetails: async (taskId: string, data: {
       title?: string;
       description?: string | null;
+      contentHtml?: string | null;     
+      attachmentUrl?: string | null;   
       priority?: "low" | "medium" | "high";
       dueDate?: Date | null;
       assigneeId?: string | null;

@@ -116,6 +116,8 @@ export async function updateTaskAction(
     await queries.tasks.updateDetails(taskId, {
       title: validatedData.title,
       description: validatedData.description || null,
+      contentHtml: validatedData.contentHtml || null,
+      attachmentUrl: validatedData.attachmentUrl || null,
       priority: validatedData.priority,
       dueDate: validatedData.dueDate || null,
       assigneeId: validatedData.assigneeId || null,

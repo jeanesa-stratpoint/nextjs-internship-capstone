@@ -5,6 +5,9 @@ import { X, Loader2, FolderDot, CheckCircle2, FolderKanban } from "lucide-react"
 import { getTodayString } from "@/lib/utils";
 import { useTaskDefaults, useTaskMutations } from "@/hooks/use-tasks";
 import { DbProject, TeamMember } from "@/types/index";
+import RichTextEditor from "@/components/rich-text-editor";
+import { UploadDropzone } from "@/lib/uploadthing";
+import { Paperclip } from "lucide-react";
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -43,6 +46,9 @@ export default function CreateTaskModal({
 
   const [error, setError] = useState("");
   const [successTaskName, setSuccessTaskName] = useState("");
+
+  const [contentHtml, setContentHtml] = useState("");
+  const [attachmentUrl, setAttachmentUrl] = useState("");
 
   const handleClose = () => {
     onClose();
@@ -86,6 +92,8 @@ export default function CreateTaskModal({
       await createTask.mutateAsync({
         title,
         description: description || undefined,
+        contentHtml: contentHtml || undefined,
+        attachmentUrl: attachmentUrl || undefined,
         priority,
         dueDate: dueDate || null,
         assigneeId: assigneeId || null,
@@ -220,13 +228,49 @@ export default function CreateTaskModal({
                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
                   Description
                 </label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add details..."
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm resize-none text-black"
-                />
+                {/* ✨ TIPTAP EDITOR */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
+                    Task Details
+                  </label>
+                  <RichTextEditor
+                    value={contentHtml}
+                    onChange={setContentHtml}
+                    placeholder="Add formatting, lists, and details here..."
+                  />
+                </div>
+
+                {/* ✨ UPLOADTHING DROPZONE */}
+                <div>
+                  <label className="text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide flex items-center gap-2">
+                    <Paperclip size={14} /> Attachment
+                  </label>
+                  {attachmentUrl ? (
+                    <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                      <span className="text-sm font-medium text-blue-700 truncate pr-4">
+                        File attached successfully!
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setAttachmentUrl("")}
+                        className="text-blue-500 hover:text-blue-700"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <UploadDropzone
+                      endpoint="taskAttachment"
+                      onClientUploadComplete={(res) => {
+                        if (res && res[0]) setAttachmentUrl(res[0].url);
+                      }}
+                      onUploadError={(error: Error) => {
+                        setError(`Upload failed: ${error.message}`);
+                      }}
+                      className="ut-button:bg-black ut-button:ut-readying:bg-black/80 ut-label:text-black ut-allowed-content:text-gray-500 border-gray-300 border-dashed rounded-xl bg-gray-50 py-4 cursor-pointer"
+                    />
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
