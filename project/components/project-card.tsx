@@ -43,6 +43,7 @@ export default function ProjectCard({
   ownerName,
   isOwner,
   canEdit,
+  canDelete,
 }: {
   project: DbProject;
   index: number;
@@ -52,6 +53,7 @@ export default function ProjectCard({
   ownerName: string;
   isOwner: boolean;
   canEdit: boolean;
+  canDelete: boolean;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -181,7 +183,7 @@ export default function ProjectCard({
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-20">
                   <button
                     onClick={() => {
-                      setIsMenuOpen(false); /* Trigger Edit Modal Next */
+                      setIsMenuOpen(false);
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                   >
@@ -214,15 +216,20 @@ export default function ProjectCard({
                     </button>
                   ) : null}
                   <div className="h-px bg-gray-100 my-1"></div>
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      setShowDeleteModal(true);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
-                  >
-                    <Trash2 size={14} /> Delete Project
-                  </button>
+                  {canDelete && (
+                    <>
+                      <div className="h-px bg-gray-100 my-1"></div>
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setShowDeleteModal(true);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
+                      >
+                        <Trash2 size={14} /> Delete Project
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             )}

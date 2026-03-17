@@ -13,6 +13,7 @@ export default async function ProjectsPage() {
 
   const canCreateProject = await hasSystemPermission(userId, "project:create");
   const canEditProject = await hasSystemPermission(userId, "project:edit");
+  const canDeleteProject = await hasSystemPermission(userId, "project:delete");
   const canInviteMember = await hasSystemPermission(userId, "project-invite:create");
   const canCreateTask = await hasSystemPermission(userId, "task:create");
   const canEditTask = await hasSystemPermission(userId, "task:edit");
@@ -43,6 +44,7 @@ export default async function ProjectsPage() {
             ownerName={metrics.ownerName}
             isOwner={metrics.isOwner}
             canEdit={canEditProject}
+            canDelete={canDeleteProject}
           />
         ))}
       </div>
