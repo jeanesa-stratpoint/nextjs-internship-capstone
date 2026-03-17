@@ -2,16 +2,17 @@ import { relations } from 'drizzle-orm';
 import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer, boolean, pgEnum } from 'drizzle-orm/pg-core';
 
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high']);
+export const projectStatusEnum = pgEnum('project_status', ['active', 'completed', 'on-hold']);
 
 // RBAC
-export const roles = pgTable("roles", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull().unique(), // e.g., 'Project Manager', 'Developer'
+export const roles = pgTable('roles', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull().unique(), // e.g., 'Project Manager', 'Developer'
 });
 
-export const permissions = pgTable("permissions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  action: text("action").notNull().unique(), // e.g., 'create:project', 'delete:task'
+export const permissions = pgTable('permissions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  action: text('action').notNull().unique(), // e.g., 'create:project', 'delete:task'
 });
 
 export const rolePermissions = pgTable('role_permissions', {
@@ -38,7 +39,7 @@ export const projects = pgTable('projects', {
   description: text('description'),
   ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   dueDate: timestamp('due_date'),
-  isArchived: boolean("is_archived").default(false).notNull(),
+  status: projectStatusEnum("status").default("active").notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -68,6 +69,8 @@ export const tasks = pgTable('tasks', {
   listId: uuid('list_id').notNull().references(() => lists.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description'),
+  contentHtml: text('content_html'), 
+  attachmentUrl: text('attachment_url'),
   assigneeId: text('assignee_id').references(() => users.id, { onDelete: 'set null' }),
   priority: priorityEnum('priority').default('medium'),
   dueDate: timestamp('due_date'),
