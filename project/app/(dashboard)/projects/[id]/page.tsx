@@ -80,7 +80,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       </p>
 
       <div className="flex-1 overflow-hidden ml-14">
-        <KanbanBoard projectId={project.id} permissions={boardPermissions} />
+        <KanbanBoard project={project} permissions={boardPermissions} />
       </div>
 
       <TaskDetailModal canEditTask={canEditTask} canDeleteTask={canDeleteTask} />

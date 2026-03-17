@@ -26,7 +26,7 @@ import { useBoardStore, StoreList, StoreTask } from "@/stores/board-store";
 import { useUIStore } from "@/stores/ui-store";
 import { useProjectBoard, useTaskMutations } from "@/hooks/use-tasks";
 import { useListMutations } from "@/hooks/use-lists";
-import { TeamMember } from "@/types/index";
+import { DbProject, TeamMember } from "@/types/index";
 import TaskCard from "@/components/task-card";
 import CreateTaskModal from "./modals/create-task-modal";
 import ConfirmActionModal from "./modals/confirm-action-modal";
@@ -62,12 +62,13 @@ export interface BoardPermissions {
 }
 
 export default function KanbanBoard({
-  projectId,
+  project,
   permissions,
 }: {
-  projectId: string;
+  project: DbProject;
   permissions: BoardPermissions;
 }) {
+  const projectId = project.id;
   const { data, isLoading, error } = useProjectBoard(projectId);
   const { updateTaskOrder } = useTaskMutations(projectId);
   const { createList, updateListOrder } = useListMutations(projectId);
@@ -117,6 +118,11 @@ export default function KanbanBoard({
   };
 
   useEffect(() => {
+    if (activeTask !== null || activeColumn !== null) return;
+
+    if (project.status === "completed") return;
+    if (tasks.length === 0) return;
+
     const endListId = lists.length > 0 ? lists[lists.length - 1].id : null;
     const allTasksCompleted =
       tasks.length > 0 && endListId && tasks.every((t) => t.listId === endListId);
@@ -127,7 +133,7 @@ export default function KanbanBoard({
     } else if (!allTasksCompleted && hasPrompted.current) {
       hasPrompted.current = false;
     }
-  }, [lists, tasks, openProjectCompletionModal]);
+  }, [lists, tasks, project.status, activeTask, activeColumn, openProjectCompletionModal]);
 
   const listIds = useMemo(() => lists.map((l) => l.id), [lists]);
 
@@ -215,6 +221,11 @@ export default function KanbanBoard({
     }
   };
 
+  const handleDragCancel = () => {
+    setActiveColumn(null);
+    setActiveTask(null);
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -222,6 +233,7 @@ export default function KanbanBoard({
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
       <div className="flex h-full gap-6 overflow-x-auto pb-4 items-start">
         <SortableContext items={listIds} strategy={horizontalListSortingStrategy}>

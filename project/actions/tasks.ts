@@ -69,6 +69,18 @@ export async function updateTaskStatus(taskId: string, newListId: string, projec
        }
     }
 
+    const projectLists = await queries.tasks.getListsByProject(projectId);
+    const endListId = projectLists.length > 0 ? projectLists[projectLists.length - 1].id : null;
+    if (endListId) {
+      const allProjectTasks = await queries.tasks.getByListIds(projectLists.map(l => l.id));
+      const allTasksCompleted = allProjectTasks.length > 0 && allProjectTasks.every((t) => t.listId === endListId);
+      
+      const project = await queries.projects.getById(projectId);
+      if (project?.status === "completed" && !allTasksCompleted) {
+        await queries.projects.updateStatus(projectId, "active");
+        revalidatePath("/projects");
+      }
+    }
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
@@ -171,6 +183,19 @@ export async function updateTaskAction(
 
     await queries.tasks.logBulkActivities(newActivities);
 
+    const projectLists = await queries.tasks.getListsByProject(projectId);
+    const endListId = projectLists.length > 0 ? projectLists[projectLists.length - 1].id : null;
+    if (endListId) {
+      const allProjectTasks = await queries.tasks.getByListIds(projectLists.map(l => l.id));
+      const allTasksCompleted = allProjectTasks.length > 0 && allProjectTasks.every((t) => t.listId === endListId);
+      
+      const project = await queries.projects.getById(projectId);
+      if (project?.status === "completed" && !allTasksCompleted) {
+        await queries.projects.updateStatus(projectId, "active");
+        revalidatePath("/projects");
+      }
+    }
+
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {
@@ -237,6 +262,18 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
     );
 
     await queries.tasks.logBulkActivities(newActivities);
+
+    const endListId = projectLists.length > 0 ? projectLists[projectLists.length - 1].id : null;
+    if (endListId) {
+      const allProjectTasks = await queries.tasks.getByListIds(projectLists.map(l => l.id));
+      const allTasksCompleted = allProjectTasks.length > 0 && allProjectTasks.every((t) => t.listId === endListId);
+      
+      const project = await queries.projects.getById(projectId);
+      if (project?.status === "completed" && !allTasksCompleted) {
+        await queries.projects.updateStatus(projectId, "active");
+        revalidatePath("/projects");
+      }
+    }
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
