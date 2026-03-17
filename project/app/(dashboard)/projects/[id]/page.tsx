@@ -1,8 +1,10 @@
 import Link from "next/link";
 import KanbanBoard from "@/components/kanban-board";
 import TaskDetailModal from "@/components/modals/task-detail-modal";
+import ProjectCompletionModal from "@/components/modals/project-completion-modal";
+import ProjectHeaderActions from "@/components/project-header-actions";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Users, CalendarDays } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { queries } from "@/lib/db/queries";
 import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
@@ -18,15 +20,23 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   if (!project) notFound();
 
-  const [canCreateList, canEditList, canDeleteList, canCreateTask, canEditTask, canDeleteTask] =
-    await Promise.all([
-      hasSystemPermission(userId, "list:create"),
-      hasSystemPermission(userId, "list:edit"),
-      hasSystemPermission(userId, "list:delete"),
-      hasSystemPermission(userId, "task:create"),
-      hasSystemPermission(userId, "task:edit"),
-      hasSystemPermission(userId, "task:delete"),
-    ]);
+  const [
+    canEditProject,
+    canCreateList,
+    canEditList,
+    canDeleteList,
+    canCreateTask,
+    canEditTask,
+    canDeleteTask,
+  ] = await Promise.all([
+    hasSystemPermission(userId, "project:edit"),
+    hasSystemPermission(userId, "list:create"),
+    hasSystemPermission(userId, "list:edit"),
+    hasSystemPermission(userId, "list:delete"),
+    hasSystemPermission(userId, "task:create"),
+    hasSystemPermission(userId, "task:edit"),
+    hasSystemPermission(userId, "task:delete"),
+  ]);
 
   const boardPermissions = {
     canCreateList,
@@ -47,14 +57,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <h1 className="text-3xl font-bold">{project.name}</h1>
         </div>
 
-        <div className="flex items-center gap-4 text-gray-500">
-          <button className="hover:text-black transition-colors">
-            <Users size={24} />
-          </button>
-          <button className="hover:text-black transition-colors">
-            <CalendarDays size={24} />
-          </button>
-        </div>
+        <ProjectHeaderActions canEditProject={canEditProject} />
       </div>
 
       <p className="text-gray-600 ml-14 max-w-4xl mb-8 flex-shrink-0">
@@ -66,6 +69,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       </div>
 
       <TaskDetailModal canEditTask={canEditTask} canDeleteTask={canDeleteTask} />
+      <ProjectCompletionModal projectId={project.id} />
     </div>
   );
 }

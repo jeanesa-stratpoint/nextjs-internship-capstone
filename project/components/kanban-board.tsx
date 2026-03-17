@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   DndContext,
@@ -23,6 +23,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Plus, Circle, Loader2, MoreHorizontal } from "lucide-react";
 import { useBoardStore, StoreList, StoreTask } from "@/stores/board-store";
+import { useUIStore } from "@/stores/ui-store";
 import { useProjectBoard, useTaskMutations } from "@/hooks/use-tasks";
 import { useListMutations } from "@/hooks/use-lists";
 import { TeamMember } from "@/types/index";
@@ -84,6 +85,9 @@ export default function KanbanBoard({
   const [newListName, setNewListName] = useState("");
   const [newListColor, setNewListColor] = useState("#3B82F6");
 
+  const { openProjectCompletionModal } = useUIStore();
+  const hasPrompted = useRef(false);
+
   useEffect(() => {
     const handleClickOutside = () => setOpenMenuId(null);
     document.addEventListener("click", handleClickOutside);
@@ -111,6 +115,19 @@ export default function KanbanBoard({
       console.error(err);
     }
   };
+
+  useEffect(() => {
+    const endListId = lists.length > 0 ? lists[lists.length - 1].id : null;
+    const allTasksCompleted =
+      tasks.length > 0 && endListId && tasks.every((t) => t.listId === endListId);
+
+    if (allTasksCompleted && !hasPrompted.current) {
+      openProjectCompletionModal();
+      hasPrompted.current = true;
+    } else if (!allTasksCompleted && hasPrompted.current) {
+      hasPrompted.current = false;
+    }
+  }, [lists, tasks, openProjectCompletionModal]);
 
   const listIds = useMemo(() => lists.map((l) => l.id), [lists]);
 

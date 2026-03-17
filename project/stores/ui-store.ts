@@ -1,53 +1,3 @@
-// TODO: Task 5.3 - Set up client-side state management with Zustand
-
-/*
-TODO: Implementation Notes for Interns:
-
-UI state management store for:
-- Modal states (create project, create task, etc.)
-- Sidebar state
-- Theme preferences
-- Loading states
-- Error states
-- Notifications/toasts
-
-Install: pnpm add zustand
-
-Example structure:
-import { create } from 'zustand'
-
-interface UIState {
-  // Modal states
-  isCreateProjectModalOpen: boolean
-  isCreateTaskModalOpen: boolean
-  isTaskDetailModalOpen: boolean
-  selectedTaskId: string | null
-
-  // UI states
-  sidebarOpen: boolean
-  theme: 'light' | 'dark'
-
-  // Loading states
-  isLoading: boolean
-  loadingMessage: string
-
-  // Actions
-  openCreateProjectModal: () => void
-  closeCreateProjectModal: () => void
-  openCreateTaskModal: () => void
-  closeCreateTaskModal: () => void
-  openTaskDetailModal: (taskId: string) => void
-  closeTaskDetailModal: () => void
-  toggleSidebar: () => void
-  setTheme: (theme: 'light' | 'dark') => void
-  setLoading: (loading: boolean, message?: string) => void
-}
-
-export const useUIStore = create<UIState>((set) => ({
-  // ... implementation
-}))
-*/
-
 import { create } from 'zustand';
 
 interface UIState {
@@ -56,6 +6,7 @@ interface UIState {
   isCreateTaskModalOpen: boolean;
   isTaskDetailModalOpen: boolean;
   selectedTaskId: string | null;
+  isProjectCompletionModalOpen: boolean;
 
   // actions
   openCreateProjectModal: () => void;
@@ -69,6 +20,9 @@ interface UIState {
 
   openTaskDetailModal: (taskId: string) => void;
   closeTaskDetailModal: () => void;
+
+  openProjectCompletionModal: () => void;
+  closeProjectCompletionModal: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -77,6 +31,7 @@ export const useUIStore = create<UIState>((set) => ({
   isCreateTaskModalOpen: false,
   isTaskDetailModalOpen: false,
   selectedTaskId: null,
+  isProjectCompletionModalOpen: false,
 
   // actions
   openCreateProjectModal: () => set({ isCreateProjectModalOpen: true }),
@@ -90,4 +45,7 @@ export const useUIStore = create<UIState>((set) => ({
 
   openTaskDetailModal: (taskId) => set({ isTaskDetailModalOpen: true, selectedTaskId: taskId }),
   closeTaskDetailModal: () => set({ isTaskDetailModalOpen: false, selectedTaskId: null }),
+
+  openProjectCompletionModal: () => set({ isProjectCompletionModalOpen: true }),
+  closeProjectCompletionModal: () => set({ isProjectCompletionModalOpen: false })
 }));
