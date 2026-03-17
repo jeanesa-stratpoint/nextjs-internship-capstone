@@ -99,6 +99,7 @@ export default function KanbanBoard({
     if (data?.lists && data?.tasks) {
       setBoardData(data.lists, data.tasks);
     }
+    return () => setBoardData([], []);
   }, [data, setBoardData]);
 
   const handleCreateList = async (e: React.FormEvent) => {
@@ -118,6 +119,9 @@ export default function KanbanBoard({
   };
 
   useEffect(() => {
+    if (isLoading || !data) return;
+    if (lists.length > 0 && lists[0].projectId !== project.id) return;
+
     if (activeTask !== null || activeColumn !== null) return;
 
     if (project.status === "completed") return;
@@ -133,8 +137,16 @@ export default function KanbanBoard({
     } else if (!allTasksCompleted && hasPrompted.current) {
       hasPrompted.current = false;
     }
-  }, [lists, tasks, project.status, activeTask, activeColumn, openProjectCompletionModal]);
-
+  }, [
+    lists,
+    tasks,
+    project,
+    activeTask,
+    activeColumn,
+    openProjectCompletionModal,
+    isLoading,
+    data,
+  ]);
   const listIds = useMemo(() => lists.map((l) => l.id), [lists]);
 
   if (isLoading)
