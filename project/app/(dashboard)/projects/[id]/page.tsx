@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { queries } from "@/lib/db/queries";
 import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
+import { formatDate } from "@/lib/utils";
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -60,8 +61,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div className="flex flex-col">
             <h1 className="text-3xl font-bold">{project.name}</h1>
             {project.dueDate && (
-              <span className="text-sm font-medium text-red-500 mt-1">
-                Due: {new Date(project.dueDate).toLocaleDateString()}
+              <span className="text-sm text-gray-500 font-semibold mt-1">
+                Due on {formatDate(new Date(project.dueDate))}
               </span>
             )}
           </div>
