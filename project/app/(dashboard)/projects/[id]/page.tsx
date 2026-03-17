@@ -13,10 +13,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const resolvedParams = await params;
   const projectId = resolvedParams.id;
 
-  const project = await queries.projects.getById(projectId);
-
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
+
+  const project = await queries.projects.getById(projectId);
+  const team = await queries.projects.getMembers(projectId);
+
+  const canDeleteProject = await hasSystemPermission(userId, "project:delete");
 
   if (!project) notFound();
 
@@ -54,10 +57,22 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <Link href="/projects" className="p-2 hover:bg-gray-200 rounded-full transition-colors">
             <ArrowLeft size={24} className="text-black" />
           </Link>
-          <h1 className="text-3xl font-bold">{project.name}</h1>
+          <div className="flex flex-col">
+            <h1 className="text-3xl font-bold">{project.name}</h1>
+            {project.dueDate && (
+              <span className="text-sm font-medium text-red-500 mt-1">
+                Due: {new Date(project.dueDate).toLocaleDateString()}
+              </span>
+            )}
+          </div>
         </div>
 
-        <ProjectHeaderActions canEditProject={canEditProject} />
+        <ProjectHeaderActions
+          project={project}
+          team={team}
+          canEditProject={canEditProject}
+          canDeleteProject={canDeleteProject}
+        />
       </div>
 
       <p className="text-gray-600 ml-14 max-w-4xl mb-8 flex-shrink-0">

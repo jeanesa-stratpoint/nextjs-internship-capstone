@@ -12,13 +12,42 @@ export default async function ProjectsPage() {
   if (!userId) redirect("/sign-in");
 
   const canCreateProject = await hasSystemPermission(userId, "project:create");
+  const canEditProject = await hasSystemPermission(userId, "project:edit");
   const canInviteMember = await hasSystemPermission(userId, "project-invite:create");
   const canCreateTask = await hasSystemPermission(userId, "task:create");
   const canEditTask = await hasSystemPermission(userId, "task:edit");
   const canDeleteTask = await hasSystemPermission(userId, "task:delete");
   const projectsWithMetrics = await queries.projects.getProjectsWithMetrics(userId);
   const currentDate = formatHeaderDate();
-  const activeProjects = projectsWithMetrics;
+  const activeProjects = projectsWithMetrics.filter((p) => p.project.status === "active");
+  const onHoldProjects = projectsWithMetrics.filter((p) => p.project.status === "on-hold");
+  const completedProjects = projectsWithMetrics.filter((p) => p.project.status === "completed");
+
+  const renderProjectGrid = (projects: typeof projectsWithMetrics, emptyText: string) => {
+    if (projects.length === 0)
+      return (
+        <div className="border-2 border-dashed border-gray-200 rounded-[20px] p-8 text-center bg-gray-50/50">
+          <p className="text-gray-400 text-sm font-medium">{emptyText}</p>
+        </div>
+      );
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {projects.map(({ project, metrics }, index) => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            index={index}
+            memberCount={metrics.memberCount}
+            taskCount={metrics.taskCount}
+            completedTaskCount={metrics.completedTaskCount}
+            ownerName={metrics.ownerName}
+            isOwner={metrics.isOwner}
+            canEdit={canEditProject}
+          />
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-8 text-black h-full flex flex-col">
@@ -58,41 +87,33 @@ export default async function ProjectsPage() {
         />
       </div>
 
-      {/* ACTIVE PROJECTS GRID */}
+      {/* ACTIVE PROJECTS */}
       <div className="pt-2">
-        <h2 className="text-lg font-bold mb-4">Active Projects ({activeProjects.length})</h2>
-
-        {activeProjects.length === 0 ? (
-          <div className="border-2 border-dashed border-gray-200 rounded-[20px] p-12 text-center flex flex-col items-center justify-center">
-            <p className="text-gray-500 font-medium mb-4">
-              No projects yet. Create one to get started!
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {activeProjects.map(({ project, metrics }, index) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                index={index}
-                isActive={true}
-                memberCount={metrics.memberCount}
-                taskCount={metrics.taskCount}
-                completedTaskCount={metrics.completedTaskCount}
-                ownerName={metrics.ownerName}
-                isOwner={metrics.isOwner}
-              />
-            ))}
-          </div>
-        )}
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-sky-200"></div> Active Projects (
+          {activeProjects.length})
+        </h2>
+        {renderProjectGrid(activeProjects, "No active projects. Create one to get started!")}
       </div>
 
-      {/* ARCHIVE GRID */}
-      <div className="pt-6 pb-12">
-        <h2 className="text-lg font-bold mb-4">Archive</h2>
-        <div className="border-2 border-dashed border-gray-200 rounded-[20px] p-8 text-center bg-gray-50/50">
-          <p className="text-gray-400 text-sm font-medium">No archived projects.</p>
+      {/* ON-HOLD PROJECTS */}
+      {onHoldProjects.length > 0 && (
+        <div className="pt-2">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> On Hold (
+            {onHoldProjects.length})
+          </h2>
+          {renderProjectGrid(onHoldProjects, "No projects on hold.")}
         </div>
+      )}
+
+      {/* COMPLETED PROJECTS */}
+      <div className="pt-2 pb-12">
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-lime-400"></div> Completed (
+          {completedProjects.length})
+        </h2>
+        {renderProjectGrid(completedProjects, "No completed projects yet.")}
       </div>
     </div>
   );
