@@ -48,7 +48,13 @@ interface TaskData {
   activities: ServerActivity[];
 }
 
-export default function TaskDetailModal() {
+export default function TaskDetailModal({
+  canEditTask = true,
+  canDeleteTask = true,
+}: {
+  canEditTask?: boolean;
+  canDeleteTask?: boolean;
+}) {
   const { isTaskDetailModalOpen, selectedTaskId, closeTaskDetailModal } = useUIStore();
   const { data, isLoading } = useTaskDetails(isTaskDetailModalOpen ? selectedTaskId : null);
 
@@ -76,6 +82,8 @@ export default function TaskDetailModal() {
             data={data as TaskData}
             taskId={selectedTaskId as string}
             onClose={closeTaskDetailModal}
+            canEditTask={canEditTask}
+            canDeleteTask={canDeleteTask}
           />
         )}
       </div>
@@ -87,10 +95,14 @@ function TaskDetailContent({
   data,
   taskId,
   onClose,
+  canEditTask,
+  canDeleteTask,
 }: {
   data: TaskData;
   taskId: string;
   onClose: () => void;
+  canEditTask: boolean;
+  canDeleteTask: boolean;
 }) {
   const { updateTask, deleteTask } = useTaskMutations(data.project.id);
 
@@ -213,13 +225,15 @@ function TaskDetailContent({
           />
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-            title="Delete Task"
-          >
-            <Trash2 size={20} />
-          </button>
+          {canDeleteTask && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+              title="Delete Task"
+            >
+              <Trash2 size={20} />
+            </button>
+          )}
           <div className="w-px h-6 bg-gray-200 mx-1"></div>
           <button
             onClick={handleClose}
@@ -319,21 +333,17 @@ function TaskDetailContent({
               </div>
             </div>
 
-            <div className="pt-6 flex justify-end">
-              <button
-                type="submit"
-                disabled={updateTask.isPending || !title.trim()}
-                className="flex items-center gap-2 bg-black text-white px-8 py-3 rounded-full text-sm font-bold hover:bg-gray-800 transition-all disabled:opacity-50"
-              >
-                {updateTask.isPending ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" /> Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </button>
-            </div>
+            {canEditTask && (
+              <div className="pt-6 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={updateTask.isPending || !title.trim()}
+                  className="flex items-center gap-2 bg-black text-white px-8 py-3 rounded-full text-sm font-bold hover:bg-gray-800 transition-all disabled:opacity-50"
+                >
+                  {updateTask.isPending ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            )}
           </form>
         </div>
 

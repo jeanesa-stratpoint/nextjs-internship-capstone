@@ -13,6 +13,9 @@ export default async function ProjectsPage() {
 
   const canCreateProject = await hasSystemPermission(userId, "project:create");
   const canInviteMember = await hasSystemPermission(userId, "project-invite:create");
+  const canCreateTask = await hasSystemPermission(userId, "task:create");
+  const canEditTask = await hasSystemPermission(userId, "task:edit");
+  const canDeleteTask = await hasSystemPermission(userId, "task:delete");
   const projectsWithMetrics = await queries.projects.getProjectsWithMetrics(userId);
   const currentDate = formatHeaderDate();
   const activeProjects = projectsWithMetrics;
@@ -48,6 +51,9 @@ export default async function ProjectsPage() {
         <QuickActions
           canCreateProject={canCreateProject}
           canInviteMember={canInviteMember}
+          canCreateTask={canCreateTask}
+          canEditTask={canEditTask}
+          canDeleteTask={canDeleteTask}
           userProjects={projectsWithMetrics.map((p) => p.project)}
         />
       </div>

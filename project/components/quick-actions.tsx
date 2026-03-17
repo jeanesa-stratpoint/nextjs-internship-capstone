@@ -11,12 +11,18 @@ import { DbProject } from "@/types";
 interface QuickActionsProps {
   canCreateProject: boolean;
   canInviteMember: boolean;
+  canCreateTask: boolean;
+  canEditTask: boolean;
+  canDeleteTask: boolean;
   userProjects: DbProject[];
 }
 
 export default function QuickActions({
   canCreateProject,
   canInviteMember,
+  canCreateTask,
+  canEditTask,
+  canDeleteTask,
   userProjects,
 }: QuickActionsProps) {
   const {
@@ -38,7 +44,7 @@ export default function QuickActions({
           onClose={closeCreateTaskModal}
           userProjects={userProjects}
         />
-        <TaskDetailModal />
+        <TaskDetailModal canEditTask={canEditTask} canDeleteTask={canDeleteTask} />
 
         {canCreateProject && (
           <button
@@ -58,12 +64,14 @@ export default function QuickActions({
           </button>
         )}
 
-        <button
-          onClick={openCreateTaskModal}
-          className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
-        >
-          <Plus size={16} className="text-gray-500" /> Create Task
-        </button>
+        {canCreateTask && (
+          <button
+            onClick={openCreateTaskModal}
+            className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
+          >
+            <Plus size={16} className="text-gray-500" /> Create Task
+          </button>
+        )}
       </div>
     </div>
   );

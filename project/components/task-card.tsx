@@ -10,6 +10,7 @@ import { TeamMember } from "@/types/index";
 import { useUIStore } from "@/stores/ui-store";
 import { useBoardStore } from "@/stores/board-store";
 import { useTaskMutations } from "@/hooks/use-tasks";
+import { BoardPermissions } from "./kanban-board";
 import ConfirmActionModal from "./modals/confirm-action-modal";
 
 interface TaskCardProps {
@@ -18,6 +19,7 @@ interface TaskCardProps {
   projectName: string;
   column: StoreList;
   projectTeam: TeamMember[];
+  permissions: BoardPermissions;
 }
 
 const getColumnStyle = (column: StoreList) => {
@@ -62,6 +64,7 @@ export default function TaskCard({
   projectName,
   column,
   projectTeam,
+  permissions,
 }: TaskCardProps) {
   const { openTaskDetailModal } = useUIStore();
   const { lists } = useBoardStore();
@@ -74,6 +77,7 @@ export default function TaskCard({
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { type: "Task", task },
+    disabled: !permissions.canEditTask,
   });
 
   const style = { transition, transform: CSS.Transform.toString(transform) };
@@ -135,79 +139,88 @@ export default function TaskCard({
             <span className="truncate max-w-[150px]">{projectName}</span>
           </div>
 
-          <div className="relative flex items-center justify-end h-6 min-w-[24px]">
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-transform duration-200 z-10 ${
-                isMenuOpen ? "-translate-x-7" : "group-hover:-translate-x-7"
-              }`}
-              style={{ backgroundColor: colStyle.avatarBg, color: colStyle.avatarText }}
-              title={fullName}
-            >
-              {initials}
-            </div>
-
-            <div
-              className={`absolute right-0 top-0 transition-opacity duration-200 z-20 ${
-                isMenuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-              }`}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-              }}
-            >
-              <button
-                onClick={() => {
-                  setIsMenuOpen(!isMenuOpen);
-                  setShowMoveMenu(false);
-                }}
-                className="p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md transition-colors"
+          {(permissions.canEditTask || permissions.canDeleteTask) && (
+            <div className="relative flex items-center justify-end h-6 min-w-[24px]">
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-transform duration-200 z-10 ${
+                  isMenuOpen && (permissions.canEditTask || permissions.canDeleteTask)
+                    ? "-translate-x-7"
+                    : "group-hover:-translate-x-7"
+                }`}
+                style={{ backgroundColor: colStyle.avatarBg, color: colStyle.avatarText }}
+                title={fullName}
               >
-                <MoreVertical size={16} />
-              </button>
+                {initials}
+              </div>
 
-              {isMenuOpen && (
-                <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-                  {!showMoveMenu ? (
-                    <>
-                      <button
-                        onClick={() => setShowMoveMenu(true)}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                      >
-                        <ArrowRightLeft size={14} /> Move to column...
-                      </button>
-                      <div className="h-px bg-gray-100 my-1"></div>
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          setShowDeleteConfirm(true);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
-                      >
-                        <Trash2 size={14} /> Delete from project
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="px-4 py-1.5 text-xs font-bold text-gray-400 uppercase">
-                        Select List
-                      </div>
-                      {lists.map((list) => (
-                        <button
-                          key={list.id}
-                          onClick={() => handleMoveToColumn(list.id)}
-                          disabled={list.id === task.listId}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:bg-gray-50 truncate"
-                        >
-                          {list.name} {list.id === task.listId && "(Current)"}
-                        </button>
-                      ))}
-                    </>
-                  )}
-                </div>
-              )}
+              <div
+                className={`...`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                }}
+              >
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(!isMenuOpen);
+                    setShowMoveMenu(false);
+                  }}
+                  className="p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md transition-colors"
+                >
+                  <MoreVertical size={16} />
+                </button>
+
+                {isMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                    {!showMoveMenu ? (
+                      <>
+                        {/* ✨ SECURE MENU ITEMS */}
+                        {permissions.canEditTask && (
+                          <button
+                            onClick={() => setShowMoveMenu(true)}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <ArrowRightLeft size={14} /> Move to column...
+                          </button>
+                        )}
+                        {permissions.canEditTask && permissions.canDeleteTask && (
+                          <div className="h-px bg-gray-100 my-1"></div>
+                        )}
+                        {permissions.canDeleteTask && (
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              setShowDeleteConfirm(true);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
+                          >
+                            <Trash2 size={14} /> Delete from project
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="px-4 py-1.5 text-xs font-bold text-gray-400 uppercase">
+                          Select List
+                        </div>
+                        {lists.map((list) => (
+                          <button
+                            key={list.id}
+                            onClick={() => handleMoveToColumn(list.id)}
+                            disabled={list.id === task.listId}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:bg-gray-50 truncate"
+                          >
+                            {list.name} {list.id === task.listId && "(Current)"}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <h4 className="text-sm font-bold text-black">{task.title}</h4>

@@ -51,7 +51,22 @@ const PRESET_COLORS = [
   "#6B7280",
 ];
 
-export default function KanbanBoard({ projectId }: { projectId: string }) {
+export interface BoardPermissions {
+  canCreateList: boolean;
+  canEditList: boolean;
+  canDeleteList: boolean;
+  canCreateTask: boolean;
+  canEditTask: boolean;
+  canDeleteTask: boolean;
+}
+
+export default function KanbanBoard({
+  projectId,
+  permissions,
+}: {
+  projectId: string;
+  permissions: BoardPermissions;
+}) {
   const { data, isLoading, error } = useProjectBoard(projectId);
   const { updateTaskOrder } = useTaskMutations(projectId);
   const { createList, updateListOrder } = useListMutations(projectId);
@@ -208,71 +223,74 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 isLast={lists[lists.length - 1]?.id === column.id}
                 isMenuOpen={openMenuId === column.id}
                 setMenuOpen={(isOpen) => setOpenMenuId(isOpen ? column.id : null)}
+                permissions={permissions}
               />
             );
           })}
         </SortableContext>
 
-        <div
-          className={`flex-shrink-0 transition-all duration-300 ease-in-out ${isAddingList ? "w-[320px]" : "w-[60px]"}`}
-        >
-          {!isAddingList ? (
-            <button
-              onClick={() => setIsAddingList(true)}
-              className="w-[60px] h-[60px] rounded-[20px] bg-[#F0F0F0]/50 border-2 border-dashed border-[#BDBDBD] flex items-center justify-start px-[18px] text-gray-500 hover:bg-[#F0F0F0] hover:text-black transition-all duration-300 hover:w-[200px] group overflow-hidden"
-            >
-              <Plus size={20} className="flex-shrink-0" />
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity font-medium whitespace-nowrap ml-3">
-                Add another list
-              </span>
-            </button>
-          ) : (
-            <form
-              onSubmit={handleCreateList}
-              className="bg-[#F0F0F0] p-4 rounded-[20px] shadow-sm border border-[#BDBDBD] flex flex-col gap-3 w-[320px]"
-            >
-              <input
-                autoFocus
-                type="text"
-                placeholder="List name..."
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black text-black"
-              />
-              <div className="flex justify-between items-center px-1 mt-1">
-                {PRESET_COLORS.map((color) => (
+        {permissions.canCreateList && (
+          <div
+            className={`flex-shrink-0 transition-all duration-300 ease-in-out ${isAddingList ? "w-[320px]" : "w-[60px]"}`}
+          >
+            {!isAddingList ? (
+              <button
+                onClick={() => setIsAddingList(true)}
+                className="w-[60px] h-[60px] rounded-[20px] bg-[#F0F0F0]/50 border-2 border-dashed border-[#BDBDBD] flex items-center justify-start px-[18px] text-gray-500 hover:bg-[#F0F0F0] hover:text-black transition-all duration-300 hover:w-[200px] group overflow-hidden"
+              >
+                <Plus size={20} className="flex-shrink-0" />
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity font-medium whitespace-nowrap ml-3">
+                  Add another list
+                </span>
+              </button>
+            ) : (
+              <form
+                onSubmit={handleCreateList}
+                className="bg-[#F0F0F0] p-4 rounded-[20px] shadow-sm border border-[#BDBDBD] flex flex-col gap-3 w-[320px]"
+              >
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="List name..."
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black text-black"
+                />
+                <div className="flex justify-between items-center px-1 mt-1">
+                  {PRESET_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setNewListColor(color)}
+                      className={`w-5 h-5 rounded-full transition-transform ${newListColor === color ? "scale-125 ring-2 ring-offset-2 ring-black" : "hover:scale-110"}`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-2">
                   <button
-                    key={color}
+                    type="submit"
+                    disabled={createList.isPending || !newListName.trim()}
+                    className="flex-1 bg-black text-white text-xs font-bold py-2.5 rounded-xl hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    {createList.isPending ? (
+                      <Loader2 size={14} className="animate-spin mx-auto" />
+                    ) : (
+                      "Save List"
+                    )}
+                  </button>
+                  <button
                     type="button"
-                    onClick={() => setNewListColor(color)}
-                    className={`w-5 h-5 rounded-full transition-transform ${newListColor === color ? "scale-125 ring-2 ring-offset-2 ring-black" : "hover:scale-110"}`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-              <div className="flex gap-2 mt-2">
-                <button
-                  type="submit"
-                  disabled={createList.isPending || !newListName.trim()}
-                  className="flex-1 bg-black text-white text-xs font-bold py-2.5 rounded-xl hover:bg-gray-800 disabled:opacity-50"
-                >
-                  {createList.isPending ? (
-                    <Loader2 size={14} className="animate-spin mx-auto" />
-                  ) : (
-                    "Save List"
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAddingList(false)}
-                  className="px-4 bg-gray-200 text-gray-600 rounded-xl hover:bg-gray-300 font-bold text-xs"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
+                    onClick={() => setIsAddingList(false)}
+                    className="px-4 bg-gray-200 text-gray-600 rounded-xl hover:bg-gray-300 font-bold text-xs"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
       </div>
 
       {typeof window !== "undefined" &&
@@ -289,6 +307,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 isOverlay
                 setMenuOpen={() => {}}
                 isMenuOpen={false}
+                permissions={permissions}
               />
             )}
             {activeTask && (
@@ -298,6 +317,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 projectName={data.project.name}
                 column={lists.find((l) => l.id === activeTask.listId)!}
                 projectTeam={data.team}
+                permissions={permissions}
               />
             )}
           </DragOverlay>,
@@ -328,6 +348,7 @@ function KanbanColumn({
   isLast = false,
   isMenuOpen,
   setMenuOpen,
+  permissions,
 }: {
   column: StoreList;
   columnTasks: StoreTask[];
@@ -340,10 +361,12 @@ function KanbanColumn({
   isLast?: boolean;
   isMenuOpen: boolean;
   setMenuOpen: (isOpen: boolean) => void;
+  permissions: BoardPermissions;
 }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: column.id,
     data: { type: "Column", column },
+    disabled: !permissions.canEditList,
   });
 
   const { lists, setLists } = useBoardStore();
@@ -439,7 +462,9 @@ function KanbanColumn({
       <div
         ref={setNodeRef}
         style={style}
-        className={`flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px] ${isOverlay ? "rotate-2 scale-105 shadow-2xl cursor-grabbing" : ""}`}
+        className={`flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px] ${
+          isOverlay ? "rotate-2 scale-105 shadow-2xl cursor-grabbing" : ""
+        }`}
       >
         {isEditing ? (
           <form
@@ -459,7 +484,9 @@ function KanbanColumn({
                   key={c}
                   type="button"
                   onClick={() => setEditColor(c)}
-                  className={`w-4 h-4 rounded-full transition-transform ${editColor === c ? "scale-125 ring-2 ring-offset-2 ring-black" : ""}`}
+                  className={`w-4 h-4 rounded-full transition-transform ${
+                    editColor === c ? "scale-125 ring-2 ring-offset-2 ring-black" : ""
+                  }`}
                   style={{ backgroundColor: c }}
                 />
               ))}
@@ -493,70 +520,82 @@ function KanbanColumn({
               <span className="text-xs font-bold text-gray-400 ml-1">{columnTasks.length}</span>
             </div>
 
-            <div
-              className="relative"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-              }}
-            >
-              <button
-                onClick={() => setMenuOpen(!isMenuOpen)}
-                className={`p-1.5 rounded-md transition-colors focus:opacity-100 ${isMenuOpen ? "opacity-100 bg-white text-black shadow-sm" : "opacity-0 text-gray-400 hover:text-black hover:bg-white group-hover:opacity-100"}`}
+            {(permissions.canEditList || permissions.canDeleteList) && (
+              <div
+                className="relative"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                }}
               >
-                <MoreHorizontal size={18} />
-              </button>
+                <button
+                  onClick={() => setMenuOpen(!isMenuOpen)}
+                  className={`p-1.5 rounded-md transition-colors focus:opacity-100 ${
+                    isMenuOpen
+                      ? "opacity-100 bg-white text-black shadow-sm"
+                      : "opacity-0 text-gray-400 hover:text-black hover:bg-white group-hover:opacity-100"
+                  }`}
+                >
+                  <MoreHorizontal size={18} />
+                </button>
 
-              {isMenuOpen && (
-                <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-                  <button
-                    onClick={() => {
-                      setIsEditing(true);
-                      setMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-medium"
-                  >
-                    Edit details
-                  </button>
-                  <div className="h-px bg-gray-100 my-1"></div>
-                  <button
-                    onClick={() => handleMoveColumn("left")}
-                    disabled={isFirst}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Move left
-                  </button>
-                  <button
-                    onClick={() => handleMoveColumn("right")}
-                    disabled={isLast}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Move right
-                  </button>
-                  <div className="h-px bg-gray-100 my-1"></div>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setShowClearTasksModal(true);
-                    }}
-                    disabled={columnTasks.length === 0}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium disabled:opacity-50"
-                  >
-                    Delete all tasks
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setShowDeleteListModal(true);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
-                  >
-                    Delete this list
-                  </button>
-                </div>
-              )}
-            </div>
+                {isMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                    {permissions.canEditList && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setIsEditing(true);
+                            setMenuOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-medium"
+                        >
+                          Edit details
+                        </button>
+                        <div className="h-px bg-gray-100 my-1"></div>
+                        <button
+                          onClick={() => handleMoveColumn("left")}
+                          disabled={isFirst}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Move left
+                        </button>
+                        <button
+                          onClick={() => handleMoveColumn("right")}
+                          disabled={isLast}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Move right
+                        </button>
+                        <div className="h-px bg-gray-100 my-1"></div>
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setShowClearTasksModal(true);
+                          }}
+                          disabled={columnTasks.length === 0}
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium disabled:opacity-50"
+                        >
+                          Delete all tasks
+                        </button>
+                      </>
+                    )}
+                    {permissions.canDeleteList && (
+                      <button
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setShowDeleteListModal(true);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
+                      >
+                        Delete this list
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -578,20 +617,23 @@ function KanbanColumn({
                   projectName={projectName}
                   column={column}
                   projectTeam={projectTeam}
+                  permissions={permissions}
                 />
               ))
             )}
           </SortableContext>
         </div>
 
-        <div className="p-3 mt-auto border-t border-gray-50/50">
-          <button
-            onClick={() => setActiveListId(column.id)}
-            className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 hover:text-black hover:bg-white rounded-xl transition-colors"
-          >
-            <Plus size={16} /> Add task
-          </button>
-        </div>
+        {permissions.canCreateTask && (
+          <div className="p-3 mt-auto border-t border-gray-50/50">
+            <button
+              onClick={() => setActiveListId(column.id)}
+              className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 hover:text-black hover:bg-white rounded-xl transition-colors"
+            >
+              <Plus size={16} /> Add task
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

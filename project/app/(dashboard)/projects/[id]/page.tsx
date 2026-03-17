@@ -1,9 +1,11 @@
 import Link from "next/link";
 import KanbanBoard from "@/components/kanban-board";
 import TaskDetailModal from "@/components/modals/task-detail-modal";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Users, CalendarDays } from "lucide-react";
 import { queries } from "@/lib/db/queries";
+import { auth } from "@clerk/nextjs/server";
+import { hasSystemPermission } from "@/lib/rbac";
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -11,7 +13,29 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const project = await queries.projects.getById(projectId);
 
+  const { userId } = await auth();
+  if (!userId) redirect("/sign-in");
+
   if (!project) notFound();
+
+  const [canCreateList, canEditList, canDeleteList, canCreateTask, canEditTask, canDeleteTask] =
+    await Promise.all([
+      hasSystemPermission(userId, "list:create"),
+      hasSystemPermission(userId, "list:edit"),
+      hasSystemPermission(userId, "list:delete"),
+      hasSystemPermission(userId, "task:create"),
+      hasSystemPermission(userId, "task:edit"),
+      hasSystemPermission(userId, "task:delete"),
+    ]);
+
+  const boardPermissions = {
+    canCreateList,
+    canEditList,
+    canDeleteList,
+    canCreateTask,
+    canEditTask,
+    canDeleteTask,
+  };
 
   return (
     <div className="h-full flex flex-col text-black overflow-hidden">
@@ -38,10 +62,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       </p>
 
       <div className="flex-1 overflow-hidden ml-14">
-        <KanbanBoard projectId={project.id} />
+        <KanbanBoard projectId={project.id} permissions={boardPermissions} />
       </div>
 
-      <TaskDetailModal />
+      <TaskDetailModal canEditTask={canEditTask} canDeleteTask={canDeleteTask} />
     </div>
   );
 }
