@@ -13,12 +13,15 @@ export const projectSchema = z.object({
   description: z.string().max(500, "Description cannot exceed 500 characters").optional(),
   // z.coerce.date() safely converts HTML date picker strings into native JavaScript Date objects
   dueDate: z.coerce.date().min(new Date(new Date().setHours(0,0,0,0)), "Project due date cannot be in the past.").optional(),
+  status: z.enum(["active", "completed", "on-hold"]).optional(),
 });
 
 // TASK VALIDATION
 export const taskSchema = z.object({
   title: z.string().min(1, "Task title is required").max(100, "Title cannot exceed 100 characters"),
   description: z.string().max(1000, "Description cannot exceed 1000 characters").optional().nullable(),
+  contentHtml: z.string().optional().nullable(),
+  attachmentUrl: z.string().url("Invalid attachment URL").optional().nullable(),
   priority: z.enum(["low", "medium", "high"], {
     message: "Please select a valid priority level (low, medium, or high)",
   }),
