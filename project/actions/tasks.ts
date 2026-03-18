@@ -30,6 +30,8 @@ export async function createTaskAction(formData: unknown, projectId: string) {
     const newTask = await queries.tasks.create({
       title: validatedData.title,
       description: validatedData.description || null,
+      contentHtml: validatedData.contentHtml || null, 
+      attachmentUrl: validatedData.attachmentUrl || null,
       priority: validatedData.priority,
       dueDate: validatedData.dueDate || null,
       listId: validatedData.listId,
@@ -182,7 +184,9 @@ export async function updateTaskAction(
 
     if (existingTask.title !== validatedData.title) newActivities.push({ taskId, userId, actionType: "updated_title" });
     if ((existingTask.description || "") !== (validatedData.description || "")) newActivities.push({ taskId, userId, actionType: "updated_description" });
-
+    if ((existingTask.attachmentUrl || "") !== (validatedData.attachmentUrl || "")) {
+      newActivities.push({ taskId, userId, actionType: "updated_attachment" });
+    }
     await queries.tasks.logBulkActivities(newActivities);
 
     const projectLists = await queries.tasks.getListsByProject(projectId);

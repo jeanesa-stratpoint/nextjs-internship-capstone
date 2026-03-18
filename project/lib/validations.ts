@@ -22,8 +22,8 @@ export const taskSchema = z.object({
   description: z.string().max(1000, "Description cannot exceed 1000 characters").optional().nullable(),
   contentHtml: z.string().optional().nullable(),
   attachmentUrl: z.preprocess(
-    (val) => (val === "" || val === null ? undefined : val), 
-    z.string().url("Invalid attachment URL").optional().nullable()
+    (val) => (val === "" ? null : val), 
+    z.string().url("Invalid attachment URL").nullable().optional()
   ),
   priority: z.enum(["low", "medium", "high"], {
     message: "Please select a valid priority level (low, medium, or high)",

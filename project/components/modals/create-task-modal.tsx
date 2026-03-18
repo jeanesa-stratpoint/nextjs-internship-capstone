@@ -6,7 +6,7 @@ import { getTodayString } from "@/lib/utils";
 import { useTaskDefaults, useTaskMutations } from "@/hooks/use-tasks";
 import { DbProject, TeamMember } from "@/types/index";
 import RichTextEditor from "@/components/rich-text-editor";
-import { UploadDropzone } from "@/lib/uploadthing";
+import { useUploadThing } from "@/lib/uploadthing";
 import { Paperclip } from "lucide-react";
 
 interface CreateTaskModalProps {
@@ -39,7 +39,6 @@ export default function CreateTaskModal({
   const { createTask } = useTaskMutations(activeProjectId || "");
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
@@ -48,14 +47,16 @@ export default function CreateTaskModal({
   const [successTaskName, setSuccessTaskName] = useState("");
 
   const [contentHtml, setContentHtml] = useState("");
-  const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { startUpload, isUploading } = useUploadThing("taskAttachment");
 
   const handleClose = () => {
     onClose();
     setTimeout(() => {
       setSelectedProjectId(initialProjectId || "");
       setTitle("");
-      setDescription("");
+      setContentHtml("");
+      setSelectedFile(null);
       setPriority("medium");
       setDueDate("");
       setAssigneeId("");
@@ -89,11 +90,29 @@ export default function CreateTaskModal({
     setError("");
 
     try {
+      let finalAttachmentUrl = undefined;
+
+      if (selectedFile) {
+        const customFileName = selectedFile.name
+          .toLowerCase()
+          .replace(/[^a-z0-9.]/g, "_")
+          .replace(/_+/g, "_");
+
+        const renamedFile = new File([selectedFile], customFileName, { type: selectedFile.type });
+
+        const res = await startUpload([renamedFile]);
+        if (!res) throw new Error("File upload failed. Please try again.");
+
+        finalAttachmentUrl = `${res[0].ufsUrl}#${encodeURIComponent(customFileName)}`;
+      }
+
+      const plainTextDescription = contentHtml.replace(/<[^>]*>?/gm, "").trim();
+
       await createTask.mutateAsync({
         title,
-        description: description || undefined,
         contentHtml: contentHtml || undefined,
-        attachmentUrl: attachmentUrl || undefined,
+        description: plainTextDescription || null,
+        attachmentUrl: finalAttachmentUrl,
         priority,
         dueDate: dueDate || null,
         assigneeId: assigneeId || null,
@@ -226,51 +245,50 @@ export default function CreateTaskModal({
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
-                  Description
+                  Description/Task Details
                 </label>
-                {/* ✨ TIPTAP EDITOR */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
-                    Task Details
-                  </label>
-                  <RichTextEditor
-                    value={contentHtml}
-                    onChange={setContentHtml}
-                    placeholder="Add formatting, lists, and details here..."
-                  />
-                </div>
+                <RichTextEditor
+                  value={contentHtml}
+                  onChange={setContentHtml}
+                  placeholder="Add formatting, lists, and details here..."
+                />
+              </div>
 
-                {/* ✨ UPLOADTHING DROPZONE */}
-                <div>
-                  <label className="text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide flex items-center gap-2">
-                    <Paperclip size={14} /> Attachment
-                  </label>
-                  {attachmentUrl ? (
-                    <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                      <span className="text-sm font-medium text-blue-700 truncate pr-4">
-                        File attached successfully!
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setAttachmentUrl("")}
-                        className="text-blue-500 hover:text-blue-700"
-                      >
-                        <X size={16} />
-                      </button>
+              <div>
+                <label className="text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide flex items-center gap-2">
+                  <Paperclip size={14} /> Attachment
+                </label>
+
+                {selectedFile ? (
+                  <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                    <span className="text-sm font-medium text-blue-700 truncate pr-4">
+                      {selectedFile.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFile(null)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full py-6 bg-gray-50 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div className="flex flex-col items-center justify-center text-gray-500">
+                      <Paperclip size={24} className="mb-2 text-gray-400" />
+                      <p className="text-sm font-medium">Click to select a file</p>
+                      <p className="text-xs mt-1">PDF or Image (Max 4MB/8MB)</p>
                     </div>
-                  ) : (
-                    <UploadDropzone
-                      endpoint="taskAttachment"
-                      onClientUploadComplete={(res) => {
-                        if (res && res[0]) setAttachmentUrl(res[0].url);
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*,application/pdf"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) setSelectedFile(e.target.files[0]);
                       }}
-                      onUploadError={(error: Error) => {
-                        setError(`Upload failed: ${error.message}`);
-                      }}
-                      className="ut-button:bg-black ut-button:ut-readying:bg-black/80 ut-label:text-black ut-allowed-content:text-gray-500 border-gray-300 border-dashed rounded-xl bg-gray-50 py-4 cursor-pointer"
                     />
-                  )}
-                </div>
+                  </label>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -281,7 +299,7 @@ export default function CreateTaskModal({
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as "low" | "medium" | "high")}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm appearance-none text-black"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm appearance-none text-black cursor-pointer"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -314,11 +332,18 @@ export default function CreateTaskModal({
                 <button
                   type="submit"
                   disabled={
-                    createTask.isPending || (isGlobalMode && !selectedProjectId) || !title.trim()
+                    createTask.isPending ||
+                    isUploading ||
+                    (isGlobalMode && !selectedProjectId) ||
+                    !title.trim()
                   }
                   className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {createTask.isPending ? (
+                  {isUploading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Uploading...
+                    </>
+                  ) : createTask.isPending ? (
                     <>
                       <Loader2 size={16} className="animate-spin" /> Saving...
                     </>

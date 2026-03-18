@@ -20,7 +20,7 @@ import { getTodayString } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useTaskDetails, useTaskMutations } from "@/hooks/use-tasks";
 import { DbProject, DbList, DbComment, DbActivity, DbTask, TeamMember } from "@/types";
-import { UploadDropzone } from "@/lib/uploadthing";
+import { useUploadThing } from "@/lib/uploadthing";
 import RichTextEditor from "@/components/rich-text-editor";
 
 interface FeedUser {
@@ -110,12 +110,27 @@ function TaskDetailContent({
 }) {
   const { updateTask, deleteTask } = useTaskMutations(data.project.id);
 
+  const getFileNameFromUrl = (url: string) => {
+    if (!url) return "Attachment";
+    if (url.includes("#")) {
+      return decodeURIComponent(url.split("#").pop() || "Attachment");
+    }
+    return decodeURIComponent(url.split("/").pop() || "Attachment");
+  };
+
   const [title, setTitle] = useState(data.task.title);
   const [priority, setPriority] = useState<"low" | "medium" | "high">(
     data.task.priority || "medium"
   );
+
   const [attachmentUrl, setAttachmentUrl] = useState(data.task.attachmentUrl || "");
-  const [contentHtml, setContentHtml] = useState(data.task.contentHtml || "");
+  const [contentHtml, setContentHtml] = useState(
+    data.task.contentHtml || data.task.description || ""
+  );
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { startUpload, isUploading } = useUploadThing("taskAttachment");
+
   const [dueDate, setDueDate] = useState(
     data.task.dueDate ? new Date(data.task.dueDate).toISOString().split("T")[0] : ""
   );
@@ -123,6 +138,7 @@ function TaskDetailContent({
   const [statusId, setStatusId] = useState(data.task.listId);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRemoveAttachmentConfirm, setShowRemoveAttachmentConfirm] = useState(false);
   const [error, setError] = useState("");
 
   const [prevDataListId, setPrevDataListId] = useState(data.task.listId);
@@ -157,20 +173,40 @@ function TaskDetailContent({
     setError("");
 
     try {
+      let finalAttachmentUrl = attachmentUrl;
+
+      if (selectedFile) {
+        const customFileName = selectedFile.name
+          .toLowerCase()
+          .replace(/[^a-z0-9.]/g, "_")
+          .replace(/_+/g, "_");
+
+        const renamedFile = new File([selectedFile], customFileName, { type: selectedFile.type });
+
+        const res = await startUpload([renamedFile]);
+        if (!res) throw new Error("File upload failed. Please try again.");
+
+        finalAttachmentUrl = `${res[0].ufsUrl}#${encodeURIComponent(customFileName)}`;
+      }
+
       const plainTextDescription = contentHtml.replace(/<[^>]*>?/gm, "").trim();
+
       await updateTask.mutateAsync({
         taskId,
         data: {
           title,
           contentHtml,
           description: plainTextDescription || null,
-          attachmentUrl,
+          attachmentUrl: finalAttachmentUrl,
           priority,
           dueDate,
           assigneeId,
           listId: statusId,
         },
       });
+
+      setSelectedFile(null);
+      setAttachmentUrl(finalAttachmentUrl);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("Failed to update task");
@@ -219,6 +255,38 @@ function TaskDetailContent({
                 ) : (
                   "Delete Task"
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRemoveAttachmentConfirm && (
+        <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+              <AlertTriangle size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-black mb-2">Remove Attachment?</h3>
+            <p className="text-gray-500 mb-6 text-sm">
+              Are you sure you want to remove this file? You will need to upload it again if you
+              change your mind.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRemoveAttachmentConfirm(false)}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setAttachmentUrl("");
+                  setShowRemoveAttachmentConfirm(false);
+                }}
+                className="flex-1 flex justify-center items-center gap-2 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors"
+              >
+                Remove File
               </button>
             </div>
           </div>
@@ -295,7 +363,21 @@ function TaskDetailContent({
                 <label className="text-xs font-bold text-gray-700 mt-2 mb-2 uppercase tracking-wide flex items-center gap-2">
                   <Paperclip size={14} /> Attachment
                 </label>
-                {attachmentUrl ? (
+
+                {selectedFile ? (
+                  <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-xl group">
+                    <span className="text-sm font-medium text-blue-700 truncate pr-4">
+                      {selectedFile.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFile(null)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : attachmentUrl ? (
                   <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl group">
                     <a
                       href={attachmentUrl}
@@ -303,27 +385,35 @@ function TaskDetailContent({
                       rel="noreferrer"
                       className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline truncate"
                     >
-                      <Download size={16} /> View/Download Attachment
+                      <Download size={16} className="flex-shrink-0" />
+                      <span className="truncate">{getFileNameFromUrl(attachmentUrl)}</span>
                     </a>
                     {canEditTask && (
                       <button
                         type="button"
-                        onClick={() => setAttachmentUrl("")}
-                        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setShowRemoveAttachmentConfirm(true)}
+                        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                       >
                         <Trash2 size={16} />
                       </button>
                     )}
                   </div>
                 ) : canEditTask ? (
-                  <UploadDropzone
-                    endpoint="taskAttachment"
-                    onClientUploadComplete={(res) => {
-                      if (res && res[0]) setAttachmentUrl(res[0].url);
-                    }}
-                    onUploadError={(error: Error) => setError(`Upload failed: ${error.message}`)}
-                    className="ut-button:bg-black ut-button:ut-readying:bg-black/80 ut-label:text-black ut-allowed-content:text-gray-500 border-gray-300 border-dashed rounded-xl bg-gray-50 py-4 cursor-pointer"
-                  />
+                  <label className="flex flex-col items-center justify-center w-full py-6 bg-gray-50 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div className="flex flex-col items-center justify-center text-gray-500">
+                      <Paperclip size={24} className="mb-2 text-gray-400" />
+                      <p className="text-sm font-medium">Click to select a file</p>
+                      <p className="text-xs mt-1">PDF or Image (Max 4MB/8MB)</p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*,application/pdf"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) setSelectedFile(e.target.files[0]);
+                      }}
+                    />
+                  </label>
                 ) : (
                   <div className="text-sm text-gray-400 italic p-3 bg-gray-50 rounded-xl border border-gray-100">
                     No file attached.
@@ -402,10 +492,14 @@ function TaskDetailContent({
               <div className="pt-6 flex justify-end">
                 <button
                   type="submit"
-                  disabled={updateTask.isPending || !title.trim()}
+                  disabled={updateTask.isPending || isUploading || !title.trim()}
                   className="flex items-center gap-2 bg-black text-white px-8 py-3 rounded-full text-sm font-bold hover:bg-gray-800 transition-all disabled:opacity-50"
                 >
-                  {updateTask.isPending ? "Saving..." : "Save Changes"}
+                  {isUploading
+                    ? "Uploading File..."
+                    : updateTask.isPending
+                      ? "Saving..."
+                      : "Save Changes"}
                 </button>
               </div>
             )}
@@ -498,6 +592,7 @@ function TaskDetailContent({
                         )}
                         {item.actionType === "updated_title" && " updated the title"}
                         {item.actionType === "updated_description" && " updated the description"}
+                        {item.actionType === "updated_attachment" && " updated the task attachment"}
                         <span className="text-xs text-gray-400 ml-2">{timeAgo}</span>
                       </div>
                     </div>
