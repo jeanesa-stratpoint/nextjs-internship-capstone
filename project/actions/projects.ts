@@ -99,7 +99,12 @@ export async function updateProjectDetailsAction(projectId: string, data: { name
     const canEdit = await hasSystemPermission(userId, "project:edit");
     if (!canEdit) return { success: false, error: "Access Denied" };
 
-    const validationResult = projectSchema.safeParse(data);
+    const validationResult = projectSchema.safeParse({
+      name: data.name,
+      description: data.description || undefined,
+      dueDate: data.dueDate || undefined, 
+    });
+
     if (!validationResult.success) return { success: false, error: validationResult.error.issues[0].message };
 
     await queries.projects.updateDetails(projectId, {

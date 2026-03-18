@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { X, Loader2, CalendarDays, AlignLeft, Type } from "lucide-react";
 import { updateProjectDetailsAction } from "@/actions/projects";
-import { getTodayString } from "@/lib/utils";
 import { useToastStore } from "@/stores/toast-store";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -60,7 +59,7 @@ export default function EditProjectModal() {
       if (!result.success) throw new Error(result.error);
 
       showToast({ message: "Project updated successfully!", type: "success", duration: 3000 });
-      closeEditProjectModal(); // ✨ Use store close action
+      closeEditProjectModal();
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("An unexpected error occurred.");
@@ -122,7 +121,6 @@ export default function EditProjectModal() {
             <input
               type="date"
               value={dueDate}
-              min={getTodayString()}
               onChange={(e) => setDueDate(e.target.value)}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-gray-600"
             />
