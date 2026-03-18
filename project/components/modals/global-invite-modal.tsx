@@ -3,10 +3,10 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { X, Loader2, Search, FolderKanban, CheckCircle2 } from "lucide-react";
-import { inviteMembersAction } from "@/actions/projects";
+import { useProjectMutations } from "@/hooks/use-projects";
 import { useUIStore } from "@/stores/ui-store";
 import { useUser } from "@clerk/nextjs";
-import { DbProject, TeamMember } from "@/types";
+import { DbProject, TeamMember } from "@/types/index";
 
 interface GlobalInviteModalProps {
   userProjects: DbProject[];
@@ -15,6 +15,7 @@ interface GlobalInviteModalProps {
 export default function GlobalInviteModal({ userProjects }: GlobalInviteModalProps) {
   const { user } = useUser();
   const { isGlobalInviteModalOpen, closeGlobalInviteModal, inviteProjectId } = useUIStore();
+  const { inviteMembers } = useProjectMutations();
 
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,15 +87,18 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
     setError("");
     setIsSubmitting(true);
 
-    const memberIds = selectedUsers.map((u) => u.id);
-    const result = await inviteMembersAction(selectedProjectId, memberIds);
+    try {
+      const memberIds = selectedUsers.map((u) => u.id);
 
-    if (result.success) {
+      await inviteMembers.mutateAsync({ projectId: selectedProjectId, memberIds });
+
       setSuccessMessage(`Successfully added ${selectedUsers.length} member(s) to the project!`);
-    } else {
-      setError(result.error || "Failed to invite members");
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+      else setError("Failed to invite members");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   if (!isGlobalInviteModalOpen) return null;

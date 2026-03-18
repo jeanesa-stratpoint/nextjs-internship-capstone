@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import { PartyPopper, Loader2 } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
-import { markProjectCompletedAction } from "@/actions/projects";
+import { useProjectMutations } from "@/hooks/use-projects";
 import { useRouter } from "next/navigation";
 
 export default function ProjectCompletionModal({ projectId }: { projectId: string }) {
   const router = useRouter();
   const { isProjectCompletionModalOpen, closeProjectCompletionModal } = useUIStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { markProjectCompleted } = useProjectMutations();
 
   useEffect(() => {
     if (isProjectCompletionModalOpen) document.body.style.overflow = "hidden";
@@ -23,12 +25,15 @@ export default function ProjectCompletionModal({ projectId }: { projectId: strin
 
   const handleComplete = async () => {
     setIsSubmitting(true);
-    const res = await markProjectCompletedAction(projectId);
-    setIsSubmitting(false);
+    try {
+      await markProjectCompleted.mutateAsync(projectId);
 
-    if (res.success) {
       closeProjectCompletionModal();
       router.push("/projects");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

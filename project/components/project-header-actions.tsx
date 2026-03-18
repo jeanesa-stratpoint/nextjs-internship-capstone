@@ -4,8 +4,8 @@ import { useState } from "react";
 import { MoreVertical, CheckCircle2, UserPlus, X, Trash2, Edit } from "lucide-react";
 import { useBoardStore } from "@/stores/board-store";
 import { useUIStore } from "@/stores/ui-store";
-import { DbProject, TeamMember } from "@/types";
-import { removeMemberAction, deleteProjectAction } from "@/actions/projects";
+import { DbProject, TeamMember } from "@/types/index";
+import { useProjectMutations } from "@/hooks/use-projects";
 import { useRouter } from "next/navigation";
 import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,6 +31,7 @@ export default function ProjectHeaderActions({
 
   const { showToast } = useToastStore();
   const queryClient = useQueryClient();
+  const { removeMember, deleteProject } = useProjectMutations();
 
   const [isTeamMenuOpen, setIsTeamMenuOpen] = useState(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
@@ -47,16 +48,20 @@ export default function ProjectHeaderActions({
     if (!memberToRemove) return;
     setIsRemoving(true);
 
-    const res = await removeMemberAction(project.id, memberToRemove.id);
-
-    if (res.success) {
+    try {
+      await removeMember.mutateAsync({
+        projectId: project.id,
+        memberId: memberToRemove.id,
+      });
       showToast({ message: "Member removed from project", type: "success" });
-    } else {
-      showToast({ message: res.error || "Failed to remove member", type: "error" });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        showToast({ message: error.message || "Failed to remove member", type: "error" });
+      }
+    } finally {
+      setIsRemoving(false);
+      setMemberToRemove(null);
     }
-
-    setIsRemoving(false);
-    setMemberToRemove(null);
   };
 
   const handleDeleteProject = () => {
@@ -76,7 +81,11 @@ export default function ProjectHeaderActions({
 
     const timerId = setTimeout(async () => {
       if (!isUndone) {
-        await deleteProjectAction(project.id);
+        try {
+          await deleteProject.mutateAsync(project.id);
+        } catch (error) {
+          console.error(error);
+        }
       }
     }, DEFAULT_TOAST_DURATION);
 

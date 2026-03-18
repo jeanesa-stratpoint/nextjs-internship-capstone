@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { X, Loader2, CalendarDays, AlignLeft, Type } from "lucide-react";
-import { updateProjectDetailsAction } from "@/actions/projects";
+import { useProjectMutations } from "@/hooks/use-projects";
 import { useToastStore } from "@/stores/toast-store";
 import { useUIStore } from "@/stores/ui-store";
 
 export default function EditProjectModal() {
   const { isEditProjectModalOpen, closeEditProjectModal, selectedEditProject } = useUIStore();
+  const { showToast } = useToastStore();
+  const { updateProjectDetails } = useProjectMutations();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -15,7 +17,6 @@ export default function EditProjectModal() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { showToast } = useToastStore();
 
   useEffect(() => {
     if (isEditProjectModalOpen && selectedEditProject) {
@@ -50,13 +51,14 @@ export default function EditProjectModal() {
     setError("");
 
     try {
-      const result = await updateProjectDetailsAction(selectedEditProject.id, {
-        name: name.trim(),
-        description: description.trim(),
-        dueDate: dueDate || null,
+      await updateProjectDetails.mutateAsync({
+        projectId: selectedEditProject.id,
+        data: {
+          name: name.trim(),
+          description: description.trim(),
+          dueDate: dueDate || null,
+        },
       });
-
-      if (!result.success) throw new Error(result.error);
 
       showToast({ message: "Project updated successfully!", type: "success", duration: 3000 });
       closeEditProjectModal();

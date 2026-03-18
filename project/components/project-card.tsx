@@ -6,11 +6,7 @@ import { useState } from "react";
 import { formatDate } from "@/lib/utils";
 import { MoreHorizontal, CheckCircle2, PauseCircle, Trash2, Edit } from "lucide-react";
 import { DbProject } from "@/types/index";
-import {
-  updateProjectStatusAction,
-  markProjectCompletedAction,
-  deleteProjectAction,
-} from "@/actions/projects";
+import { useProjectMutations } from "@/hooks/use-projects";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 import { useUIStore } from "@/stores/ui-store";
@@ -65,6 +61,7 @@ export default function ProjectCard({
   const queryClient = useQueryClient();
   const { showToast } = useToastStore();
   const { openEditProjectModal } = useUIStore();
+  const { updateProjectStatus, markProjectCompleted, deleteProject } = useProjectMutations();
 
   const colors = [
     "bg-red-100",
@@ -88,16 +85,26 @@ export default function ProjectCard({
 
   const handleStatusChange = async (status: "active" | "on-hold") => {
     setIsLoading(true);
-    await updateProjectStatusAction(project.id, status);
-    setIsLoading(false);
-    setIsMenuOpen(false);
+    try {
+      await updateProjectStatus.mutateAsync({ projectId: project.id, status });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setIsMenuOpen(false);
+    }
   };
 
   const handleComplete = async () => {
     setIsLoading(true);
-    await markProjectCompletedAction(project.id);
-    setIsLoading(false);
-    setShowCompleteModal(false);
+    try {
+      await markProjectCompleted.mutateAsync(project.id);
+      setShowCompleteModal(false);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = () => {
@@ -115,7 +122,13 @@ export default function ProjectCard({
 
     const timerId = setTimeout(async () => {
       if (!isUndone) {
-        await deleteProjectAction(project.id);
+        try {
+          await deleteProject.mutateAsync(project.id);
+        } catch (error) {
+          console.error(error);
+          queryClient.setQueryData(queryKey, previousProjects);
+          showToast({ message: "Failed to delete project", type: "error" });
+        }
       }
     }, DEFAULT_TOAST_DURATION);
 
