@@ -327,7 +327,7 @@ function TaskDetailContent({
       )}
 
       {/* HEADER */}
-      <div className="flex items-center justify-between px-8 py-5 bg-white border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 md:px-8 py-5 bg-white border-b border-gray-200 flex-shrink-0">
         <div className="flex flex-col">
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
             {data.project.name}
@@ -360,9 +360,9 @@ function TaskDetailContent({
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+      <div className="flex flex-1 overflow-y-auto md:overflow-hidden flex-col md:flex-row">
         {/* LEFT COLUMN: EDIT FORM */}
-        <div className="flex-1 md:w-3/5 p-8 overflow-y-auto border-r border-gray-200 bg-white">
+        <div className="w-full md:w-3/5 p-4 md:p-8 md:overflow-y-auto border-b md:border-b-0 md:border-r border-gray-200 bg-white shrink-0 md:shrink">
           {error && (
             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-sm">
               {error}
@@ -540,14 +540,14 @@ function TaskDetailContent({
         </div>
 
         {/* RIGHT COLUMN: ACTIVITY FEED */}
-        <div className="flex-1 md:w-2/5 flex flex-col bg-[#F8F8F8]">
+        <div className="w-full md:w-2/5 flex flex-col bg-[#F8F8F8] min-h-[500px] md:min-h-0 md:h-full">
           <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0 bg-white">
             <h3 className="font-bold text-black flex items-center gap-2">
               <Activity size={16} /> Activity & Comments
             </h3>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
             {combinedFeed.length === 0 ? (
               <p className="text-center text-sm text-gray-400 mt-10">No activity yet.</p>
             ) : (

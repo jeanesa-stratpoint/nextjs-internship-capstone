@@ -34,9 +34,9 @@ export default function QuickActions({
   } = useUIStore();
 
   return (
-    <div className="flex flex-col items-start lg:items-end gap-2">
+    <div className="flex flex-col items-start lg:items-end gap-2 w-full lg:w-auto">
       <span className="text-xs font-bold text-black mb-1">Quick Actions</span>
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
         <CreateProjectModal />
         <GlobalInviteModal userProjects={userProjects} />
         <CreateTaskModal
@@ -49,27 +49,27 @@ export default function QuickActions({
         {canCreateProject && (
           <button
             onClick={openCreateProjectModal}
-            className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
           >
-            <Plus size={16} className="text-gray-500" /> Create Project
+            <Plus size={16} className="text-gray-500 shrink-0" /> Create Project
           </button>
         )}
 
         {canInviteMember && (
           <button
             onClick={() => openGlobalInviteModal()}
-            className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
           >
-            <Plus size={16} className="text-gray-500" /> Add Team Member
+            <Plus size={16} className="text-gray-500 shrink-0" /> Add Team Member
           </button>
         )}
 
         {canCreateTask && (
           <button
             onClick={openCreateTaskModal}
-            className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
           >
-            <Plus size={16} className="text-gray-500" /> Create Task
+            <Plus size={16} className="text-gray-500 shrink-0" /> Create Task
           </button>
         )}
       </div>

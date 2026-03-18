@@ -60,8 +60,8 @@ export default async function ProjectsPage() {
           <h1 className="text-3xl font-bold">Projects</h1>
         </div>
 
-        <div className="flex items-center gap-3 w-full lg:w-auto">
-          <div className="relative flex-1 lg:w-[300px]">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+          <div className="relative w-full sm:flex-1 lg:w-[300px]">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
@@ -69,7 +69,7 @@ export default async function ProjectsPage() {
               className="w-full pl-11 pr-4 py-2.5 bg-gray-100/60 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all placeholder:text-gray-400 text-black"
             />
           </div>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-gray-100/60 border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-200 transition-colors">
+          <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100/60 border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-200 transition-colors w-full sm:w-auto">
             <Filter size={16} />
             Filter
           </button>

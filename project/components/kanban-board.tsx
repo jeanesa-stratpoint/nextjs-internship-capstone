@@ -272,7 +272,9 @@ export default function KanbanBoard({
 
         {permissions.canCreateList && (
           <div
-            className={`flex-shrink-0 transition-all duration-300 ease-in-out ${isAddingList ? "w-[320px]" : "w-[60px]"}`}
+            className={`flex-shrink-0 transition-all duration-300 ease-in-out ${
+              isAddingList ? "w-[85vw] max-w-[320px] sm:w-[320px]" : "w-[60px]"
+            }`}
           >
             {!isAddingList ? (
               <button
@@ -469,7 +471,7 @@ function KanbanColumn({
       <div
         ref={setNodeRef}
         style={style}
-        className="flex-shrink-0 w-[320px] bg-gray-100 border-2 border-dashed border-gray-300 rounded-[20px] h-[500px] opacity-50"
+        className="flex-shrink-0 w-[85vw] max-w-[320px] sm:w-[320px] bg-gray-100 border-2 border-dashed border-gray-300 rounded-[20px] h-[500px] opacity-50"
       />
     );
 
@@ -503,7 +505,7 @@ function KanbanColumn({
       <div
         ref={setNodeRef}
         style={style}
-        className={`flex-shrink-0 w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px] ${
+        className={`flex-shrink-0 w-[85vw] max-w-[320px] sm:w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px] ${
           isOverlay ? "rotate-2 scale-105 shadow-2xl cursor-grabbing" : ""
         }`}
       >

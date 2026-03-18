@@ -11,6 +11,8 @@ interface UIState {
   isProjectCompletionModalOpen: boolean;
   isEditProjectModalOpen: boolean;
   selectedEditProject: DbProject | null;
+  isSidebarCollapsed: boolean;
+  isMobileMenuOpen: boolean;
 
   // actions
   openCreateProjectModal: () => void;
@@ -30,6 +32,9 @@ interface UIState {
 
   openEditProjectModal: (project: DbProject) => void;
   closeEditProjectModal: () => void;
+
+  toggleSidebar: () => void;
+  setMobileMenuOpen: (isOpen: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -42,6 +47,8 @@ export const useUIStore = create<UIState>((set) => ({
   isProjectCompletionModalOpen: false,
   isEditProjectModalOpen: false,
   selectedEditProject: null,
+  isSidebarCollapsed: false,
+  isMobileMenuOpen: false,
 
   // actions
   openCreateProjectModal: () => set({ isCreateProjectModalOpen: true }),
@@ -66,5 +73,8 @@ export const useUIStore = create<UIState>((set) => ({
   closeProjectCompletionModal: () => set({ isProjectCompletionModalOpen: false }),
 
   openEditProjectModal: (project) => set({ isEditProjectModalOpen: true, selectedEditProject: project }),
-  closeEditProjectModal: () => set({ isEditProjectModalOpen: false, selectedEditProject: null })
+  closeEditProjectModal: () => set({ isEditProjectModalOpen: false, selectedEditProject: null }),
+
+  toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+  setMobileMenuOpen: (isOpen) => set({ isMobileMenuOpen: isOpen }),
 }));
