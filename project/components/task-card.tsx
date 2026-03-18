@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { StoreList, StoreTask } from "@/stores/board-store";
@@ -86,6 +86,27 @@ export default function TaskCard({
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: Event) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+        setShowMoveMenu(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("pointerdown", handleClickOutside, true);
+      document.addEventListener("mousedown", handleClickOutside, true);
+    }
+
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside, true);
+      document.removeEventListener("mousedown", handleClickOutside, true);
+    };
+  }, [isMenuOpen]);
+
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { type: "Task", task },
@@ -169,7 +190,6 @@ export default function TaskCard({
 
   return (
     <>
-      {/* ✨ RESTORED: The confirmation modal */}
       <ConfirmActionModal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
@@ -177,7 +197,7 @@ export default function TaskCard({
         title="Delete Task"
         description={`Are you sure you want to delete "${task.title}"? This cannot be undone.`}
         confirmText="Delete"
-        isLoading={false} // We don't need a loading state here because it closes instantly
+        isLoading={false}
       />
 
       <div
@@ -207,6 +227,7 @@ export default function TaskCard({
 
             {hasMenuAccess && (
               <div
+                ref={menuRef}
                 className={`absolute right-0 top-0 transition-opacity duration-200 z-20 ${
                   isMenuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                 }`}
