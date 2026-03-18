@@ -209,7 +209,7 @@ export default function TaskCard({
         className={`p-4 bg-white border ${isOverdue ? "border-red-300 shadow-sm shadow-red-100" : "border-gray-200 shadow-sm hover:shadow-md"} rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none`}
       >
         <div className="flex justify-between items-start mb-1">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
             <StatusIcon size={12} style={{ color: colStyle.hexColor }} />
             <span className="truncate max-w-[150px]">{projectName}</span>
           </div>
@@ -266,7 +266,7 @@ export default function TaskCard({
                           <button
                             onClick={() => {
                               setIsMenuOpen(false);
-                              setShowDeleteConfirm(true); // ✨ TRIGGER THE MODAL
+                              setShowDeleteConfirm(true);
                             }}
                             className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
                           >
@@ -331,7 +331,7 @@ export default function TaskCard({
             </span>
           ) : (
             <span className="text-[10px] font-medium text-gray-400">
-              Created: {formatDate(task.dueDate || task.createdAt)}
+              {formatDate(task.dueDate)}
             </span>
           )}
         </div>
