@@ -21,6 +21,8 @@ import { formatDistanceToNow } from "date-fns";
 import { useTaskDetails, useTaskMutations } from "@/hooks/use-tasks";
 import { DbProject, DbList, DbComment, DbActivity, DbTask, TeamMember } from "@/types";
 import { useUploadThing } from "@/lib/uploadthing";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 import RichTextEditor from "@/components/rich-text-editor";
 
 interface FeedUser {
@@ -109,6 +111,8 @@ function TaskDetailContent({
   canDeleteTask: boolean;
 }) {
   const { updateTask, deleteTask } = useTaskMutations(data.project.id);
+  const queryClient = useQueryClient();
+  const { showToast } = useToastStore();
 
   const getFileNameFromUrl = (url: string) => {
     if (!url) return "Attachment";
@@ -213,15 +217,44 @@ function TaskDetailContent({
     }
   };
 
-  const handleDeleteTask = async () => {
-    try {
-      await deleteTask.mutateAsync(taskId);
-      handleClose();
-    } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Failed to delete task");
-      setShowDeleteConfirm(false);
-    }
+  const handleDeleteTask = () => {
+    setShowDeleteConfirm(false);
+    onClose();
+
+    const queryKey = ["tasks", data.project.id];
+    const previousTasks = queryClient.getQueryData(queryKey);
+
+    queryClient.setQueryData(queryKey, (oldTasks: DbTask[] | undefined) => {
+      if (!Array.isArray(oldTasks)) return oldTasks;
+      return oldTasks.filter((t: DbTask) => t.id !== taskId);
+    });
+
+    let isUndone = false;
+
+    const timerId = setTimeout(() => {
+      if (!isUndone) {
+        deleteTask.mutate(taskId, {
+          onError: () => {
+            queryClient.setQueryData(queryKey, previousTasks);
+            showToast({ message: "Failed to delete task", type: "error" });
+          },
+        });
+      }
+    }, DEFAULT_TOAST_DURATION);
+
+    showToast({
+      message: "Task moved to trash",
+      description: "Will be permanently deleted in 5 seconds.",
+      action: {
+        label: "Undo",
+        onClick: () => {
+          isUndone = true;
+          clearTimeout(timerId);
+          queryClient.setQueryData(queryKey, previousTasks);
+          showToast({ message: "Task restored!", type: "success" });
+        },
+      },
+    });
   };
 
   return (

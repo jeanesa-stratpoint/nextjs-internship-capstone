@@ -11,6 +11,8 @@ import {
   markProjectCompletedAction,
   deleteProjectAction,
 } from "@/actions/projects";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 
 const StatusBadge = ({ status }: { status: string }) => {
   if (status === "completed") {
@@ -59,6 +61,8 @@ export default function ProjectCard({
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const { showToast } = useToastStore();
 
   const colors = [
     "bg-red-100",
@@ -94,11 +98,38 @@ export default function ProjectCard({
     setShowCompleteModal(false);
   };
 
-  const handleDelete = async () => {
-    setIsLoading(true);
-    await deleteProjectAction(project.id);
-    setIsLoading(false);
+  const handleDelete = () => {
     setShowDeleteModal(false);
+
+    const queryKey = ["projects"];
+    const previousProjects = queryClient.getQueryData(queryKey);
+
+    queryClient.setQueryData(queryKey, (oldData: { project: DbProject }[] | undefined) => {
+      if (!Array.isArray(oldData)) return oldData;
+      return oldData.filter((p) => p.project.id !== project.id);
+    });
+
+    let isUndone = false;
+
+    const timerId = setTimeout(async () => {
+      if (!isUndone) {
+        await deleteProjectAction(project.id);
+      }
+    }, DEFAULT_TOAST_DURATION);
+
+    showToast({
+      message: "Project deleted",
+      description: "All tasks and lists will be permanently erased in 5 seconds.",
+      action: {
+        label: "Undo",
+        onClick: () => {
+          isUndone = true;
+          clearTimeout(timerId);
+          queryClient.setQueryData(queryKey, previousProjects);
+          showToast({ message: "Project restored!", type: "success" });
+        },
+      },
+    });
   };
 
   return (

@@ -9,6 +9,8 @@ import Image from "next/image";
 import { removeMemberAction, deleteProjectAction } from "@/actions/projects";
 import ConfirmActionModal from "./modals/confirm-action-modal";
 import { useRouter } from "next/navigation";
+import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface HeaderProps {
   project: DbProject;
@@ -27,6 +29,9 @@ export default function ProjectHeaderActions({
   const { lists, tasks } = useBoardStore();
   const { openProjectCompletionModal, openGlobalInviteModal } = useUIStore();
 
+  const { showToast } = useToastStore();
+  const queryClient = useQueryClient();
+
   const [isTeamMenuOpen, setIsTeamMenuOpen] = useState(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -39,9 +44,42 @@ export default function ProjectHeaderActions({
     await removeMemberAction(project.id, memberId);
   };
 
-  const handleDeleteProject = async () => {
-    await deleteProjectAction(project.id);
+  const handleDeleteProject = () => {
+    setShowDeleteModal(false);
+
+    const queryKey = ["projects"];
+    const previousProjects = queryClient.getQueryData(queryKey);
+
+    queryClient.setQueryData(queryKey, (oldData: { project: DbProject }[] | undefined) => {
+      if (!Array.isArray(oldData)) return oldData;
+      return oldData.filter((p) => p.project.id !== project.id);
+    });
+
     router.push("/projects");
+
+    let isUndone = false;
+
+    const timerId = setTimeout(async () => {
+      if (!isUndone) {
+        await deleteProjectAction(project.id);
+      }
+    }, DEFAULT_TOAST_DURATION);
+
+    showToast({
+      message: "Project moved to trash",
+      description: "Will be permanently deleted in 5 seconds.",
+      action: {
+        label: "Undo",
+        onClick: () => {
+          isUndone = true;
+          clearTimeout(timerId);
+          queryClient.setQueryData(queryKey, previousProjects);
+
+          router.push(`/projects/${project.id}`);
+          showToast({ message: "Project restored!", type: "success" });
+        },
+      },
+    });
   };
 
   return (
@@ -52,6 +90,7 @@ export default function ProjectHeaderActions({
         onConfirm={handleDeleteProject}
         title="Delete Project?"
         description="Are you sure you want to permanently delete this project? This cannot be undone."
+        isLoading={false}
       />
 
       <div className="flex items-center gap-4">

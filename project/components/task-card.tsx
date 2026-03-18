@@ -19,6 +19,8 @@ import { useBoardStore } from "@/stores/board-store";
 import { useTaskMutations } from "@/hooks/use-tasks";
 import { BoardPermissions } from "./kanban-board";
 import ConfirmActionModal from "./modals/confirm-action-modal";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 
 interface TaskCardProps {
   task: StoreTask;
@@ -77,6 +79,9 @@ export default function TaskCard({
   const { lists } = useBoardStore();
   const { deleteTask, moveTaskStatus } = useTaskMutations(projectId);
 
+  const queryClient = useQueryClient();
+  const { showToast } = useToastStore();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -105,9 +110,43 @@ export default function TaskCard({
 
   const hasMenuAccess = permissions.canEditTask || permissions.canDeleteTask;
 
-  const handleDelete = async () => {
-    await deleteTask.mutateAsync(task.id);
+  const handleDelete = () => {
     setShowDeleteConfirm(false);
+
+    const queryKey = ["tasks", projectId];
+    const previousTasks = queryClient.getQueryData(queryKey);
+
+    queryClient.setQueryData(queryKey, (oldTasks: StoreTask[] | undefined) => {
+      if (!Array.isArray(oldTasks)) return oldTasks;
+      return oldTasks.filter((t) => t.id !== task.id);
+    });
+
+    let isUndone = false;
+
+    const timerId = setTimeout(() => {
+      if (!isUndone) {
+        deleteTask.mutate(task.id, {
+          onError: () => {
+            queryClient.setQueryData(queryKey, previousTasks);
+            showToast({ message: "Failed to delete task", type: "error" });
+          },
+        });
+      }
+    }, DEFAULT_TOAST_DURATION);
+
+    showToast({
+      message: "Task moved to trash",
+      description: "Will be permanently deleted in 5 seconds.",
+      action: {
+        label: "Undo",
+        onClick: () => {
+          isUndone = true;
+          clearTimeout(timerId);
+          queryClient.setQueryData(queryKey, previousTasks);
+          showToast({ message: "Task restored!", type: "success" });
+        },
+      },
+    });
   };
 
   const handleMoveToColumn = async (newListId: string) => {
@@ -130,6 +169,7 @@ export default function TaskCard({
 
   return (
     <>
+      {/* ✨ RESTORED: The confirmation modal */}
       <ConfirmActionModal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
@@ -137,7 +177,7 @@ export default function TaskCard({
         title="Delete Task"
         description={`Are you sure you want to delete "${task.title}"? This cannot be undone.`}
         confirmText="Delete"
-        isLoading={deleteTask.isPending}
+        isLoading={false} // We don't need a loading state here because it closes instantly
       />
 
       <div
@@ -205,7 +245,7 @@ export default function TaskCard({
                           <button
                             onClick={() => {
                               setIsMenuOpen(false);
-                              setShowDeleteConfirm(true);
+                              setShowDeleteConfirm(true); // ✨ TRIGGER THE MODAL
                             }}
                             className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
                           >
