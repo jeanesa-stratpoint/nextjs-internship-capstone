@@ -3,6 +3,7 @@ import KanbanBoard from "@/components/kanban-board";
 import TaskDetailModal from "@/components/modals/task-detail-modal";
 import ProjectCompletionModal from "@/components/modals/project-completion-modal";
 import ProjectHeaderActions from "@/components/project-header-actions";
+import GlobalInviteModal from "@/components/modals/global-invite-modal";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { queries } from "@/lib/db/queries";
@@ -19,6 +20,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const project = await queries.projects.getById(projectId);
   const team = await queries.projects.getMembers(projectId);
+
+  const userProjectsData = await queries.projects.getAllForUser(userId);
+  const userProjects = userProjectsData.map((p) => p.project);
 
   const canDeleteProject = await hasSystemPermission(userId, "project:delete");
 
@@ -86,6 +90,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
       <TaskDetailModal canEditTask={canEditTask} canDeleteTask={canDeleteTask} />
       <ProjectCompletionModal projectId={project.id} />
+      <GlobalInviteModal userProjects={userProjects} />
     </div>
   );
 }

@@ -211,6 +211,11 @@ export async function removeMemberAction(projectId: string, memberId: string) {
     const canEdit = await hasSystemPermission(userId, "project:edit");
     if (!canEdit) return { success: false, error: "Access Denied" };
 
+    const project = await queries.projects.getById(projectId);
+    if (project?.ownerId === memberId) {
+      return { success: false, error: "Cannot remove the project owner." };
+    }
+    
     await queries.projects.removeMember(projectId, memberId);
 
     revalidatePath(`/projects/${projectId}`);

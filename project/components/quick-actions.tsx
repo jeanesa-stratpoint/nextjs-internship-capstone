@@ -57,7 +57,7 @@ export default function QuickActions({
 
         {canInviteMember && (
           <button
-            onClick={openGlobalInviteModal}
+            onClick={() => openGlobalInviteModal()}
             className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
           >
             <Plus size={16} className="text-gray-500" /> Add Team Member

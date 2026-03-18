@@ -4,6 +4,7 @@ import { DbProject } from '@/types';
 interface UIState {
   isCreateProjectModalOpen: boolean;
   isGlobalInviteModalOpen: boolean;
+  inviteProjectId: string | null;
   isCreateTaskModalOpen: boolean;
   isTaskDetailModalOpen: boolean;
   selectedTaskId: string | null;
@@ -15,7 +16,7 @@ interface UIState {
   openCreateProjectModal: () => void;
   closeCreateProjectModal: () => void;
   
-  openGlobalInviteModal: () => void;
+  openGlobalInviteModal: (projectId?: string) => void;
   closeGlobalInviteModal: () => void;
   
   openCreateTaskModal: () => void;
@@ -34,6 +35,7 @@ interface UIState {
 export const useUIStore = create<UIState>((set) => ({
   isCreateProjectModalOpen: false,
   isGlobalInviteModalOpen: false,
+  inviteProjectId: null,
   isCreateTaskModalOpen: false,
   isTaskDetailModalOpen: false,
   selectedTaskId: null,
@@ -45,8 +47,14 @@ export const useUIStore = create<UIState>((set) => ({
   openCreateProjectModal: () => set({ isCreateProjectModalOpen: true }),
   closeCreateProjectModal: () => set({ isCreateProjectModalOpen: false }),
 
-  openGlobalInviteModal: () => set({ isGlobalInviteModalOpen: true }),
-  closeGlobalInviteModal: () => set({ isGlobalInviteModalOpen: false }),
+  openGlobalInviteModal: (projectId?: string) => set({ 
+    isGlobalInviteModalOpen: true, 
+    inviteProjectId: typeof projectId === "string" ? projectId : null 
+  }),
+  closeGlobalInviteModal: () => set({ 
+    isGlobalInviteModalOpen: false, 
+    inviteProjectId: null 
+  }),
 
   openCreateTaskModal: () => set({ isCreateTaskModalOpen: true }),
   closeCreateTaskModal: () => set({ isCreateTaskModalOpen: false }),

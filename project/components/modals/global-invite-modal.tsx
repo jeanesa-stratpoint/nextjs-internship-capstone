@@ -14,7 +14,7 @@ interface GlobalInviteModalProps {
 
 export default function GlobalInviteModal({ userProjects }: GlobalInviteModalProps) {
   const { user } = useUser();
-  const { isGlobalInviteModalOpen, closeGlobalInviteModal } = useUIStore();
+  const { isGlobalInviteModalOpen, closeGlobalInviteModal, inviteProjectId } = useUIStore();
 
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,12 +38,22 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
   };
 
   useEffect(() => {
-    if (isGlobalInviteModalOpen) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "unset";
+    if (isGlobalInviteModalOpen) {
+      document.body.style.overflow = "hidden";
+
+      if (inviteProjectId && typeof inviteProjectId === "string") {
+        setSelectedProjectId(inviteProjectId);
+      } else {
+        setSelectedProjectId("");
+      }
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isGlobalInviteModalOpen]);
+  }, [isGlobalInviteModalOpen, inviteProjectId]);
 
   useEffect(() => {
     if (searchQuery.length < 2) {

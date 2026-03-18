@@ -36,12 +36,27 @@ export default function ProjectHeaderActions({
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
+
   const endListId = lists.length > 0 ? lists[lists.length - 1].id : null;
   const allTasksCompleted =
     tasks.length > 0 && endListId && tasks.every((t) => t.listId === endListId);
 
-  const handleRemoveMember = async (memberId: string) => {
-    await removeMemberAction(project.id, memberId);
+  const handleConfirmRemoveMember = async () => {
+    if (!memberToRemove) return;
+    setIsRemoving(true);
+
+    const res = await removeMemberAction(project.id, memberToRemove.id);
+
+    if (res.success) {
+      showToast({ message: "Member removed from project", type: "success" });
+    } else {
+      showToast({ message: res.error || "Failed to remove member", type: "error" });
+    }
+
+    setIsRemoving(false);
+    setMemberToRemove(null);
   };
 
   const handleDeleteProject = () => {
@@ -92,6 +107,15 @@ export default function ProjectHeaderActions({
         description="Are you sure you want to permanently delete this project? This cannot be undone."
         isLoading={false}
       />
+      <ConfirmActionModal
+        isOpen={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+        onConfirm={handleConfirmRemoveMember}
+        title="Remove Team Member?"
+        description={`Are you sure you want to remove ${memberToRemove?.firstName || "this user"} from the project? They will lose access to all tasks and lists.`}
+        confirmText="Remove Member"
+        isLoading={isRemoving}
+      />
 
       <div className="flex items-center gap-4">
         {allTasksCompleted && canEditProject && project.status !== "completed" && (
@@ -113,7 +137,7 @@ export default function ProjectHeaderActions({
               {team.slice(0, 3).map((u) => (
                 <div
                   key={u.id}
-                  className="w-8 h-8 rounded-full border-2 border-[#F8F8F8] bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold z-10 overflow-hidden"
+                  className="w-8 h-8 rounded-full border-2 border-[#F8F8F8] bg-gray-300 text-gray-900 flex items-center justify-center text-[10px] font-bold z-10 overflow-hidden"
                 >
                   {u.imageUrl ? (
                     <Image
@@ -144,36 +168,48 @@ export default function ProjectHeaderActions({
                   <button
                     onClick={() => {
                       setIsTeamMenuOpen(false);
-                      openGlobalInviteModal();
+                      openGlobalInviteModal(project.id);
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-black hover:bg-gray-50 rounded-lg mb-2"
                   >
                     <UserPlus size={16} className="text-gray-500" /> Add Member
                   </button>
                 )}
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">
+                <div className="text-xs font-bold text-gray-400 uppercase px-3 mb-2">
                   Project Team
                 </div>
                 <div className="max-h-48 overflow-y-auto space-y-1">
-                  {team.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-lg group"
-                    >
-                      <span className="text-sm text-gray-700 truncate pr-2">
-                        {user.firstName || user.email.split("@")[0]}
-                      </span>
-                      {canEditProject && (
-                        <button
-                          onClick={() => handleRemoveMember(user.id)}
-                          className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Remove"
-                        >
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  {team.map((user) => {
+                    const isOwner = user.id === project.ownerId;
+                    return (
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-lg group"
+                      >
+                        <div className="flex flex-col overflow-hidden pr-2">
+                          <span className="text-sm font-semibold text-gray-800 truncate">
+                            {`${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+                              user.email.split("@")[0]}
+                          </span>
+                          {isOwner && (
+                            <span className="text-[10px] text-gray-400 font-bold uppercase">
+                              Owner
+                            </span>
+                          )}
+                        </div>
+
+                        {canEditProject && !isOwner && (
+                          <button
+                            onClick={() => setMemberToRemove(user)}
+                            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Remove"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </>
