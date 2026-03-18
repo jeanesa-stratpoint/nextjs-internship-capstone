@@ -13,6 +13,7 @@ import {
 } from "@/actions/projects";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
+import { useUIStore } from "@/stores/ui-store";
 
 const StatusBadge = ({ status }: { status: string }) => {
   if (status === "completed") {
@@ -63,6 +64,7 @@ export default function ProjectCard({
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
   const { showToast } = useToastStore();
+  const { openEditProjectModal } = useUIStore();
 
   const colors = [
     "bg-red-100",
@@ -212,14 +214,17 @@ export default function ProjectCard({
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setIsMenuOpen(false)}></div>
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-20">
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                  >
-                    <Edit size={14} /> Edit Details
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        openEditProjectModal(project);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <Edit size={14} /> Edit Details
+                    </button>
+                  )}
                   {project.status !== "completed" && (
                     <button
                       onClick={() => {

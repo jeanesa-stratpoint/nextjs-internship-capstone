@@ -5,12 +5,12 @@ import { MoreVertical, CheckCircle2, UserPlus, X, Trash2, Edit } from "lucide-re
 import { useBoardStore } from "@/stores/board-store";
 import { useUIStore } from "@/stores/ui-store";
 import { DbProject, TeamMember } from "@/types";
-import Image from "next/image";
 import { removeMemberAction, deleteProjectAction } from "@/actions/projects";
-import ConfirmActionModal from "./modals/confirm-action-modal";
 import { useRouter } from "next/navigation";
 import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 import { useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
+import ConfirmActionModal from "./modals/confirm-action-modal";
 
 interface HeaderProps {
   project: DbProject;
@@ -27,7 +27,7 @@ export default function ProjectHeaderActions({
 }: HeaderProps) {
   const router = useRouter();
   const { lists, tasks } = useBoardStore();
-  const { openProjectCompletionModal, openGlobalInviteModal } = useUIStore();
+  const { openProjectCompletionModal, openGlobalInviteModal, openEditProjectModal } = useUIStore();
 
   const { showToast } = useToastStore();
   const queryClient = useQueryClient();
@@ -200,7 +200,8 @@ export default function ProjectHeaderActions({
                   {canEditProject && (
                     <button
                       onClick={() => {
-                        setIsSettingsMenuOpen(false); /* Trigger Edit Modal */
+                        setIsSettingsMenuOpen(false);
+                        openEditProjectModal(project);
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                     >

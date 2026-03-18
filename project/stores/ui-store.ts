@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { DbProject } from '@/types';
 
 interface UIState {
   isCreateProjectModalOpen: boolean;
@@ -7,6 +8,8 @@ interface UIState {
   isTaskDetailModalOpen: boolean;
   selectedTaskId: string | null;
   isProjectCompletionModalOpen: boolean;
+  isEditProjectModalOpen: boolean;
+  selectedEditProject: DbProject | null;
 
   // actions
   openCreateProjectModal: () => void;
@@ -23,6 +26,9 @@ interface UIState {
 
   openProjectCompletionModal: () => void;
   closeProjectCompletionModal: () => void;
+
+  openEditProjectModal: (project: DbProject) => void;
+  closeEditProjectModal: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -32,6 +38,8 @@ export const useUIStore = create<UIState>((set) => ({
   isTaskDetailModalOpen: false,
   selectedTaskId: null,
   isProjectCompletionModalOpen: false,
+  isEditProjectModalOpen: false,
+  selectedEditProject: null,
 
   // actions
   openCreateProjectModal: () => set({ isCreateProjectModalOpen: true }),
@@ -47,5 +55,8 @@ export const useUIStore = create<UIState>((set) => ({
   closeTaskDetailModal: () => set({ isTaskDetailModalOpen: false, selectedTaskId: null }),
 
   openProjectCompletionModal: () => set({ isProjectCompletionModalOpen: true }),
-  closeProjectCompletionModal: () => set({ isProjectCompletionModalOpen: false })
+  closeProjectCompletionModal: () => set({ isProjectCompletionModalOpen: false }),
+
+  openEditProjectModal: (project) => set({ isEditProjectModalOpen: true, selectedEditProject: project }),
+  closeEditProjectModal: () => set({ isEditProjectModalOpen: false, selectedEditProject: null })
 }));
