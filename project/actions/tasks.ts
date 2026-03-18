@@ -6,6 +6,9 @@ import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
 import { queries } from "@/lib/db/queries/index";
 import { TaskPayload } from "@/types/index";
+import { UTApi } from "uploadthing/server";
+
+const utapi = new UTApi();
 
 export async function createTaskAction(formData: unknown, projectId: string) {
   try {
@@ -125,7 +128,11 @@ export async function updateTaskAction(
       assigneeId: validatedData.assigneeId || null,
       listId: validatedData.listId,
     });
-
+    
+    if (existingTask.attachmentUrl && existingTask.attachmentUrl !== validatedData.attachmentUrl) {
+      await deleteFilesFromUploadThing([existingTask.attachmentUrl]);
+    }
+    
     const newActivities: { taskId: string; userId: string; actionType: string; oldValue?: string | null; newValue?: string | null }[] = [];
 
     if (existingTask.priority !== validatedData.priority) {
@@ -217,7 +224,12 @@ export async function deleteTaskAction(taskId: string, projectId: string) {
     const canDelete = await hasSystemPermission(userId, "task:delete"); 
     if (!canDelete) return { success: false, error: "Access Denied: You do not have permission to delete tasks." };
 
+    const existingTask = await queries.tasks.getById(taskId);
     await queries.tasks.delete(taskId);
+
+    if (existingTask?.attachmentUrl) {
+      await deleteFilesFromUploadThing([existingTask.attachmentUrl]);
+    }
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
@@ -286,5 +298,25 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
   } catch (error) {
     console.error("Failed to reorder tasks:", error);
     return { success: false, error: "Failed to reorder tasks." };
+  }
+}
+
+async function deleteFilesFromUploadThing(urls: (string | null | undefined)[]) {
+  const keys = urls
+    .filter((url): url is string => !!url)
+    .map((url) => {
+      const withoutHash = url.split("#")[0]; 
+      const parts = withoutHash.split("/");
+      return parts[parts.length - 1]; 
+    })
+    .filter((key) => !!key);
+
+  if (keys.length > 0) {
+    try {
+      await utapi.deleteFiles(keys);
+      console.log(`Successfully deleted ${keys.length} files from UploadThing`);
+    } catch (error) {
+      console.error("Failed to delete files from UploadThing:", error);
+    }
   }
 }

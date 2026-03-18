@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { hasSystemPermission } from "@/lib/rbac";
 import { projectSchema } from "@/lib/validations";
 import { queries } from "@/lib/db/queries";
+import { UTApi } from "uploadthing/server";
+
+const utapi = new UTApi();
 
 export async function createProjectAction(
   name: string, 
@@ -182,6 +185,13 @@ export async function deleteProjectAction(projectId: string) {
     const canDelete = await hasSystemPermission(userId, "project:delete");
     if (!canDelete) return { success: false, error: "Access Denied" };
 
+    const projectLists = await queries.tasks.getListsByProject(projectId);
+    if (projectLists.length > 0) {
+      const allProjectTasks = await queries.tasks.getByListIds(projectLists.map(l => l.id));
+      const urlsToDelete = allProjectTasks.map(t => t.attachmentUrl).filter(Boolean);
+
+      await deleteFilesFromUploadThing(urlsToDelete);
+    }
     await queries.projects.delete(projectId);
 
     revalidatePath("/dashboard");
@@ -209,5 +219,25 @@ export async function removeMemberAction(projectId: string, memberId: string) {
   } catch (error) {
     console.error("Failed to remove member:", error);
     return { success: false, error: "Failed to remove team member." };
+  }
+}
+
+async function deleteFilesFromUploadThing(urls: (string | null | undefined)[]) {
+  const keys = urls
+    .filter((url): url is string => !!url)
+    .map((url) => {
+      const withoutHash = url.split("#")[0];
+      const parts = withoutHash.split("/");
+      return parts[parts.length - 1]; 
+    })
+    .filter((key) => !!key);
+
+  if (keys.length > 0) {
+    try {
+      await utapi.deleteFiles(keys);
+      console.log(`Successfully bulk-deleted ${keys.length} files from UploadThing for Project cleanup.`);
+    } catch (error) {
+      console.error("Failed to delete files from UploadThing:", error);
+    }
   }
 }
