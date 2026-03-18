@@ -30,6 +30,14 @@ export async function createTaskAction(formData: unknown, projectId: string) {
       }
     }
 
+    const existingTasksInList = await queries.tasks.getByListIds([validatedData.listId]);
+    
+    const maxOrder = existingTasksInList.length > 0 
+      ? Math.max(...existingTasksInList.map(t => t.order)) 
+      : -1;
+      
+    const newOrder = maxOrder + 1;
+
     const newTask = await queries.tasks.create({
       title: validatedData.title,
       description: validatedData.description || null,
@@ -38,7 +46,7 @@ export async function createTaskAction(formData: unknown, projectId: string) {
       priority: validatedData.priority,
       dueDate: validatedData.dueDate || null,
       listId: validatedData.listId,
-      order: 0,
+      order: newOrder,
       assigneeId: validatedData.assigneeId || null,
     });
 
