@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { useUIStore } from "@/stores/ui-store";
+import { useEffect } from "react";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -25,7 +26,17 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
   const { user } = useUser();
 
   const { isSidebarCollapsed, toggleSidebar, isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && isMobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isMobileMenuOpen, setMobileMenuOpen]);
 
+  const effectivelyCollapsed = isSidebarCollapsed && !isMobileMenuOpen;
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Projects", href: "/projects", icon: FolderKanban },
@@ -52,9 +63,9 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
         `}
       >
         <div
-          className={`flex items-center mb-8 px-4 ${isSidebarCollapsed ? "justify-center" : "justify-between"}`}
+          className={`flex items-center mb-8 px-4 ${effectivelyCollapsed ? "justify-center" : "justify-between"}`}
         >
-          {!isSidebarCollapsed ? (
+          {!effectivelyCollapsed ? (
             <Image
               src="/levera-logo.svg"
               alt="Levera Logo"
@@ -102,25 +113,25 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
               <Link
                 key={item.name}
                 href={item.href}
-                title={isSidebarCollapsed ? item.name : undefined}
+                title={effectivelyCollapsed ? item.name : undefined}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium text-sm whitespace-nowrap
                   ${isActive ? "bg-white/60 text-black font-semibold shadow-sm" : "text-gray-600 hover:bg-white/40 hover:text-black"}
-                  ${isSidebarCollapsed ? "justify-center" : "justify-start"}
+                  ${effectivelyCollapsed ? "justify-center" : "justify-start"}
                 `}
               >
                 <Icon
                   size={18}
                   className={isActive ? "text-black shrink-0" : "text-gray-500 shrink-0"}
                 />
-                {!isSidebarCollapsed && <span className="truncate">{item.name}</span>}
+                {!effectivelyCollapsed && <span className="truncate">{item.name}</span>}
               </Link>
             );
           })}
         </nav>
 
         <div className="space-y-4 px-4 mt-auto pt-4">
-          {!isSidebarCollapsed && (
+          {!effectivelyCollapsed && (
             <div className="flex items-center justify-between px-3 py-2 bg-white/40 rounded-xl text-sm font-medium text-gray-700">
               <span className="flex items-center gap-2">
                 <Sun size={16} className="text-gray-500" /> Light
@@ -132,10 +143,10 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
           )}
 
           <div
-            className={`flex items-center gap-3 py-2 ${isSidebarCollapsed ? "justify-center" : "px-2"}`}
+            className={`flex items-center gap-3 py-2 ${effectivelyCollapsed ? "justify-center" : "px-2"}`}
           >
             <UserButton />
-            {!isSidebarCollapsed && (
+            {!effectivelyCollapsed && (
               <div className="flex flex-col overflow-hidden">
                 <span className="text-sm font-bold text-black truncate w-full">
                   {user?.fullName || "Loading..."}
