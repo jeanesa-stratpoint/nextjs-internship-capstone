@@ -3,6 +3,7 @@ import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer, boolean, 
 
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high']);
 export const projectStatusEnum = pgEnum('project_status', ['active', 'completed', 'on-hold']);
+export const listStageEnum = pgEnum("list_stage", ["unstarted", "in_progress", "completed"]);
 
 // RBAC
 export const roles = pgTable('roles', {
@@ -60,6 +61,7 @@ export const lists = pgTable('lists', {
   name: text('name').notNull(),
   order: integer('order').notNull(),
   color: text('color').default('#6B7280'),
+  stage: listStageEnum("stage").default("in_progress").notNull(),
   isCompleteStage: boolean("is_complete_stage").default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
