@@ -62,7 +62,6 @@ export const lists = pgTable('lists', {
   order: integer('order').notNull(),
   color: text('color').default('#6B7280'),
   stage: listStageEnum("stage").default("in_progress").notNull(),
-  isCompleteStage: boolean("is_complete_stage").default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
