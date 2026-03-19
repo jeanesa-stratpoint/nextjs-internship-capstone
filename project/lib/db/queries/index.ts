@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles } from "@/lib/db/schema";
-import { eq, desc, inArray, asc, and } from "drizzle-orm";
+import { eq, desc, inArray, asc, and, ne } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 
 export const queries = {
@@ -110,6 +110,23 @@ export const queries = {
       await db.delete(projectMembers).where(
         and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId))
       );
+    },
+    removeMemberFromAllOwnedProjects: async (ownerId: string, memberId: string) => {
+      const ownedProjects = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(eq(projects.ownerId, ownerId));
+
+      const projectIds = ownedProjects.map((p) => p.id);
+
+      if (projectIds.length > 0) {
+        await db.delete(projectMembers).where(
+          and(
+            eq(projectMembers.userId, memberId),
+            inArray(projectMembers.projectId, projectIds)
+          )
+        );
+      }
     },
   },
 
@@ -254,6 +271,79 @@ export const queries = {
     getById: async (userId: string) => {
       const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       return result[0] || null;
-    }
+    },
+
+    getTeamMembers: async (currentUserId: string) => {
+      const userProjects = await db
+        .select({ projectId: projectMembers.projectId })
+        .from(projectMembers)
+        .where(eq(projectMembers.userId, currentUserId));
+
+      const projectIds = userProjects.map((up) => up.projectId);
+
+      if (projectIds.length === 0) return [];
+
+      const sharedMemberships = await db
+        .select({
+          userId: projectMembers.userId,
+          status: projects.status,
+          user: users,
+          roleName: roles.name,
+        })
+        .from(projectMembers)
+        .innerJoin(projects, eq(projectMembers.projectId, projects.id))
+        .innerJoin(users, eq(projectMembers.userId, users.id))
+        .leftJoin(roles, eq(users.roleId, roles.id))
+        .where(
+          and(
+            inArray(projectMembers.projectId, projectIds),
+            ne(projectMembers.userId, currentUserId) 
+          )
+        );
+
+      type TeamMemberData = {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        email: string;
+        role: string;
+        activeProjectCount: number;
+      };  
+
+      const teamMap = new Map<string, TeamMemberData>();
+
+      sharedMemberships.forEach((sm) => {
+        if (!teamMap.has(sm.userId)) {
+          teamMap.set(sm.userId, {
+            id: sm.user.id,
+            firstName: sm.user.firstName,
+            lastName: sm.user.lastName,
+            email: sm.user.email,
+            role: sm.roleName || "Standard User",
+            activeProjectCount: 0,
+          });
+        }
+
+        const userData = teamMap.get(sm.userId)!;
+        if (sm.status !== "completed") {
+          userData.activeProjectCount += 1;
+        }
+      });
+
+      const teamArray = Array.from(teamMap.values());
+      if (teamArray.length === 0) return [];
+
+      const client = await clerkClient();
+      const clerkUsers = await client.users.getUserList({
+        userId: teamArray.map((u) => u.id),
+      });
+
+      const avatarMap = new Map(clerkUsers.data.map((cu) => [cu.id, cu.imageUrl]));
+
+      return teamArray.map((u) => ({
+        ...u,
+        imageUrl: avatarMap.get(u.id) || null,
+      }));
+    },
   },
 };

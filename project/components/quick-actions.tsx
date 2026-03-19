@@ -1,12 +1,13 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { DbProject } from "@/types/index";
+import { useUIStore } from "@/stores/ui-store";
 import CreateProjectModal from "@/components/modals/create-project-modal";
 import GlobalInviteModal from "@/components/modals/global-invite-modal";
 import CreateTaskModal from "@/components/modals/create-task-modal";
-import { useUIStore } from "@/stores/ui-store";
 import TaskDetailModal from "@/components/modals/task-detail-modal";
-import { DbProject } from "@/types";
+import TeamInviteButton from "@/components/team-invite-button";
 
 interface QuickActionsProps {
   canCreateProject: boolean;
@@ -27,7 +28,6 @@ export default function QuickActions({
 }: QuickActionsProps) {
   const {
     openCreateProjectModal,
-    openGlobalInviteModal,
     isCreateTaskModalOpen,
     closeCreateTaskModal,
     openCreateTaskModal,
@@ -55,14 +55,7 @@ export default function QuickActions({
           </button>
         )}
 
-        {canInviteMember && (
-          <button
-            onClick={() => openGlobalInviteModal()}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors bg-white text-black"
-          >
-            <Plus size={16} className="text-gray-500 shrink-0" /> Add Team Member
-          </button>
-        )}
+        {canInviteMember && <TeamInviteButton variant="outline" />}
 
         {canCreateTask && (
           <button

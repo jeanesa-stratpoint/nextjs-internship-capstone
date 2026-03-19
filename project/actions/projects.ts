@@ -232,6 +232,26 @@ export async function removeMemberAction(projectId: string, memberId: string) {
   }
 }
 
+export async function removeTeamMemberGlobalAction(memberId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canManageTeam = await hasSystemPermission(userId, "project-invite:create");
+    if (!canManageTeam) return { success: false, error: "Access Denied: You cannot manage team members." };
+
+    await queries.projects.removeMemberFromAllOwnedProjects(userId, memberId);
+
+    revalidatePath("/team");
+    revalidatePath("/projects");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to remove team member globally:", error);
+    return { success: false, error: "Failed to remove team member." };
+  }
+}
+
 async function deleteFilesFromUploadThing(urls: (string | null | undefined)[]) {
   const keys = urls
     .filter((url): url is string => !!url)

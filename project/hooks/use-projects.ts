@@ -6,7 +6,8 @@ import {
   markProjectCompletedAction,
   deleteProjectAction,
   inviteMembersAction,
-  removeMemberAction
+  removeMemberAction,
+  removeTeamMemberGlobalAction
 } from "@/actions/projects";
 
 // MUTATIONS (WRITES)
@@ -67,6 +68,14 @@ export function useProjectMutations() {
     },
   });
 
+  const removeTeamMemberGlobal = useMutation({
+    mutationFn: async (memberId: string) => {
+      const result = await removeTeamMemberGlobalAction(memberId);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+  });
+
   return {
     createProject,
     updateProjectDetails,
@@ -75,5 +84,6 @@ export function useProjectMutations() {
     deleteProject,
     inviteMembers,
     removeMember,
+    removeTeamMemberGlobal
   };
 }
