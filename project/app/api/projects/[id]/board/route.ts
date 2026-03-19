@@ -26,10 +26,10 @@ export async function GET(
 
     if (boardLists.length === 0) {
       boardLists = await db.insert(lists).values([
-        { name: "To Do", projectId: projectId, order: 0, isCompleteStage: false },
-        { name: "In Progress", projectId: projectId, order: 1, isCompleteStage: false },
-        { name: "Review", projectId: projectId, order: 2, isCompleteStage: false },
-        { name: "Done", projectId: projectId, order: 3, isCompleteStage: true }, 
+        { name: "To Do", projectId: projectId, order: 0, stage: "unstarted" },
+        { name: "In Progress", projectId: projectId, order: 1, stage: "in_progress" },
+        { name: "Review", projectId: projectId, order: 2, stage: "in_progress" },
+        { name: "Done", projectId: projectId, order: 3, stage: "completed" }, 
       ]).returning();
     }
     const listIds = boardLists.map((l) => l.id);

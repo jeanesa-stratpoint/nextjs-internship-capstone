@@ -14,11 +14,18 @@ export async function createListAction(projectId: string, name: string, newOrder
     if (!canCreate) return { success: false, error: "Access Denied" };
     if (!name.trim()) return { success: false, error: "List name is required" };
 
+    const existingLists = await queries.tasks.getListsByProject(projectId);
+    if (existingLists.length > 0) {
+      const lastList = existingLists[existingLists.length - 1];
+      if (lastList.stage === "completed") {
+         await queries.lists.updateOrder(lastList.id, existingLists.length);
+      }
+    }
+
     const newList = await queries.lists.create({
-      projectId, name: name.trim(), order: newOrder, color, isCompleteStage: false
+      projectId, name: name.trim(), order: newOrder, color
     });
 
-    await queries.lists.syncCompleteStage(projectId);
     revalidatePath(`/projects/${projectId}`);
     return { success: true, list: newList };
   } catch (error) {
@@ -56,7 +63,6 @@ export async function updateListOrderAction(projectId: string, listUpdates: { id
 
     await Promise.all(listUpdates.map((list) => queries.lists.updateOrder(list.id, list.order)));
 
-    await queries.lists.syncCompleteStage(projectId);
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {
@@ -74,7 +80,6 @@ export async function deleteListAction(projectId: string, listId: string) {
     if (!canDeleteList) return { success: false, error: "Access Denied" };
 
     await queries.lists.delete(listId);
-    await queries.lists.syncCompleteStage(projectId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };

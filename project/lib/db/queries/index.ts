@@ -234,7 +234,7 @@ export const queries = {
   },
 
   lists: {
-    create: async (data: { projectId: string; name: string; order: number; color: string; isCompleteStage: boolean }) => {
+    create: async (data: { projectId: string; name: string; order: number; color: string; stage?: "unstarted" | "in_progress" | "completed" }) => {
       const [newList] = await db.insert(lists).values(data).returning();
       return newList;
     },
@@ -246,13 +246,6 @@ export const queries = {
     },
     delete: async (listId: string) => {
       await db.delete(lists).where(eq(lists.id, listId));
-    },
-    syncCompleteStage: async (projectId: string) => {
-      const projectLists = await db.select().from(lists).where(eq(lists.projectId, projectId)).orderBy(asc(lists.order));
-      if (projectLists.length === 0) return;
-      const lastListId = projectLists[projectLists.length - 1].id;
-      await db.update(lists).set({ isCompleteStage: false }).where(eq(lists.projectId, projectId));
-      await db.update(lists).set({ isCompleteStage: true }).where(eq(lists.id, lastListId));
     },
   },
 

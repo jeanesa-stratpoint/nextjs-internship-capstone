@@ -106,9 +106,11 @@ export default function KanbanBoard({
     e.preventDefault();
     if (!newListName.trim()) return;
     try {
+      const targetOrder = lists.length > 1 ? lists.length - 1 : lists.length;
+
       await createList.mutateAsync({
         name: newListName,
-        order: data.lists.length,
+        order: targetOrder,
         color: newListColor,
       });
       setNewListName("");
@@ -204,14 +206,23 @@ export default function KanbanBoard({
     if (active.data.current?.type === "Column") {
       if (active.id !== over.id) {
         const activeIndex = lists.findIndex((l) => l.id === active.id);
-        const overIndex = lists.findIndex((l) => l.id === over.id);
-        const newLists = arrayMove(lists, activeIndex, overIndex);
-        setLists(newLists);
-        const listUpdates = newLists.map((list, index) => ({ id: list.id, order: index }));
-        try {
-          await updateListOrder.mutateAsync(listUpdates);
-        } catch (err) {
-          console.error(err);
+        let overIndex = lists.findIndex((l) => l.id === over.id);
+
+        if (lists[overIndex].stage === "unstarted") {
+          overIndex = 1;
+        } else if (lists[overIndex].stage === "completed") {
+          overIndex = lists.length - 2;
+        }
+
+        if (activeIndex !== overIndex) {
+          const newLists = arrayMove(lists, activeIndex, overIndex);
+          setLists(newLists);
+          const listUpdates = newLists.map((list, index) => ({ id: list.id, order: index }));
+          try {
+            await updateListOrder.mutateAsync(listUpdates);
+          } catch (err) {
+            console.error(err);
+          }
         }
       }
       return;
@@ -387,8 +398,6 @@ function KanbanColumn({
   projectName,
   projectTeam,
   isOverlay = false,
-  isFirst = false,
-  isLast = false,
   isMenuOpen,
   setMenuOpen,
   permissions,
@@ -406,15 +415,21 @@ function KanbanColumn({
   setMenuOpen: (isOpen: boolean) => void;
   permissions: BoardPermissions;
 }) {
+  const isSystemColumn = column.stage === "unstarted" || column.stage === "completed";
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: column.id,
     data: { type: "Column", column },
-    disabled: !permissions.canEditList,
+    disabled: isSystemColumn || !permissions.canEditList,
   });
 
   const { lists, setLists } = useBoardStore();
   const { deleteList, clearListTasks, updateListOrder, updateListDetails } =
     useListMutations(projectId);
+
+  const currentIndex = lists.findIndex((l) => l.id === column.id);
+  const canMoveLeft = currentIndex > 0 && lists[currentIndex - 1]?.stage !== "unstarted";
+  const canMoveRight =
+    currentIndex < lists.length - 1 && lists[currentIndex + 1]?.stage !== "completed";
 
   const [showDeleteListModal, setShowDeleteListModal] = useState(false);
   const [showClearTasksModal, setShowClearTasksModal] = useState(false);
@@ -440,9 +455,11 @@ function KanbanColumn({
 
   const handleMoveColumn = async (direction: "left" | "right") => {
     setMenuOpen(false);
-    const currentIndex = lists.findIndex((l) => l.id === column.id);
+
+    if (direction === "left" && !canMoveLeft) return;
+    if (direction === "right" && !canMoveRight) return;
+
     const newIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
-    if (newIndex < 0 || newIndex >= lists.length) return;
 
     const newLists = arrayMove(lists, currentIndex, newIndex);
     setLists(newLists);
@@ -596,21 +613,25 @@ function KanbanColumn({
                         >
                           Edit details
                         </button>
-                        <div className="h-px bg-gray-100 my-1"></div>
-                        <button
-                          onClick={() => handleMoveColumn("left")}
-                          disabled={isFirst}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                        >
-                          Move left
-                        </button>
-                        <button
-                          onClick={() => handleMoveColumn("right")}
-                          disabled={isLast}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                        >
-                          Move right
-                        </button>
+                        {!isSystemColumn && (
+                          <>
+                            <div className="h-px bg-gray-100 my-1"></div>
+                            <button
+                              onClick={() => handleMoveColumn("left")}
+                              disabled={!canMoveLeft}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              Move left
+                            </button>
+                            <button
+                              onClick={() => handleMoveColumn("right")}
+                              disabled={!canMoveRight}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              Move right
+                            </button>
+                          </>
+                        )}
                         <div className="h-px bg-gray-100 my-1"></div>
                         <button
                           onClick={() => {
@@ -624,7 +645,7 @@ function KanbanColumn({
                         </button>
                       </>
                     )}
-                    {permissions.canDeleteList && (
+                    {permissions.canDeleteList && !isSystemColumn && (
                       <button
                         onClick={() => {
                           setMenuOpen(false);
