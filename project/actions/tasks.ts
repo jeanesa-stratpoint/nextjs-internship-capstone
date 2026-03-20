@@ -1,12 +1,13 @@
 "use server";
 
-import { taskSchema } from "@/lib/validations";
+import { taskSchema, commentSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { hasSystemPermission } from "@/lib/rbac";
 import { queries } from "@/lib/db/queries/index";
 import { TaskPayload } from "@/types/index";
 import { UTApi } from "uploadthing/server";
+import { pusherServer } from "@/lib/pusher";
 
 const utapi = new UTApi();
 
@@ -75,10 +76,11 @@ export async function updateTaskStatus(taskId: string, newListId: string, projec
        const newList = await queries.tasks.getListById(newListId);
        
        if (oldList && newList) {
-         await queries.tasks.logActivity({
+         const activity = await queries.tasks.logActivity({
            taskId, userId, actionType: "moved", 
            oldValue: oldList.name, newValue: newList.name,
          });
+         await pusherServer.trigger(`task-${taskId}`, "new-activity", [activity]);
        }
     }
 
@@ -202,7 +204,11 @@ export async function updateTaskAction(
     if ((existingTask.attachmentUrl || "") !== (validatedData.attachmentUrl || "")) {
       newActivities.push({ taskId, userId, actionType: "updated_attachment" });
     }
-    await queries.tasks.logBulkActivities(newActivities);
+
+    const loggedActivities = await queries.tasks.logBulkActivities(newActivities);
+    if (loggedActivities.length > 0) {
+      await pusherServer.trigger(`task-${taskId}`, "new-activity", loggedActivities);
+    }
 
     const projectLists = await queries.tasks.getListsByProject(projectId);
     const endListId = projectLists.length > 0 ? projectLists[projectLists.length - 1].id : null;
@@ -287,7 +293,18 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
       })
     );
 
-    await queries.tasks.logBulkActivities(newActivities);
+    const loggedActivities = await queries.tasks.logBulkActivities(newActivities);
+    if (loggedActivities.length > 0) {
+      const byTask = loggedActivities.reduce((acc, act) => {
+        if (!acc[act.taskId]) acc[act.taskId] = [];
+        acc[act.taskId].push(act);
+        return acc;
+      }, {} as Record<string, typeof loggedActivities>);
+
+      for (const tId in byTask) {
+        await pusherServer.trigger(`task-${tId}`, "new-activity", byTask[tId]);
+      }
+    }
 
     const endListId = projectLists.length > 0 ? projectLists[projectLists.length - 1].id : null;
     if (endListId) {
@@ -306,6 +323,40 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
   } catch (error) {
     console.error("Failed to reorder tasks:", error);
     return { success: false, error: "Failed to reorder tasks." };
+  }
+}
+
+export async function createCommentAction(taskId: string, projectId: string, content: string) {
+  try {
+    const validationResult = commentSchema.safeParse({ content, taskId });
+    if (!validationResult.success) {
+      return { success: false, error: validationResult.error.issues[0].message };
+    }
+
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const projectMembers = await queries.projects.getMembers(projectId);
+    const isMember = projectMembers.some((member) => member.id === userId);
+    if (!isMember) {
+      return { success: false, error: "Forbidden: You are not a member of this project." };
+    }
+
+    const canComment = await hasSystemPermission(userId, "task:comment");
+    const canEdit = await hasSystemPermission(userId, "task:edit"); 
+    
+    if (!canComment && !canEdit) {
+      return { success: false, error: "Access Denied: You do not have permission to comment." };
+    }
+
+    const newComment = await queries.tasks.createComment(taskId, userId, validationResult.data.content);
+
+    await pusherServer.trigger(`task-${taskId}`, "new-comment", newComment);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to create comment:", error);
+    return { success: false, error: "Failed to post comment." };
   }
 }
 

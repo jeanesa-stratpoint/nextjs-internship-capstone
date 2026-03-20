@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction } from "@/actions/tasks";
+import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction, createCommentAction } from "@/actions/tasks";
 import { TaskPayload } from "@/types/index";
 
 export function useProjectBoard(projectId: string) {
@@ -28,7 +28,7 @@ export function useTaskDefaults(projectId: string | null) {
   });
 }
 
-export function useTaskDetails(taskId: string | null) {
+export function useTaskDetails(taskId: string | null, refetchInterval: number | false = false) {
   return useQuery({
     queryKey: ["taskDetails", taskId],
     queryFn: async () => {
@@ -37,6 +37,7 @@ export function useTaskDetails(taskId: string | null) {
       return res.json();
     },
     enabled: !!taskId,
+    refetchInterval,
   });
 }
 
@@ -95,6 +96,14 @@ export function useTaskMutations(projectId: string) {
     onSuccess: invalidateBoard,
   });
 
+  const createComment = useMutation({
+    mutationFn: async ({ taskId, content }: { taskId: string; content: string }) => {
+      const result = await createCommentAction(taskId, projectId, content);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+  });
+
 
   return {
     createTask,
@@ -102,5 +111,6 @@ export function useTaskMutations(projectId: string) {
     moveTaskStatus,
     deleteTask,
     updateTaskOrder,
+    createComment
   };
 }

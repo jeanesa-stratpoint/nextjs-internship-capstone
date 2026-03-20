@@ -23,6 +23,7 @@ import { DbProject, DbList, DbComment, DbActivity, DbTask, TeamMember } from "@/
 import { useUploadThing } from "@/lib/uploadthing";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
+import { getPusherClient } from "@/lib/pusher";
 import RichTextEditor from "@/components/rich-text-editor";
 
 interface FeedUser {
@@ -54,6 +55,8 @@ interface TaskData {
   activities: ServerActivity[];
 }
 
+const FALLBACK_POLLING_INTERVAL_MS = 60 * 1000;
+
 export default function TaskDetailModal({
   canEditTask = true,
   canDeleteTask = true,
@@ -62,7 +65,13 @@ export default function TaskDetailModal({
   canDeleteTask?: boolean;
 }) {
   const { isTaskDetailModalOpen, selectedTaskId, closeTaskDetailModal } = useUIStore();
-  const { data, isLoading } = useTaskDetails(isTaskDetailModalOpen ? selectedTaskId : null);
+  const [isPusherConnected, setIsPusherConnected] = useState(false);
+
+  const { data, isLoading } = useTaskDetails(
+    isTaskDetailModalOpen ? selectedTaskId : null,
+    isPusherConnected ? false : FALLBACK_POLLING_INTERVAL_MS
+  );
+  console.log("Is Pusher Connected?", isPusherConnected);
 
   useEffect(() => {
     if (isTaskDetailModalOpen) document.body.style.overflow = "hidden";
@@ -90,6 +99,7 @@ export default function TaskDetailModal({
             onClose={closeTaskDetailModal}
             canEditTask={canEditTask}
             canDeleteTask={canDeleteTask}
+            setIsPusherConnected={setIsPusherConnected}
           />
         )}
       </div>
@@ -103,16 +113,78 @@ function TaskDetailContent({
   onClose,
   canEditTask,
   canDeleteTask,
+  setIsPusherConnected,
 }: {
   data: TaskData;
   taskId: string;
   onClose: () => void;
   canEditTask: boolean;
   canDeleteTask: boolean;
+  setIsPusherConnected: (connected: boolean) => void;
 }) {
-  const { updateTask, deleteTask } = useTaskMutations(data.project.id);
+  const { updateTask, deleteTask, createComment } = useTaskMutations(data.project.id);
   const queryClient = useQueryClient();
   const { showToast } = useToastStore();
+
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  useEffect(() => {
+    const pusher = getPusherClient();
+    if (!pusher) return;
+
+    pusher.connection.bind("state_change", (states: { current: string }) => {
+      setIsPusherConnected(states.current === "connected");
+    });
+
+    const channelName = `task-${taskId}`;
+    const channel = pusher.subscribe(channelName);
+
+    channel.bind("new-comment", (newCommentData: ServerComment) => {
+      queryClient.setQueryData(["taskDetails", taskId], (oldData: TaskData | undefined) => {
+        if (!oldData) return oldData;
+        const exists = oldData.comments.some((c) => c.id === newCommentData.id);
+        if (exists) return oldData;
+        return { ...oldData, comments: [newCommentData, ...oldData.comments] };
+      });
+    });
+
+    channel.bind("new-activity", (newActivities: ServerActivity[]) => {
+      queryClient.setQueryData(["taskDetails", taskId], (oldData: TaskData | undefined) => {
+        if (!oldData) return oldData;
+
+        const existingIds = new Set(oldData.activities.map((a) => a.id));
+        const uniqueNew = newActivities.filter((a) => !existingIds.has(a.id));
+        if (uniqueNew.length === 0) return oldData;
+
+        return { ...oldData, activities: [...uniqueNew, ...oldData.activities] };
+      });
+    });
+
+    return () => {
+      channel.unbind("new-comment");
+      channel.unbind("new-activity");
+      pusher.unsubscribe(channelName);
+      pusher.connection.unbind("state_change");
+    };
+  }, [taskId, queryClient, setIsPusherConnected]);
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    setIsSubmittingComment(true);
+    try {
+      await createComment.mutateAsync({ taskId, content: newComment.trim() });
+      setNewComment("");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        showToast({ message: err.message || "Failed to post comment", type: "error" });
+      }
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
 
   const getFileNameFromUrl = (url: string) => {
     if (!url) return "Attachment";
@@ -561,7 +633,7 @@ function TaskDetailContent({
                 if (item.feedType === "comment") {
                   return (
                     <div key={`comment-${item.id}`} className="flex gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
                         {userName.substring(0, 2).toUpperCase()}
                       </div>
                       <div className="flex flex-col flex-1">
@@ -636,16 +708,27 @@ function TaskDetailContent({
           </div>
 
           <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
-            <div className="relative">
+            <form onSubmit={handleCommentSubmit} className="relative">
               <input
                 type="text"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                disabled={isSubmittingComment}
                 placeholder="Write a comment..."
-                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all text-black"
+                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all text-black disabled:opacity-50"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black text-white rounded-full hover:bg-gray-800 transition-colors">
-                <MessageSquare size={14} />
+              <button
+                type="submit"
+                disabled={isSubmittingComment || !newComment.trim()}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black text-white rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmittingComment ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <MessageSquare size={14} />
+                )}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>

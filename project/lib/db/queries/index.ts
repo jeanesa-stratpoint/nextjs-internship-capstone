@@ -226,11 +226,68 @@ export const queries = {
       await db.delete(tasks).where(eq(tasks.listId, listId));
     },
     logActivity: async (data: { taskId: string; userId: string; actionType: string; oldValue?: string; newValue?: string }) => {
-      await db.insert(taskActivities).values(data);
+      const [inserted] = await db.insert(taskActivities).values(data).returning();
+      
+      const joined = await db
+        .select({
+          id: taskActivities.id,
+          actionType: taskActivities.actionType,
+          oldValue: taskActivities.oldValue,
+          newValue: taskActivities.newValue,
+          createdAt: taskActivities.createdAt,
+          user: { id: users.id, firstName: users.firstName, lastName: users.lastName }
+        })
+        .from(taskActivities)
+        .leftJoin(users, eq(taskActivities.userId, users.id))
+        .where(eq(taskActivities.id, inserted.id))
+        .limit(1);
+        
+      return joined[0];
     },
     logBulkActivities: async (activities: { taskId: string; userId: string | null; actionType: string; oldValue?: string | null; newValue?: string | null }[]) => {
-      if (activities.length > 0) await db.insert(taskActivities).values(activities);
-    }
+      if (activities.length === 0) return [];
+      
+      const inserted = await db.insert(taskActivities).values(activities).returning();
+      const ids = inserted.map(a => a.id);
+      
+      const joined = await db
+        .select({
+          id: taskActivities.id,
+          taskId: taskActivities.taskId, 
+          actionType: taskActivities.actionType,
+          oldValue: taskActivities.oldValue,
+          newValue: taskActivities.newValue,
+          createdAt: taskActivities.createdAt,
+          user: { id: users.id, firstName: users.firstName, lastName: users.lastName }
+        })
+        .from(taskActivities)
+        .leftJoin(users, eq(taskActivities.userId, users.id))
+        .where(inArray(taskActivities.id, ids));
+        
+      return joined;
+    },
+    createComment: async (taskId: string, userId: string, content: string) => {
+      const [newComment] = await db.insert(comments).values({
+        taskId,
+        userId,
+        content,
+      }).returning();
+
+      const joinedComment = await db
+        .select({
+          id: comments.id,
+          content: comments.content,
+          createdAt: comments.createdAt,
+          isEdited: comments.isEdited,
+          user: { id: users.id, firstName: users.firstName, lastName: users.lastName }
+        })
+        .from(comments)
+        .leftJoin(users, eq(comments.userId, users.id))
+        .where(eq(comments.id, newComment.id))
+        .limit(1);
+
+      return joinedComment[0];
+    },
   },
 
   lists: {
