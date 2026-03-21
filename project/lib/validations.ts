@@ -47,3 +47,21 @@ export const commentSchema = z.object({
   content: z.string().min(1, "Comment cannot be empty").max(2000, "Comment is too long"),
   taskId: z.string().uuid("Invalid Task ID"),
 });
+
+// EVENT VALIDATION
+export const eventSchema = z.object({
+  title: z.string().min(1, "Event title is required").max(100, "Title cannot exceed 100 characters"),
+  description: z.string().max(1000, "Description cannot exceed 1000 characters").optional().nullable(),
+  
+  type: z.enum(["meeting", "milestone", "reminder"], {
+    message: "Please select a valid event type",
+  }),
+  
+  startTime: z.coerce.date({ message: "Start time is required" }),
+  endTime: z.coerce.date({ message: "End time is required" }),
+  
+  projectId: z.string().uuid("Invalid Project ID"),
+}).refine((data) => data.endTime > data.startTime, {
+  message: "End time must be after the start time",
+  path: ["endTime"],
+});

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles } from "@/lib/db/schema";
+import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles, events } from "@/lib/db/schema";
 import { eq, desc, inArray, asc, and, ne, gte } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 
@@ -542,6 +542,62 @@ export const queries = {
         ],
         activityChart: Array.from(activityChartMap.values()),
       };
+    },
+  },
+
+  // EVENT QUERIES
+  events: {
+    getByProjectIds: async (projectIds: string[]) => {
+      if (projectIds.length === 0) return [];
+      
+      return await db
+        .select({
+          id: events.id,
+          projectId: events.projectId,
+          title: events.title,
+          description: events.description,
+          type: events.type,
+          startTime: events.startTime,
+          endTime: events.endTime,
+          creator: { 
+            id: users.id, 
+            firstName: users.firstName, 
+            lastName: users.lastName,
+            email: users.email 
+          }
+        })
+        .from(events)
+        .leftJoin(users, eq(events.creatorId, users.id))
+        .where(inArray(events.projectId, projectIds))
+        .orderBy(asc(events.startTime));
+    },
+
+    create: async (data: {
+      projectId: string;
+      title: string;
+      description?: string | null;
+      type: "meeting" | "milestone" | "reminder";
+      startTime: Date;
+      endTime: Date;
+      creatorId: string;
+    }) => {
+      const [newEvent] = await db.insert(events).values(data).returning();
+      return newEvent;
+    },
+
+    updateDetails: async (eventId: string, data: {
+      title?: string;
+      description?: string | null;
+      type?: "meeting" | "milestone" | "reminder";
+      startTime?: Date;
+      endTime?: Date;
+    }) => {
+      const [updatedEvent] = await db.update(events).set(data).where(eq(events.id, eventId)).returning();
+      return updatedEvent;
+    },
+
+    delete: async (eventId: string) => {
+      await db.delete(events).where(eq(events.id, eventId));
     },
   },
 };
