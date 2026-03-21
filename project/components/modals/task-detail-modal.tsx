@@ -719,6 +719,7 @@ function TaskDetailContent({
               />
               <button
                 type="submit"
+                aria-label="Send comment"
                 disabled={isSubmittingComment || !newComment.trim()}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black text-white rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >

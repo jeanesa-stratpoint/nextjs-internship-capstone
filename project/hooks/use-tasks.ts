@@ -38,6 +38,7 @@ export function useTaskDetails(taskId: string | null, refetchInterval: number | 
     },
     enabled: !!taskId,
     refetchInterval,
+    refetchIntervalInBackground: true
   });
 }
 
