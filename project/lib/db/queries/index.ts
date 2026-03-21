@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles } from "@/lib/db/schema";
-import { eq, desc, inArray, asc, and, ne } from "drizzle-orm";
+import { eq, desc, inArray, asc, and, ne, gte } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 
 export const queries = {
@@ -394,6 +394,154 @@ export const queries = {
         ...u,
         imageUrl: avatarMap.get(u.id) || null,
       }));
+    },
+  },
+
+  // ANALYTICS QUERIES
+  analytics: {
+    getDashboardMetrics: async (userId: string) => {
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const userProjects = await db
+        .select({ projectId: projectMembers.projectId })
+        .from(projectMembers)
+        .where(eq(projectMembers.userId, userId));
+
+      const projectIds = userProjects.map((p) => p.projectId);
+
+      if (projectIds.length === 0) {
+        return {
+          velocity: 0,
+          efficiency: 0,
+          activeUsers: 0,
+          avgTaskTime: 0,
+          progressChart: [],
+          activityChart: [],
+        };
+      }
+
+      const projectLists = await db
+        .select()
+        .from(lists)
+        .where(inArray(lists.projectId, projectIds));
+      
+      const listIds = projectLists.map((l) => l.id);
+      
+      const projectTasks = listIds.length > 0
+        ? await db.select().from(tasks).where(inArray(tasks.listId, listIds))
+        : [];
+      
+      const taskIds = projectTasks.map((t) => t.id);
+
+      const recentActivities = taskIds.length > 0
+        ? await db.select().from(taskActivities).where(
+            and(
+              inArray(taskActivities.taskId, taskIds),
+              gte(taskActivities.createdAt, sevenDaysAgo)
+            )
+          )
+        : [];
+
+      const recentComments = taskIds.length > 0
+        ? await db.select().from(comments).where(
+            and(
+              inArray(comments.taskId, taskIds),
+              gte(comments.createdAt, sevenDaysAgo)
+            )
+          )
+        : [];
+
+      // METRIC CALCULATIONS
+
+      // Progress & Efficiency
+      let completedCount = 0;
+      let inProgressCount = 0;
+      let unstartedCount = 0;
+
+      projectTasks.forEach((task) => {
+        const list = projectLists.find((l) => l.id === task.listId);
+        if (list?.stage === "completed") completedCount++;
+        else if (list?.stage === "in_progress") inProgressCount++;
+        else if (list?.stage === "unstarted") unstartedCount++;
+      });
+
+      const efficiency = projectTasks.length > 0 
+        ? Math.round((completedCount / projectTasks.length) * 100) 
+        : 0;
+
+      // Project Velocity (Tasks completed in the last 7 days)
+      const completedListIds = projectLists.filter((l) => l.stage === "completed").map((l) => l.id);
+      const completedTaskIds = projectTasks.filter((t) => completedListIds.includes(t.listId)).map((t) => t.id);
+      
+      const recentlyCompletedSet = new Set();
+      recentActivities.forEach((act) => {
+        if (completedTaskIds.includes(act.taskId)) recentlyCompletedSet.add(act.taskId);
+      });
+      const velocity = recentlyCompletedSet.size;
+
+      // Active Users (Unique users who commented or moved a task in the last 7 days)
+      const activeUsersSet = new Set<string>();
+      recentActivities.forEach((act) => { if (act.userId) activeUsersSet.add(act.userId); });
+      recentComments.forEach((com) => { if (com.userId) activeUsersSet.add(com.userId); });
+      const activeUsers = activeUsersSet.size;
+
+      // Average Task Time (For completed tasks only)
+      let totalDays = 0;
+      let tasksWithTime = 0;
+      
+      projectTasks.forEach((task) => {
+        if (completedListIds.includes(task.listId)) {
+          // Find the latest activity for this task to approximate completion time
+          const taskActs = recentActivities.filter(a => a.taskId === task.id);
+          const lastActDate = taskActs.length > 0 
+            ? new Date(Math.max(...taskActs.map(a => a.createdAt.getTime()))) 
+            : new Date(); // Fallback if no activity found
+
+          const diffTime = Math.abs(lastActDate.getTime() - task.createdAt.getTime());
+          const diffDays = diffTime / (1000 * 60 * 60 * 24);
+          
+          totalDays += diffDays;
+          tasksWithTime++;
+        }
+      });
+      const avgTaskTime = tasksWithTime > 0 ? (totalDays / tasksWithTime).toFixed(1) : 0;
+
+      // Build Team Activity Chart Data (Last 7 Days timeline)
+      const activityChartMap = new Map();
+      // Initialize the last 7 days with 0 to ensure the chart doesn't have gaps
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+        activityChartMap.set(dayStr, { name: dayStr, actions: 0, comments: 0 });
+      }
+
+      recentActivities.forEach((act) => {
+        const dayStr = act.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
+        if (activityChartMap.has(dayStr)) {
+          activityChartMap.get(dayStr).actions += 1;
+        }
+      });
+
+      recentComments.forEach((com) => {
+        const dayStr = com.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
+        if (activityChartMap.has(dayStr)) {
+          activityChartMap.get(dayStr).comments += 1;
+        }
+      });
+
+      return {
+        velocity,
+        efficiency,
+        activeUsers,
+        avgTaskTime,
+        progressChart: [
+          { name: "To Do", value: unstartedCount },
+          { name: "In Progress", value: inProgressCount },
+          { name: "Completed", value: completedCount },
+        ],
+        activityChart: Array.from(activityChartMap.values()),
+      };
     },
   },
 };
