@@ -4,6 +4,7 @@ import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer, boolean, 
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high']);
 export const projectStatusEnum = pgEnum('project_status', ['active', 'completed', 'on-hold']);
 export const listStageEnum = pgEnum("list_stage", ["unstarted", "in_progress", "completed"]);
+export const eventTypeEnum = pgEnum('event_type', ['meeting', 'milestone', 'reminder']);
 
 // RBAC
 export const roles = pgTable('roles', {
@@ -105,6 +106,21 @@ export const comments = pgTable("comments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const events = pgTable('events', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  description: text('description'),
+  type: eventTypeEnum('type').default('meeting').notNull(),
+  startTime: timestamp('start_time').notNull(),
+  endTime: timestamp('end_time').notNull(),
+  creatorId: text('creator_id')
+    .references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, {
@@ -116,6 +132,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   assignedTasks: many(tasks),
   activities: many(taskActivities),
   comments: many(comments),
+  createdEvents: many(events),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -125,6 +142,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   }),
   members: many(projectMembers),
   lists: many(lists),
+  events: many(events),
 }));
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
@@ -197,6 +215,17 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   }),
   user: one(users, {
     fields: [comments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const eventsRelations = relations(events, ({ one }) => ({
+  project: one(projects, {
+    fields: [events.projectId],
+    references: [projects.id],
+  }),
+  creator: one(users, {
+    fields: [events.creatorId],
     references: [users.id],
   }),
 }));
