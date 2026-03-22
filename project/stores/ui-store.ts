@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { DbProject } from '@/types';
+import { DbProject, DbEvent } from '@/types/index';
 
 interface UIState {
   isCreateProjectModalOpen: boolean;
@@ -13,6 +13,9 @@ interface UIState {
   selectedEditProject: DbProject | null;
   isSidebarCollapsed: boolean;
   isMobileMenuOpen: boolean;
+  isCreateEventModalOpen: boolean;
+  isEventDetailModalOpen: boolean;
+  selectedEvent: DbEvent | null;
 
   // actions
   openCreateProjectModal: () => void;
@@ -35,6 +38,12 @@ interface UIState {
 
   toggleSidebar: () => void;
   setMobileMenuOpen: (isOpen: boolean) => void;
+
+  openCreateEventModal: () => void;
+  closeCreateEventModal: () => void;
+
+  openEventDetailModal: (event: DbEvent) => void;
+  closeEventDetailModal: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -49,6 +58,10 @@ export const useUIStore = create<UIState>((set) => ({
   selectedEditProject: null,
   isSidebarCollapsed: false,
   isMobileMenuOpen: false,
+  isCreateEventModalOpen: false,
+  isEventDetailModalOpen: false,
+  selectedEvent: null,
+  
 
   // actions
   openCreateProjectModal: () => set({ isCreateProjectModalOpen: true }),
@@ -77,4 +90,10 @@ export const useUIStore = create<UIState>((set) => ({
 
   toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
   setMobileMenuOpen: (isOpen) => set({ isMobileMenuOpen: isOpen }),
+
+  openCreateEventModal: () => set({ isCreateEventModalOpen: true }),
+  closeCreateEventModal: () => set({ isCreateEventModalOpen: false }),
+
+  openEventDetailModal: (event) => set({ isEventDetailModalOpen: true, selectedEvent: event }),
+  closeEventDetailModal: () => set({ isEventDetailModalOpen: false, selectedEvent: null }),
 }));

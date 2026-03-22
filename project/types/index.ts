@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { projects, lists, tasks, users, comments, taskActivities } from "@/lib/db/schema";
+import { projects, lists, tasks, users, comments, taskActivities, events } from "@/lib/db/schema";
 import { taskSchema, projectSchema, listSchema, userSchema } from "@/lib/validations";
 
 export type DbUser = typeof users.$inferSelect;
@@ -8,6 +8,7 @@ export type DbList = typeof lists.$inferSelect;
 export type DbTask = typeof tasks.$inferSelect;
 export type DbComment = typeof comments.$inferSelect;
 export type DbActivity = typeof taskActivities.$inferSelect;
+export type DbEvent = typeof events.$inferSelect;
 
 export type UserPayload = z.input<typeof userSchema>;
 export type ProjectPayload = z.input<typeof projectSchema>;

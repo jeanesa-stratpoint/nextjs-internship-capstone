@@ -187,6 +187,20 @@ export const queries = {
         .orderBy(desc(taskActivities.createdAt));
     },
 
+    getByProjectIds: async (projectIds: string[]) => {
+      if (projectIds.length === 0) return [];
+      
+      const projectLists = await db
+        .select({ id: lists.id })
+        .from(lists)
+        .where(inArray(lists.projectId, projectIds));
+        
+      const listIds = projectLists.map((l) => l.id);
+
+      if (listIds.length === 0) return [];
+      return await db.select().from(tasks).where(inArray(tasks.listId, listIds));
+    },
+
     create: async (data: { 
       title: string; 
       listId: string; 
@@ -551,23 +565,8 @@ export const queries = {
       if (projectIds.length === 0) return [];
       
       return await db
-        .select({
-          id: events.id,
-          projectId: events.projectId,
-          title: events.title,
-          description: events.description,
-          type: events.type,
-          startTime: events.startTime,
-          endTime: events.endTime,
-          creator: { 
-            id: users.id, 
-            firstName: users.firstName, 
-            lastName: users.lastName,
-            email: users.email 
-          }
-        })
+        .select()
         .from(events)
-        .leftJoin(users, eq(events.creatorId, users.id))
         .where(inArray(events.projectId, projectIds))
         .orderBy(asc(events.startTime));
     },
