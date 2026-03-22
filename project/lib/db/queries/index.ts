@@ -565,8 +565,25 @@ export const queries = {
       if (projectIds.length === 0) return [];
       
       return await db
-        .select()
+        .select({
+          id: events.id,
+          projectId: events.projectId,
+          title: events.title,
+          description: events.description,
+          type: events.type,
+          startTime: events.startTime,
+          endTime: events.endTime,
+          creatorId: events.creatorId,
+          createdAt: events.createdAt,
+          creator: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            email: users.email,
+          }
+        })
         .from(events)
+        .leftJoin(users, eq(events.creatorId, users.id))
         .where(inArray(events.projectId, projectIds))
         .orderBy(asc(events.startTime));
     },

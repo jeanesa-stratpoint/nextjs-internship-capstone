@@ -8,7 +8,14 @@ export type DbList = typeof lists.$inferSelect;
 export type DbTask = typeof tasks.$inferSelect;
 export type DbComment = typeof comments.$inferSelect;
 export type DbActivity = typeof taskActivities.$inferSelect;
-export type DbEvent = typeof events.$inferSelect;
+export type DbEvent = typeof events.$inferSelect & {
+  creator: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+  } | null;
+};
 
 export type UserPayload = z.input<typeof userSchema>;
 export type ProjectPayload = z.input<typeof projectSchema>;

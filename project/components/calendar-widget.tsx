@@ -1,8 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, dateFnsLocalizer, Event as RbcEvent, ToolbarProps } from "react-big-calendar";
+import {
+  Calendar,
+  dateFnsLocalizer,
+  Event as RbcEvent,
+  ToolbarProps,
+  View,
+} from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -40,41 +46,42 @@ const CustomToolbar = (toolbar: ToolbarProps<UnifiedCalendarEvent, object>) => {
       <div className="flex items-center space-x-2 sm:space-x-4">
         <button
           onClick={goToBack}
-          className="p-2 hover:bg-gray-100 text-gray-500 hover:text-black rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 text-gray-500 hover:text-black rounded-2xl transition-colors"
         >
           <ChevronLeft size={20} />
         </button>
         <button
           onClick={goToCurrent}
-          className="px-3 py-1.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          className="px-3 py-1.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-2xl transition-colors"
         >
           Today
         </button>
         <button
           onClick={goToNext}
-          className="p-2 hover:bg-gray-100 text-gray-500 hover:text-black rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 text-gray-500 hover:text-black rounded-2xl transition-colors"
         >
           <ChevronRight size={20} />
         </button>
-        <h2 className="text-lg sm:text-xl font-bold text-black ml-2">{toolbar.label}</h2>
       </div>
-
-      <div className="hidden sm:flex space-x-2 bg-gray-100 p-1 rounded-xl">
+      <div className="flex-1 text-center">
+        <h2 className="text-lg sm:text-xl font-bold text-black">{toolbar.label}</h2>
+      </div>
+      <div className="hidden sm:flex space-x-2 bg-gray-100 p-1 rounded-2xl">
         <button
           onClick={() => setView("month")}
-          className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-colors ${toolbar.view === "month" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"}`}
+          className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-colors ${toolbar.view === "month" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"}`}
         >
           Month
         </button>
         <button
           onClick={() => setView("week")}
-          className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-colors ${toolbar.view === "week" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"}`}
+          className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-colors ${toolbar.view === "week" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"}`}
         >
           Week
         </button>
         <button
           onClick={() => setView("day")}
-          className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-colors ${toolbar.view === "day" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"}`}
+          className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-colors ${toolbar.view === "day" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"}`}
         >
           Day
         </button>
@@ -83,9 +90,25 @@ const CustomToolbar = (toolbar: ToolbarProps<UnifiedCalendarEvent, object>) => {
   );
 };
 
+const CustomDateHeader = ({ date }: { date: Date }) => {
+  return (
+    <div className="flex flex-col items-center justify-center py-1.5">
+      <span className="text-sm font-semibold text-gray-500 uppercase">{format(date, "EEE")}</span>
+      <span className="text-lg sm:text-xl font-bold text-[#4b5563] mt-0.25">
+        {format(date, "d")}
+      </span>
+    </div>
+  );
+};
+
 export default function CalendarWidget({ tasks, projects, events }: CalendarWidgetProps) {
   const router = useRouter();
   const { openTaskDetailModal, openEventDetailModal } = useUIStore();
+
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentView, setCurrentView] = useState<View>("month");
+
+  const defaultScrollTime = new Date(1970, 1, 1, 8, 0, 0);
 
   const calendarEvents = useMemo(() => {
     const unifiedEvents: UnifiedCalendarEvent[] = [];
@@ -135,21 +158,22 @@ export default function CalendarWidget({ tasks, projects, events }: CalendarWidg
 
   const eventStyleGetter = (event: UnifiedCalendarEvent) => {
     let backgroundColor = "#3174ad";
-    if (event.type === "task") backgroundColor = "#0EA5E9";
-    if (event.type === "project") backgroundColor = "#EF4444";
-    if (event.type === "event") backgroundColor = "#8B5CF6";
+    let color = "white";
+    if (event.type === "task") ((backgroundColor = "#bfdbfe"), (color = "#1e40af"));
+    if (event.type === "project") ((backgroundColor = "#fecdd3"), (color = "#9f1239"));
+    if (event.type === "event") ((backgroundColor = "#c7d2fe"), (color = "#4338ca"));
 
     return {
       style: {
         backgroundColor,
         borderRadius: "4px",
         border: "none",
-        color: "white",
-        fontSize: "11px",
+        color,
+        fontSize: "11.5px",
         lineHeight: "1.2",
-        fontWeight: "600",
+        fontWeight: "500",
         padding: "2px 8px",
-        marginBottom: "2px",
+        marginBottom: "1px",
       },
     };
   };
@@ -161,16 +185,16 @@ export default function CalendarWidget({ tasks, projects, events }: CalendarWidg
   };
 
   return (
-    <div className="h-[750px] bg-white rounded-[20px] p-6 border border-gray-200 shadow-sm">
+    <div className="h-[720px] bg-white rounded-[20px] p-6 border border-gray-200 shadow-sm">
       <div className="flex items-center gap-4 mb-2 px-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
-          <div className="w-3 h-3 rounded-full bg-sky-500"></div> Tasks
+          <div className="w-3 h-3 rounded-full bg-blue-200"></div> Tasks
         </div>
         <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div> Project Deadlines
+          <div className="w-3 h-3 rounded-full bg-rose-200"></div> Project Deadlines
         </div>
         <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
-          <div className="w-3 h-3 rounded-full bg-violet-500"></div> Events
+          <div className="w-3 h-3 rounded-full bg-indigo-300"></div> Events
         </div>
       </div>
 
@@ -179,14 +203,22 @@ export default function CalendarWidget({ tasks, projects, events }: CalendarWidg
         events={calendarEvents}
         startAccessor="start"
         endAccessor="end"
-        style={{ height: "calc(100% - 40px)" }}
+        style={{ height: "calc(100% - 25px)" }}
         eventPropGetter={eventStyleGetter}
         onSelectEvent={handleSelectEvent}
+        date={currentDate}
+        onNavigate={(newDate) => setCurrentDate(newDate)}
+        view={currentView}
+        onView={(newView) => setCurrentView(newView)}
         views={["month", "week", "day"]}
-        defaultView="month"
         popup
+        step={15}
+        timeslots={2}
+        scrollToTime={defaultScrollTime}
         components={{
           toolbar: CustomToolbar,
+          week: { header: CustomDateHeader },
+          day: { header: CustomDateHeader },
         }}
       />
     </div>

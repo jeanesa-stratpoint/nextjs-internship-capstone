@@ -53,3 +53,90 @@
 }
 
 .cl-internal-1dauvpw { display: none !important; }
+
+/* Calendar: (15 mins) a dashed line */
+.rbc-timeslot-group .rbc-time-slot:not(:first-child) {
+  border-top: 1px dashed #e5e7eb !important;
+}
+
+/* (30 mins) slightly darker solid line */
+.rbc-timeslot-group {
+  border-bottom: 1px solid #d1d5db !important;
+}
+
+.rbc-time-view .rbc-time-content .rbc-timeslot-group:first-child {
+  border-top: none !important;
+}
+
+.rbc-time-gutter .rbc-label {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #6b7280 !important;
+  padding: 0 8px !important;
+}
+
+.rbc-header {
+  padding: 10px 8px !important; /* Adds vertical and horizontal padding */
+  font-weight: 800 !important; /* Makes the text slightly bolder */
+  color: #4b5563 !important; /* Tailwind gray-600 for a softer text color */
+  text-transform: uppercase !important;
+  font-size: 12px !important; 
+  border-bottom: 1px solid #e5e7eb !important; /* Tailwind gray-200 */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important; /* Centers the text perfectly */
+}
+
+.rbc-month-view .rbc-header + .rbc-header {
+  border-left: 2px solid #f3f4f6 !important; /* Tailwind gray-100 */
+}
+
+.rbc-time-view .rbc-allday-cell::-webkit-scrollbar {
+  width: 4px;
+}
+.rbc-time-view .rbc-allday-cell::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; 
+  border-radius: 4px;
+}
+
+.rbc-month-view .rbc-date-cell {
+  padding-right: 8px !important; 
+  padding-top: 6px !important;   
+  padding-bottom: 2px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #4b5563 !important; 
+}
+
+
+.rbc-show-more {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important; 
+  padding-top: 2px !important;
+  padding-left: 4px !important;
+  background: transparent !important;
+  text-align: left !important;
+  display: block;
+  line-height: 1 !important;
+  margin-top: 1px !important;
+}
+
+.rbc-show-more:hover {
+  color: #111827 !important; 
+  text-decoration: underline;
+}
+
+.rbc-time-view .rbc-allday-cell {
+  max-height: 110px !important; /* 3-4 tasks */
+  overflow-y: auto !important;
+}
+
+
+.rbc-time-view .rbc-allday-cell::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rbc-time-view .rbc-allday-cell::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
