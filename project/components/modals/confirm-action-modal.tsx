@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, AlertCircle, Loader2 } from "lucide-react";
 
 interface ConfirmActionModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface ConfirmActionModalProps {
   confirmText: string;
   isLoading?: boolean;
   variant?: "global" | "inner";
+  isDestructive?: boolean;
 }
 
 export default function ConfirmActionModal({
@@ -22,13 +23,26 @@ export default function ConfirmActionModal({
   confirmText,
   isLoading,
   variant = "global",
+  isDestructive = true,
 }: ConfirmActionModalProps) {
   if (!isOpen) return null;
 
+  const isDestructiveAction = isDestructive !== false;
+
+  const iconBgColor = isDestructiveAction ? "bg-red-50" : "bg-blue-50";
+  const iconBorderColor = isDestructiveAction ? "border-red-100" : "border-blue-100";
+  const iconColor = isDestructiveAction ? "text-red-600" : "text-blue-600";
+  const buttonBgColor = isDestructiveAction
+    ? "bg-red-600 hover:bg-red-700"
+    : "bg-blue-600 hover:bg-blue-700";
+  const IconComponent = isDestructiveAction ? Trash2 : AlertCircle;
+
   const modalContent = (
     <>
-      <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-5 border border-red-100">
-        <Trash2 size={32} className="text-red-600" />
+      <div
+        className={`w-16 h-16 ${iconBgColor} rounded-full flex items-center justify-center mb-5 border ${iconBorderColor}`}
+      >
+        <IconComponent size={32} className={iconColor} />
       </div>
       <h3 className="text-2xl font-bold text-black mb-2">{title}</h3>
       <p className="text-gray-500 mb-8 text-sm px-2">{description}</p>
@@ -43,7 +57,7 @@ export default function ConfirmActionModal({
         <button
           onClick={onConfirm}
           disabled={isLoading}
-          className="flex-1 py-3 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center justify-center gap-2"
+          className={`flex-1 py-3 text-sm font-semibold text-white ${buttonBgColor} rounded-xl transition-colors flex items-center justify-center gap-2`}
         >
           {isLoading ? (
             <>

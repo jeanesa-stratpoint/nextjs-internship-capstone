@@ -114,6 +114,7 @@ export default function ProjectHeaderActions({
         onConfirm={handleDeleteProject}
         title="Delete Project?"
         description="Are you sure you want to permanently delete this project? This cannot be undone."
+        confirmText="Delete Project"
         isLoading={false}
       />
       <ConfirmActionModal
