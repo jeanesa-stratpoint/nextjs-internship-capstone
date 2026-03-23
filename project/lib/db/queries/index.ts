@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles, events } from "@/lib/db/schema";
+import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles, events, projectInvitations } from "@/lib/db/schema";
 import { eq, desc, inArray, asc, and, ne, gte } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 
@@ -94,23 +94,29 @@ export const queries = {
       const [newProject] = await db.insert(projects).values(data).returning();
       return newProject;
     },
+
     addMembers: async (membersToInsert: { projectId: string; userId: string; role: string }[]) => {
       await db.insert(projectMembers).values(membersToInsert).onConflictDoNothing();
     },
+
     updateStatus: async (projectId: string, status: "active" | "completed" | "on-hold") => {
       await db.update(projects).set({ status }).where(eq(projects.id, projectId));
     },
+
     updateDetails: async (projectId: string, data: { name: string; description?: string | null; dueDate?: Date | null }) => {
       await db.update(projects).set(data).where(eq(projects.id, projectId));
     },
+
     delete: async (projectId: string) => {
       await db.delete(projects).where(eq(projects.id, projectId));
     },
+
     removeMember: async (projectId: string, userId: string) => {
       await db.delete(projectMembers).where(
         and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId))
       );
     },
+
     removeMemberFromAllOwnedProjects: async (ownerId: string, memberId: string) => {
       const ownedProjects = await db
         .select({ id: projects.id })
@@ -127,6 +133,39 @@ export const queries = {
           )
         );
       }
+    },
+
+    createInvitation: async (data: { projectId: string; email: string; invitedBy: string }) => {
+      const existing = await db.select().from(projectInvitations).where(
+        and(
+          eq(projectInvitations.projectId, data.projectId),
+          eq(projectInvitations.email, data.email),
+          eq(projectInvitations.status, 'pending')
+        )
+      ).limit(1);
+
+      if (existing.length > 0) return existing[0];
+
+      const [newInvite] = await db.insert(projectInvitations).values(data).returning();
+      return newInvite;
+    },
+
+    getPendingInvitationsByEmail: async (email: string) => {
+      return await db.select()
+        .from(projectInvitations)
+        .where(
+          and(
+            eq(projectInvitations.email, email),
+            eq(projectInvitations.status, 'pending')
+          )
+        );
+    },
+
+    markInvitationsAccepted: async (invitationIds: string[]) => {
+      if (invitationIds.length === 0) return;
+      await db.update(projectInvitations)
+        .set({ status: 'accepted' })
+        .where(inArray(projectInvitations.id, invitationIds));
     },
   },
 
@@ -215,9 +254,11 @@ export const queries = {
       const [newTask] = await db.insert(tasks).values(data).returning();
       return newTask;
     },
+
     updateStatus: async (taskId: string, listId: string) => {
       await db.update(tasks).set({ listId }).where(eq(tasks.id, taskId));
     },
+
     updateDetails: async (taskId: string, data: {
       title?: string;
       description?: string | null;
@@ -230,15 +271,19 @@ export const queries = {
     }) => {
       await db.update(tasks).set(data).where(eq(tasks.id, taskId));
     },
+
     updateOrderAndStatus: async (taskId: string, order: number, listId: string) => {
       await db.update(tasks).set({ order, listId }).where(eq(tasks.id, taskId));
     },
+
     delete: async (taskId: string) => {
       await db.delete(tasks).where(eq(tasks.id, taskId));
     },
+
     deleteAllInList: async (listId: string) => {
       await db.delete(tasks).where(eq(tasks.listId, listId));
     },
+
     logActivity: async (data: { taskId: string; userId: string; actionType: string; oldValue?: string; newValue?: string }) => {
       const [inserted] = await db.insert(taskActivities).values(data).returning();
       
@@ -258,6 +303,7 @@ export const queries = {
         
       return joined[0];
     },
+
     logBulkActivities: async (activities: { taskId: string; userId: string | null; actionType: string; oldValue?: string | null; newValue?: string | null }[]) => {
       if (activities.length === 0) return [];
       
@@ -280,6 +326,7 @@ export const queries = {
         
       return joined;
     },
+
     createComment: async (taskId: string, userId: string, content: string) => {
       const [newComment] = await db.insert(comments).values({
         taskId,
@@ -309,12 +356,15 @@ export const queries = {
       const [newList] = await db.insert(lists).values(data).returning();
       return newList;
     },
+
     updateDetails: async (listId: string, name: string, color: string) => {
       await db.update(lists).set({ name, color }).where(eq(lists.id, listId));
     },
+
     updateOrder: async (listId: string, order: number) => {
       await db.update(lists).set({ order }).where(eq(lists.id, listId));
     },
+    
     delete: async (listId: string) => {
       await db.delete(lists).where(eq(lists.id, listId));
     },
