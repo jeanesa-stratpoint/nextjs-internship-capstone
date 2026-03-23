@@ -5,6 +5,7 @@ export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high']);
 export const projectStatusEnum = pgEnum('project_status', ['active', 'completed', 'on-hold']);
 export const listStageEnum = pgEnum("list_stage", ["unstarted", "in_progress", "completed"]);
 export const eventTypeEnum = pgEnum('event_type', ['meeting', 'milestone', 'reminder']);
+export const invitationStatusEnum = pgEnum('invitation_status', ['pending', 'accepted', 'declined', 'revoked', 'expired']);
 
 // RBAC
 export const roles = pgTable('roles', {
@@ -121,6 +122,26 @@ export const events = pgTable('events', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const projectInvitations = pgTable('project_invitations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  status: invitationStatusEnum('status').default('pending').notNull(),
+  invitedBy: text('invited_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+
+export const projectInvitationsRelations = relations(projectInvitations, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectInvitations.projectId],
+    references: [projects.id],
+  }),
+  inviter: one(users, {
+    fields: [projectInvitations.invitedBy],
+    references: [users.id],
+  }),
+}));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, {
@@ -133,6 +154,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   activities: many(taskActivities),
   comments: many(comments),
   createdEvents: many(events),
+  invitations: many(projectInvitations),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -143,6 +165,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   members: many(projectMembers),
   lists: many(lists),
   events: many(events),
+  invitations: many(projectInvitations),
 }));
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
