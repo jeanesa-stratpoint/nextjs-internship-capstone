@@ -16,8 +16,7 @@ import {
   Download,
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
-import { getTodayString } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
+import { getTodayString, formatRelativeTime } from "@/lib/utils";
 import { useTaskDetails, useTaskMutations } from "@/hooks/use-tasks";
 import { DbProject, DbList, DbComment, DbActivity, DbTask, TeamMember } from "@/types";
 import { useUploadThing } from "@/lib/uploadthing";
@@ -628,7 +627,7 @@ function TaskDetailContent({
                   ? `${item.user.firstName || ""} ${item.user.lastName || ""}`.trim() ||
                     "Unknown User"
                   : "Unknown User";
-                const timeAgo = formatDistanceToNow(new Date(item.createdAt), { addSuffix: true });
+                const timeAgo = formatRelativeTime(item.createdAt);
 
                 if (item.feedType === "comment") {
                   return (

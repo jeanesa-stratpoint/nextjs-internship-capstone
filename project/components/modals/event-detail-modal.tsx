@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
 import { useEventMutations } from "@/hooks/use-events";
-import { format } from "date-fns";
-import { DbProject } from "@/types";
+import { formatEventDate, formatEventTime, formatDateTimeInput } from "@/lib/utils";
+import { DbProject } from "@/types/index";
 import ConfirmActionModal from "./confirm-action-modal";
 
 interface EventDetailModalProps {
@@ -52,8 +52,9 @@ export default function EventDetailModal({
       setTitle(selectedEvent.title);
       setDescription(selectedEvent.description || "");
       setType(selectedEvent.type);
-      setStartTime(format(new Date(selectedEvent.startTime), "yyyy-MM-dd'T'HH:mm"));
-      setEndTime(format(new Date(selectedEvent.endTime), "yyyy-MM-dd'T'HH:mm"));
+
+      setStartTime(formatDateTimeInput(selectedEvent.startTime));
+      setEndTime(formatDateTimeInput(selectedEvent.endTime));
       setError("");
     }
   }, [isEditing, selectedEvent]);
@@ -319,9 +320,9 @@ export default function EventDetailModal({
               <div className="flex items-center gap-2 text-sm font-medium text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
                 <Clock size={16} className="text-violet-500" />
                 <div>
-                  <p>{format(startDate, "EEEE, MMMM d, yyyy")}</p>
+                  <p>{formatEventDate(startDate)}</p>
                   <p className="text-black">
-                    {format(startDate, "h:mm a")} — {format(endDate, "h:mm a")}
+                    {formatEventTime(startDate)} — {formatEventTime(endDate)}
                   </p>
                 </div>
               </div>
