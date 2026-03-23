@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import ConfirmActionModal from "./modals/confirm-action-modal";
+import ConfirmActionModal from "../modals/confirm-action-modal";
 import { useState } from "react";
 import { formatDate } from "@/lib/utils";
 import { MoreHorizontal, CheckCircle2, PauseCircle, Trash2, Edit } from "lucide-react";

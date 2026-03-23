@@ -17,8 +17,8 @@ import { TeamMember } from "@/types/index";
 import { useUIStore } from "@/stores/ui-store";
 import { useBoardStore } from "@/stores/board-store";
 import { useTaskMutations } from "@/hooks/use-tasks";
-import { BoardPermissions } from "./kanban-board";
-import ConfirmActionModal from "./modals/confirm-action-modal";
+import { BoardPermissions } from "../kanban-board";
+import ConfirmActionModal from "../modals/confirm-action-modal";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 

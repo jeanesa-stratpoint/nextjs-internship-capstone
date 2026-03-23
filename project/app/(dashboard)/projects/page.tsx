@@ -5,7 +5,7 @@ import { formatHeaderDate } from "@/lib/utils";
 import { hasSystemPermission } from "@/lib/rbac";
 import { queries } from "@/lib/db/queries";
 import QuickActions from "@/components/quick-actions";
-import ProjectCard from "@/components/project-card";
+import ProjectCard from "@/components/cards/project-card";
 
 export default async function ProjectsPage() {
   const { userId } = await auth();
@@ -52,7 +52,7 @@ export default async function ProjectsPage() {
   };
 
   return (
-    <div className="space-y-8 text-black h-full flex flex-col">
+    <div className="space-y-8 text-black h-full flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-700">
       {/* TOP ROW */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
         <div>
@@ -90,7 +90,7 @@ export default async function ProjectsPage() {
       </div>
 
       {/* ACTIVE PROJECTS */}
-      <div className="pt-2">
+      <div className="pt-2 animate-in slide-in-from-bottom-4 fade-in duration-700">
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-sky-200"></div> Active Projects (
           {activeProjects.length})
@@ -100,7 +100,7 @@ export default async function ProjectsPage() {
 
       {/* ON-HOLD PROJECTS */}
       {onHoldProjects.length > 0 && (
-        <div className="pt-2">
+        <div className="pt-2 animate-in slide-in-from-bottom-4 fade-in duration-700">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> On Hold (
             {onHoldProjects.length})
@@ -110,7 +110,7 @@ export default async function ProjectsPage() {
       )}
 
       {/* COMPLETED PROJECTS */}
-      <div className="pt-2 pb-12">
+      <div className="pt-2 pb-12 animate-in slide-in-from-bottom-4 fade-in duration-700">
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-lime-400"></div> Completed (
           {completedProjects.length})

@@ -4,8 +4,8 @@ import { queries } from "@/lib/db/queries/index";
 import { hasSystemPermission } from "@/lib/rbac";
 import { formatHeaderDate } from "@/lib/utils";
 import { Users } from "lucide-react";
-import TeamCard, { TeamMemberData } from "@/components/team-card";
-import TeamInviteButton from "@/components/team-invite-button";
+import TeamCard, { TeamMemberData } from "@/components/cards/team-card";
+import TeamInviteButton from "@/components/buttons/team-invite-button";
 import GlobalInviteModal from "@/components/modals/global-invite-modal";
 
 export default async function TeamPage() {
@@ -22,7 +22,7 @@ export default async function TeamPage() {
   const currentDate = formatHeaderDate();
 
   return (
-    <div className="space-y-8 text-black h-full flex flex-col">
+    <div className="space-y-8 text-black h-full flex flex-col ">
       {/* TOP HEADER ROW */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
@@ -38,7 +38,7 @@ export default async function TeamPage() {
 
       {/* TEAM GRID */}
       {teamMembers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4 border-2 border-dashed border-gray-200 rounded-[24px] bg-gray-50/50">
+        <div className="flex flex-col items-center justify-center py-20 px-4 border-2 border-dashed border-gray-200 rounded-[24px] bg-gray-50/50 animate-in slide-in-from-bottom-4 fade-in duration-700">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
             <Users size={32} />
           </div>
@@ -49,7 +49,7 @@ export default async function TeamPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-12 animate-in slide-in-from-bottom-4 fade-in duration-700">
           {teamMembers.map((member: TeamMemberData) => (
             <TeamCard key={member.id} member={member} canManageTeam={canInviteMember} />
           ))}

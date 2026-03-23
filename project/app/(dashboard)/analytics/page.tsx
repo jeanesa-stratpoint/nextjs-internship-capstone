@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { queries } from "@/lib/db/queries";
 import { formatHeaderDate } from "@/lib/utils";
 import { BarChart3, TrendingUp, Users, Clock } from "lucide-react";
-import AnalyticsCard from "@/components/analytics-card";
+import AnalyticsCard from "@/components/cards/analytics-card";
 import ProjectProgressChart from "@/components/charts/project-progress-chart";
 import TeamActivityChart from "@/components/charts/team-activity-chart";
 

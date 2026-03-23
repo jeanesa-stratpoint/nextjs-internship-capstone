@@ -27,7 +27,7 @@ import { useUIStore } from "@/stores/ui-store";
 import { useProjectBoard, useTaskMutations } from "@/hooks/use-tasks";
 import { useListMutations } from "@/hooks/use-lists";
 import { DbProject, TeamMember } from "@/types/index";
-import TaskCard from "@/components/task-card";
+import TaskCard from "@/components/cards/task-card";
 import CreateTaskModal from "./modals/create-task-modal";
 import ConfirmActionModal from "./modals/confirm-action-modal";
 

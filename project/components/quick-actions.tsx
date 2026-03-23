@@ -6,9 +6,9 @@ import CreateProjectModal from "@/components/modals/create-project-modal";
 import GlobalInviteModal from "@/components/modals/global-invite-modal";
 import CreateTaskModal from "@/components/modals/create-task-modal";
 import TaskDetailModal from "@/components/modals/task-detail-modal";
-import TeamInviteButton from "@/components/team-invite-button";
-import CreateProjectButton from "@/components/create-project-button";
-import CreateTaskButton from "@/components/create-task-button";
+import TeamInviteButton from "@/components/buttons/team-invite-button";
+import CreateProjectButton from "@/components/buttons/create-project-button";
+import CreateTaskButton from "@/components/buttons/create-task-button";
 
 interface QuickActionsProps {
   canCreateProject: boolean;

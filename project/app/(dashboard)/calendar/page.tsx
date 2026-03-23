@@ -4,7 +4,7 @@ import { queries } from "@/lib/db/queries";
 import { hasSystemPermission } from "@/lib/rbac";
 import { formatHeaderDate } from "@/lib/utils";
 
-import CreateEventButton from "@/components/create-event-button";
+import CreateEventButton from "@/components/buttons/create-event-button";
 import CreateEventModal from "@/components/modals/create-event-modal";
 import CalendarWidget from "@/components/calendar-widget";
 import TaskDetailModal from "@/components/modals/task-detail-modal";
@@ -32,7 +32,7 @@ export default async function CalendarPage() {
   const currentDate = formatHeaderDate();
 
   return (
-    <div className="space-y-4 text-black animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
+    <div className="space-y-4 text-black">
       <CreateEventModal userProjects={userProjects} />
       <TaskDetailModal />
       <EventDetailModal
@@ -53,7 +53,9 @@ export default async function CalendarPage() {
         {canCreateEvent && <CreateEventButton />}
       </div>
 
-      <CalendarWidget projects={userProjects} tasks={tasks} events={events} />
+      <div className="animate-in slide-in-from-bottom-4 fade-in duration-700">
+        <CalendarWidget projects={userProjects} tasks={tasks} events={events} />
+      </div>
     </div>
   );
 }

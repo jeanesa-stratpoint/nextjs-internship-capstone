@@ -84,7 +84,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         {project.description || "No description provided for this project."}
       </p>
 
-      <div className="flex-1 overflow-hidden ml-14">
+      <div className="flex-1 overflow-hidden ml-14 animate-in slide-in-from-bottom-4 fade-in duration-700">
         <KanbanBoard project={project} permissions={boardPermissions} />
       </div>
 
