@@ -124,6 +124,7 @@ export const events = pgTable('events', {
 
 export const projectInvitations = pgTable('project_invitations', {
   id: uuid('id').defaultRandom().primaryKey(),
+  clerkId: text('clerk_id').notNull(),
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
   status: invitationStatusEnum('status').default('pending').notNull(),

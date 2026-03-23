@@ -1,0 +1,236 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - img "Levera Logo" [ref=e5]
+        - button [ref=e6] [cursor=pointer]:
+          - img [ref=e7]
+      - navigation [ref=e10]:
+        - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e12]
+          - generic [ref=e17]: Dashboard
+        - link "Projects" [ref=e18] [cursor=pointer]:
+          - /url: /projects
+          - img [ref=e19]
+          - generic [ref=e21]: Projects
+        - link "Team" [ref=e22] [cursor=pointer]:
+          - /url: /team
+          - img [ref=e23]
+          - generic [ref=e28]: Team
+        - link "Analytics" [ref=e29] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e30]
+          - generic [ref=e33]: Analytics
+        - link "Calendar" [ref=e34] [cursor=pointer]:
+          - /url: /calendar
+          - img [ref=e35]
+          - generic [ref=e37]: Calendar
+        - link "Notifications" [ref=e38] [cursor=pointer]:
+          - /url: /notifications
+          - img [ref=e39]
+          - generic [ref=e42]: Notifications
+        - link "Settings" [ref=e43] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e44]
+          - generic [ref=e47]: Settings
+      - generic [ref=e48]:
+        - generic [ref=e50]:
+          - img [ref=e51]
+          - text: Light
+        - generic [ref=e59]:
+          - button "Open user menu" [ref=e61] [cursor=pointer]:
+            - img "User Test's logo" [ref=e64]
+          - generic [ref=e66]:
+            - generic [ref=e67]: User Test
+            - generic [ref=e68]: Project Manager
+    - main [ref=e69]:
+      - generic [ref=e71]:
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - link [ref=e74] [cursor=pointer]:
+              - /url: /projects
+              - img [ref=e75]
+            - heading "Project Test 2" [level=1] [ref=e78]
+          - generic [ref=e79]:
+            - button "U" [ref=e81] [cursor=pointer]:
+              - generic [ref=e83]: U
+            - button [ref=e85] [cursor=pointer]:
+              - img [ref=e86]
+        - paragraph [ref=e90]: No description provided for this project.
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - button "To Do 2" [disabled] [ref=e94]:
+                - generic [ref=e95]:
+                  - img [ref=e96]
+                  - heading "To Do" [level=3] [ref=e98]
+                  - generic [ref=e99]: "2"
+                - button [disabled] [ref=e101] [cursor=pointer]:
+                  - img [ref=e102]
+              - generic [ref=e106]:
+                - button "Project Test 2 UN (E2E) Task Created Test 1774096092224 medium 0" [ref=e107]:
+                  - generic [ref=e108]:
+                    - generic [ref=e109]:
+                      - img [ref=e110]
+                      - generic [ref=e112]: Project Test 2
+                    - generic [ref=e113]:
+                      - generic "Unassigned" [ref=e114]: UN
+                      - button [ref=e116] [cursor=pointer]:
+                        - img [ref=e117]
+                  - heading "(E2E) Task Created Test 1774096092224" [level=4] [ref=e122]
+                  - generic [ref=e124]:
+                    - generic [ref=e125]: medium
+                    - generic "0 comments" [ref=e126]:
+                      - img [ref=e127]
+                      - generic [ref=e129]: "0"
+                - button "Project Test 2 UN (E2E) Task Created Test 1774096103982 medium 0" [ref=e130]:
+                  - generic [ref=e131]:
+                    - generic [ref=e132]:
+                      - img [ref=e133]
+                      - generic [ref=e135]: Project Test 2
+                    - generic [ref=e136]:
+                      - generic "Unassigned" [ref=e137]: UN
+                      - button [ref=e139] [cursor=pointer]:
+                        - img [ref=e140]
+                  - heading "(E2E) Task Created Test 1774096103982" [level=4] [ref=e145]
+                  - generic [ref=e147]:
+                    - generic [ref=e148]: medium
+                    - generic "0 comments" [ref=e149]:
+                      - img [ref=e150]
+                      - generic [ref=e152]: "0"
+              - button "Add task" [ref=e154] [cursor=pointer]:
+                - img [ref=e155]
+                - text: Add task
+            - generic [ref=e156]:
+              - button "In Progress 0" [ref=e157]:
+                - generic [ref=e158]:
+                  - img [ref=e159]
+                  - heading "In Progress" [level=3] [ref=e161]
+                  - generic [ref=e162]: "0"
+                - button [ref=e164] [cursor=pointer]:
+                  - img [ref=e165]
+              - generic [ref=e170]: Drop tasks here
+              - button "Add task" [ref=e172] [cursor=pointer]:
+                - img [ref=e173]
+                - text: Add task
+            - generic [ref=e174]:
+              - button "Review 0" [ref=e175]:
+                - generic [ref=e176]:
+                  - img [ref=e177]
+                  - heading "Review" [level=3] [ref=e179]
+                  - generic [ref=e180]: "0"
+                - button [ref=e182] [cursor=pointer]:
+                  - img [ref=e183]
+              - generic [ref=e188]: Drop tasks here
+              - button "Add task" [ref=e190] [cursor=pointer]:
+                - img [ref=e191]
+                - text: Add task
+            - generic [ref=e192]:
+              - button "Done 0" [disabled] [ref=e193]:
+                - generic [ref=e194]:
+                  - img [ref=e195]
+                  - heading "Done" [level=3] [ref=e197]
+                  - generic [ref=e198]: "0"
+                - button [disabled] [ref=e200] [cursor=pointer]:
+                  - img [ref=e201]
+              - generic [ref=e206]: Drop tasks here
+              - button "Add task" [ref=e208] [cursor=pointer]:
+                - img [ref=e209]
+                - text: Add task
+            - button "Add another list" [ref=e211] [cursor=pointer]:
+              - img [ref=e212]
+              - generic [ref=e213]: Add another list
+          - status [ref=e214]: Draggable item 13bc9346-d58b-4e89-a031-7c6f74d8ac4d was dropped over droppable area 13bc9346-d58b-4e89-a031-7c6f74d8ac4d
+        - generic [ref=e216]:
+          - generic [ref=e217]:
+            - generic [ref=e218]:
+              - generic [ref=e219]: Project Test 2
+              - textbox "Task Title..." [ref=e220]: (E2E) Task Created Test 1774096092224
+            - generic [ref=e221]:
+              - button "Delete Task" [ref=e222] [cursor=pointer]:
+                - img [ref=e223]
+              - button [ref=e227] [cursor=pointer]:
+                - img [ref=e228]
+          - generic [ref=e231]:
+            - generic [ref=e233]:
+              - generic [ref=e234]:
+                - generic [ref=e235]:
+                  - generic [ref=e236]: Description/Task Details
+                  - generic [ref=e237]:
+                    - generic [ref=e238]:
+                      - button [ref=e239] [cursor=pointer]:
+                        - img [ref=e240]
+                      - button [ref=e242] [cursor=pointer]:
+                        - img [ref=e243]
+                      - button [ref=e245] [cursor=pointer]:
+                        - img [ref=e246]
+                      - button [ref=e250] [cursor=pointer]:
+                        - img [ref=e251]
+                      - button [ref=e252] [cursor=pointer]:
+                        - img [ref=e253]
+                    - paragraph [ref=e259]: Add a more detailed description...
+                - generic [ref=e260]:
+                  - generic [ref=e261]:
+                    - img [ref=e262]
+                    - text: Attachment
+                  - generic [ref=e265] [cursor=pointer]:
+                    - img [ref=e266]
+                    - paragraph [ref=e268]: Click to select a file
+                    - paragraph [ref=e269]: PDF or Image (Max 4MB/8MB)
+              - generic [ref=e270]:
+                - generic [ref=e271]:
+                  - generic [ref=e272]:
+                    - img [ref=e273]
+                    - text: Status
+                  - combobox [ref=e276] [cursor=pointer]:
+                    - option "To Do" [selected]
+                    - option "In Progress"
+                    - option "Review"
+                    - option "Done"
+                - generic [ref=e277]:
+                  - generic [ref=e278]:
+                    - img [ref=e279]
+                    - text: Assignee
+                  - combobox [ref=e282] [cursor=pointer]:
+                    - option "Unassigned" [selected]
+                    - option "User Test"
+                - generic [ref=e283]:
+                  - generic [ref=e284]:
+                    - img [ref=e285]
+                    - text: Priority
+                  - combobox [ref=e287] [cursor=pointer]:
+                    - option "Low"
+                    - option "Medium" [selected]
+                    - option "High"
+                - generic [ref=e288]:
+                  - generic [ref=e289]:
+                    - img [ref=e290]
+                    - text: Due Date
+                  - textbox [ref=e292]
+              - button "Save Changes" [ref=e294] [cursor=pointer]
+            - generic [ref=e295]:
+              - heading "Activity & Comments" [level=3] [ref=e297]:
+                - img [ref=e298]
+                - text: Activity & Comments
+              - paragraph [ref=e301]: No activity yet.
+              - generic [ref=e303]:
+                - textbox "Write a comment..." [disabled] [ref=e304]: E2E Comment generated at 1774096092224
+                - button "Send comment" [disabled] [ref=e305]:
+                  - img [ref=e306]
+  - generic [ref=e308]:
+    - img [ref=e310]
+    - button "Open Tanstack query devtools" [ref=e358] [cursor=pointer]:
+      - img [ref=e359]
+  - button "Open Next.js Dev Tools" [ref=e412] [cursor=pointer]:
+    - generic [ref=e415]:
+      - text: Rendering
+      - generic [ref=e416]:
+        - generic [ref=e417]: .
+        - generic [ref=e418]: .
+        - generic [ref=e419]: .
+  - alert [ref=e420]
+```
