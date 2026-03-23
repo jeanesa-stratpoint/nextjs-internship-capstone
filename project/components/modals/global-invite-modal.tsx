@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { X, Loader2, Search, FolderKanban, CheckCircle2 } from "lucide-react";
+import { X, Loader2, Search, FolderKanban, CheckCircle2, Mail } from "lucide-react";
 import { useProjectMutations } from "@/hooks/use-projects";
 import { useUIStore } from "@/stores/ui-store";
 import { useUser } from "@clerk/nextjs";
@@ -12,10 +12,12 @@ interface GlobalInviteModalProps {
   userProjects: DbProject[];
 }
 
+type SelectedUser = TeamMember & { isExternal?: boolean };
+
 export default function GlobalInviteModal({ userProjects }: GlobalInviteModalProps) {
   const { user } = useUser();
   const { isGlobalInviteModalOpen, closeGlobalInviteModal, inviteProjectId } = useUIStore();
-  const { inviteMembers } = useProjectMutations();
+  const { inviteMembers, inviteUserByEmail } = useProjectMutations();
 
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +27,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<TeamMember[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<TeamMember[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<SelectedUser[]>([]);
 
   const handleClose = () => {
     closeGlobalInviteModal();
@@ -41,7 +43,6 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
   useEffect(() => {
     if (isGlobalInviteModalOpen) {
       document.body.style.overflow = "hidden";
-
       if (inviteProjectId && typeof inviteProjectId === "string") {
         setSelectedProjectId(inviteProjectId);
       } else {
@@ -50,7 +51,6 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
     } else {
       document.body.style.overflow = "unset";
     }
-
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -88,11 +88,22 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
     setIsSubmitting(true);
 
     try {
-      const memberIds = selectedUsers.map((u) => u.id);
+      const existingIds = selectedUsers.filter((u) => !u.isExternal).map((u) => u.id);
+      const externalEmails = selectedUsers.filter((u) => u.isExternal).map((u) => u.email);
 
-      await inviteMembers.mutateAsync({ projectId: selectedProjectId, memberIds });
+      if (existingIds.length > 0) {
+        await inviteMembers.mutateAsync({ projectId: selectedProjectId, memberIds: existingIds });
+      }
 
-      setSuccessMessage(`Successfully added ${selectedUsers.length} member(s) to the project!`);
+      if (externalEmails.length > 0) {
+        await Promise.all(
+          externalEmails.map((email) =>
+            inviteUserByEmail.mutateAsync({ projectId: selectedProjectId, email })
+          )
+        );
+      }
+
+      setSuccessMessage(`Successfully sent ${selectedUsers.length} invitation(s)!`);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("Failed to invite members");
@@ -100,6 +111,8 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
       setIsSubmitting(false);
     }
   };
+
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchQuery);
 
   if (!isGlobalInviteModalOpen) return null;
 
@@ -111,7 +124,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-5">
               <CheckCircle2 size={32} className="text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-black mb-2">Team Updated!</h2>
+            <h2 className="text-2xl font-bold text-black mb-2">Invites Sent!</h2>
             <p className="text-gray-500 mb-8">{successMessage}</p>
             <button
               onClick={handleClose}
@@ -141,10 +154,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1">
               <div className="space-y-6 mb-6">
                 <div>
-                  <label
-                    htmlFor="projectId"
-                    className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide"
-                  >
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
                     Select Project <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -153,7 +163,6 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                       className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                     />
                     <select
-                      id="projectId"
                       required
                       value={selectedProjectId}
                       onChange={(e) => setSelectedProjectId(e.target.value)}
@@ -173,7 +182,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
 
                 <div className="pt-4 border-t border-gray-100">
                   <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                    Search Users <span className="text-red-500">*</span>
+                    Search Users or Enter Email <span className="text-red-500">*</span>
                   </label>
 
                   {selectedUsers.length > 0 && (
@@ -181,9 +190,15 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                       {selectedUsers.map((u) => (
                         <div
                           key={u.id}
-                          className="flex items-center gap-2 bg-gray-100 pl-2 pr-1 py-1 rounded-full text-xs font-medium text-black"
+                          className={`flex items-center gap-2 pl-2 pr-1 py-1 rounded-full text-xs font-medium text-black ${
+                            u.isExternal ? "bg-blue-50 border border-blue-100" : "bg-gray-100"
+                          }`}
                         >
-                          {u.imageUrl ? (
+                          {u.isExternal ? (
+                            <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-blue-700">
+                              <Mail size={10} />
+                            </div>
+                          ) : u.imageUrl ? (
                             <Image
                               src={u.imageUrl}
                               alt="Avatar"
@@ -196,13 +211,15 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                               {(u.firstName?.[0] || u.email[0]).toUpperCase()}
                             </div>
                           )}
-                          <span>{u.firstName || u.email.split("@")[0]}</span>
+                          <span>
+                            {u.isExternal ? u.email : u.firstName || u.email.split("@")[0]}
+                          </span>
                           <button
                             type="button"
                             onClick={() =>
                               setSelectedUsers(selectedUsers.filter((usr) => usr.id !== u.id))
                             }
-                            className="p-0.5 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
+                            className="p-0.5 hover:bg-black/10 rounded-full transition-colors text-gray-500"
                           >
                             <X size={14} />
                           </button>
@@ -218,7 +235,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search by email or name..."
+                        placeholder="Search by name or email address..."
                         className="w-full text-sm outline-none text-black bg-transparent py-1"
                       />
                     </div>
@@ -229,43 +246,82 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                           <div className="p-3 text-center text-xs text-gray-500 flex justify-center items-center gap-2">
                             <Loader2 size={14} className="animate-spin" /> Searching...
                           </div>
-                        ) : searchResults.length > 0 ? (
-                          searchResults.map((u) => (
-                            <button
-                              key={u.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedUsers([...selectedUsers, u]);
-                                setSearchQuery("");
-                                setSearchResults([]);
-                              }}
-                              className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0"
-                            >
-                              {u.imageUrl ? (
-                                <Image
-                                  src={u.imageUrl}
-                                  alt="Avatar"
-                                  width={32}
-                                  height={32}
-                                  className="w-8 h-8 rounded-full bg-gray-200 object-cover"
-                                />
-                              ) : (
-                                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] text-blue-700 font-bold flex-shrink-0">
-                                  {(u.firstName?.[0] || u.email[0]).toUpperCase()}
-                                </div>
-                              )}
-                              <div className="flex flex-col">
-                                <span className="text-sm font-bold text-black">
-                                  {u.firstName} {u.lastName}
-                                </span>
-                                <span className="text-xs text-gray-500">{u.email}</span>
-                              </div>
-                            </button>
-                          ))
                         ) : (
-                          <div className="p-3 text-center text-xs text-gray-500">
-                            No users found.
-                          </div>
+                          <>
+                            {searchResults.length > 0 &&
+                              searchResults.map((u) => (
+                                <button
+                                  key={u.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedUsers([...selectedUsers, u]);
+                                    setSearchQuery("");
+                                    setSearchResults([]);
+                                  }}
+                                  className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0"
+                                >
+                                  {u.imageUrl ? (
+                                    <Image
+                                      src={u.imageUrl}
+                                      alt="Avatar"
+                                      width={32}
+                                      height={32}
+                                      className="w-8 h-8 rounded-full bg-gray-200 object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs text-blue-700 font-bold flex-shrink-0">
+                                      {(u.firstName?.[0] || u.email[0]).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-black">
+                                      {u.firstName} {u.lastName}
+                                    </span>
+                                    <span className="text-xs text-gray-500">{u.email}</span>
+                                  </div>
+                                </button>
+                              ))}
+
+                            {isValidEmail &&
+                              !searchResults.some((u) => u.email === searchQuery.toLowerCase()) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedUsers([
+                                      ...selectedUsers,
+                                      {
+                                        id: `ext_${Date.now()}`,
+                                        firstName: null,
+                                        lastName: null,
+                                        email: searchQuery.toLowerCase().trim(),
+                                        isExternal: true,
+                                      },
+                                    ]);
+                                    setSearchQuery("");
+                                    setSearchResults([]);
+                                  }}
+                                  className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center gap-3 border-t border-gray-50"
+                                >
+                                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                                    <Mail size={16} />
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-blue-700">
+                                      Invite new user via email
+                                    </span>
+                                    <span className="text-xs text-blue-600">
+                                      {searchQuery.toLowerCase()}
+                                    </span>
+                                  </div>
+                                </button>
+                              )}
+
+                            {searchResults.length === 0 && !isValidEmail && (
+                              <div className="p-3 text-center text-xs text-gray-500">
+                                No users found. Enter a full email to invite them.
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
