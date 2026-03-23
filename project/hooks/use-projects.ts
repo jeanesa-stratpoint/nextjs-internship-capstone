@@ -7,7 +7,8 @@ import {
   deleteProjectAction,
   inviteMembersAction,
   removeMemberAction,
-  removeTeamMemberGlobalAction
+  removeTeamMemberGlobalAction,
+  inviteUserByEmailAction
 } from "@/actions/projects";
 
 // MUTATIONS (WRITES)
@@ -60,6 +61,14 @@ export function useProjectMutations() {
     },
   });
 
+  const inviteUserByEmail = useMutation({
+    mutationFn: async ({ projectId, email }: { projectId: string; email: string }) => {
+      const result = await inviteUserByEmailAction(projectId, email);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+  });
+
   const removeMember = useMutation({
     mutationFn: async ({ projectId, memberId }: { projectId: string; memberId: string }) => {
       const result = await removeMemberAction(projectId, memberId);
@@ -83,7 +92,8 @@ export function useProjectMutations() {
     markProjectCompleted,
     deleteProject,
     inviteMembers,
+    inviteUserByEmail,
     removeMember,
-    removeTeamMemberGlobal
+    removeTeamMemberGlobal,
   };
 }
