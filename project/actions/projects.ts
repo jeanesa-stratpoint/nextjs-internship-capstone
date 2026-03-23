@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { hasSystemPermission } from "@/lib/rbac";
 import { projectSchema } from "@/lib/validations";
@@ -88,6 +88,40 @@ export async function inviteMembersAction(projectId: string, memberIds: string[]
   } catch (error: unknown) {
     console.error("Failed to invite members:", error);
     return { success: false, error: error instanceof Error ? error.message : "Failed to invite members." };
+  }
+}
+
+export async function inviteUserByEmailAction(projectId: string, email: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const canInvite = await hasSystemPermission(userId, "project-invite:create");
+    if (!canInvite) return { success: false, error: "Access Denied: You cannot invite members." };
+
+    if (!email || !email.includes("@")) return { success: false, error: "Valid email is required." };
+
+    const cleanEmail = email.toLowerCase().trim();
+    
+    await queries.projects.createInvitation({
+      projectId,
+      email: cleanEmail,
+      invitedBy: userId
+    });
+
+    const client = await clerkClient();
+    await client.invitations.createInvitation({
+      emailAddress: cleanEmail,
+      ignoreExisting: true, 
+      publicMetadata: {
+        invitedToProjectId: projectId,
+      }
+    });
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to send invitation:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Failed to invite user." };
   }
 }
 
