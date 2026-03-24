@@ -6,6 +6,7 @@ export const projectStatusEnum = pgEnum('project_status', ['active', 'completed'
 export const listStageEnum = pgEnum("list_stage", ["unstarted", "in_progress", "completed"]);
 export const eventTypeEnum = pgEnum('event_type', ['meeting', 'milestone', 'reminder']);
 export const invitationStatusEnum = pgEnum('invitation_status', ['pending', 'accepted', 'declined', 'revoked', 'expired']);
+export const notificationTypeEnum = pgEnum('notification_type', ['project_invite', 'task_assigned', 'mention', 'system']);
 
 // RBAC
 export const roles = pgTable('roles', {
@@ -124,7 +125,7 @@ export const events = pgTable('events', {
 
 export const projectInvitations = pgTable('project_invitations', {
   id: uuid('id').defaultRandom().primaryKey(),
-  clerkId: text('clerk_id').notNull(),
+  clerkId: text('clerk_id'),
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
   status: invitationStatusEnum('status').default('pending').notNull(),
@@ -132,17 +133,18 @@ export const projectInvitations = pgTable('project_invitations', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-
-export const projectInvitationsRelations = relations(projectInvitations, ({ one }) => ({
-  project: one(projects, {
-    fields: [projectInvitations.projectId],
-    references: [projects.id],
-  }),
-  inviter: one(users, {
-    fields: [projectInvitations.invitedBy],
-    references: [users.id],
-  }),
-}));
+export const notifications = pgTable('notifications', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  actorId: text('actor_id').references(() => users.id, { onDelete: 'set null' }),
+  type: notificationTypeEnum('type').notNull(),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  isRead: boolean('is_read').default(false).notNull(),
+  actionUrl: text('action_url'),
+  referenceId: uuid('reference_id'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, {
@@ -250,6 +252,28 @@ export const eventsRelations = relations(events, ({ one }) => ({
   }),
   creator: one(users, {
     fields: [events.creatorId],
+    references: [users.id],
+  }),
+}));
+
+export const projectInvitationsRelations = relations(projectInvitations, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectInvitations.projectId],
+    references: [projects.id],
+  }),
+  inviter: one(users, {
+    fields: [projectInvitations.invitedBy],
+    references: [users.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+  actor: one(users, {
+    fields: [notifications.actorId],
     references: [users.id],
   }),
 }));
