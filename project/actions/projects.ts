@@ -47,7 +47,7 @@ export async function createProjectAction(
     });
 
     const membersToInsert = [
-      { projectId: newProject.id, userId: userId, role: "owner" },
+      { projectId: newProject.id, userId: userId, role: "admin" },
       ...memberIds.map((id) => ({ projectId: newProject.id, userId: id, role: "member" })),
     ];
 
