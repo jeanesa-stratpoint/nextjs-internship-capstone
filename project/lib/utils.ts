@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, addDays, isPast, isToday, isYesterday } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -30,6 +30,17 @@ export function formatHeaderDate(date: Date = new Date()): string {
   });
 }
 
+// EXPIRY HELPERS
+export function calculateExpiryDate(date: Date | string, daysToLive: number = 30): Date {
+  return addDays(new Date(date), daysToLive);
+}
+
+export function isDateExpired(date: Date | string): boolean {
+  return isPast(new Date(date));
+}
+
+// FORMATTING
+
 export function formatRelativeTime(date: Date | string | null | undefined): string {
   if (!date) return "";
   return formatDistanceToNow(new Date(date), { addSuffix: true });
@@ -48,4 +59,18 @@ export function formatEventTime(date: Date | string | null | undefined): string 
 export function formatDateTimeInput(date: Date | string | null | undefined): string {
   if (!date) return "";
   return format(new Date(date), "yyyy-MM-dd'T'HH:mm");
+}
+
+export function formatNotificationDate(date: Date | string | null | undefined): string {
+  if (!date) return "";
+  const d = new Date(date);
+  
+  if (isToday(d)) {
+    return `Today at ${format(d, "h:mm a")}`;
+  }
+  if (isYesterday(d)) {
+    return `Yesterday at ${format(d, "h:mm a")}`;
+  }
+  
+  return format(d, "MMM d 'at' h:mm a");
 }

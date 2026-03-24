@@ -8,7 +8,8 @@ import {
   inviteMembersAction,
   removeMemberAction,
   removeTeamMemberGlobalAction,
-  inviteUserByEmailAction
+  inviteUserByEmailAction,
+  revokeInvitationAction
 } from "@/actions/projects";
 
 // MUTATIONS (WRITES)
@@ -85,6 +86,14 @@ export function useProjectMutations() {
     },
   });
 
+  const revokeInvitation = useMutation({
+    mutationFn: async ({ invitationId, clerkInviteId }: { invitationId: string; clerkInviteId: string }) => {
+      const result = await revokeInvitationAction(invitationId, clerkInviteId);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+  });
+
   return {
     createProject,
     updateProjectDetails,
@@ -95,5 +104,6 @@ export function useProjectMutations() {
     inviteUserByEmail,
     removeMember,
     removeTeamMemberGlobal,
+    revokeInvitation
   };
 }

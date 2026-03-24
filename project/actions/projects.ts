@@ -102,26 +102,44 @@ export async function inviteUserByEmailAction(projectId: string, email: string) 
     if (!email || !email.includes("@")) return { success: false, error: "Valid email is required." };
 
     const cleanEmail = email.toLowerCase().trim();
-    
+
+    const client = await clerkClient();
+    const clerkInvite = await client.invitations.createInvitation({
+      emailAddress: cleanEmail,
+      ignoreExisting: true,
+      publicMetadata: { invitedToProjectId: projectId }
+    });
+
     await queries.projects.createInvitation({
+      clerkId: clerkInvite.id,
       projectId,
       email: cleanEmail,
       invitedBy: userId
     });
 
-    const client = await clerkClient();
-    await client.invitations.createInvitation({
-      emailAddress: cleanEmail,
-      ignoreExisting: true, 
-      publicMetadata: {
-        invitedToProjectId: projectId,
-      }
-    });
-
+    revalidatePath("/team");
     return { success: true };
   } catch (error: unknown) {
     console.error("Failed to send invitation:", error);
     return { success: false, error: error instanceof Error ? error.message : "Failed to invite user." };
+  }
+}
+
+export async function revokeInvitationAction(invitationId: string, clerkInviteId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const client = await clerkClient();
+    await client.invitations.revokeInvitation(clerkInviteId);
+
+    await queries.projects.revokeInvitation(invitationId);
+
+    revalidatePath("/team");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to revoke invite:", error);
+    return { success: false, error: "Failed to revoke invitation." };
   }
 }
 

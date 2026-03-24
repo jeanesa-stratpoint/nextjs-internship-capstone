@@ -7,15 +7,15 @@ import { Users } from "lucide-react";
 import TeamCard, { TeamMemberData } from "@/components/cards/team-card";
 import TeamInviteButton from "@/components/buttons/team-invite-button";
 import GlobalInviteModal from "@/components/modals/global-invite-modal";
+import PendingInvitationsList from "@/components/pending-invitations-list";
 
 export default async function TeamPage() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
   const teamMembers = await queries.users.getTeamMembers(userId);
-
+  const sentInvitations = await queries.projects.getSentInvitations(userId);
   const canInviteMember = await hasSystemPermission(userId, "project-invite:create");
-
   const userProjectsData = await queries.projects.getAllForUser(userId);
   const userProjects = userProjectsData.map((p) => p.project);
 
@@ -55,6 +55,9 @@ export default async function TeamPage() {
           ))}
         </div>
       )}
+      <div className="animate-in slide-in-from-bottom-4 fade-in duration-700">
+        <PendingInvitationsList invitations={sentInvitations} />
+      </div>
 
       {canInviteMember && <GlobalInviteModal userProjects={userProjects} />}
     </div>

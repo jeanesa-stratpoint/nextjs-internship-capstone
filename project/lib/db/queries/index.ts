@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles, events, projectInvitations } from "@/lib/db/schema";
 import { eq, desc, inArray, asc, and, ne, gte } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
+import { calculateExpiryDate, isDateExpired } from "@/lib/utils";
 
 export const queries = {
   // PROJECT QUERIES
@@ -90,6 +91,40 @@ export const queries = {
       });
     },
 
+    getSentInvitations: async (userId: string) => {
+      const rawInvitations = await db
+        .select({
+          id: projectInvitations.id,
+          clerkId: projectInvitations.clerkId,
+          email: projectInvitations.email,
+          status: projectInvitations.status,
+          createdAt: projectInvitations.createdAt,
+          project: {
+            id: projects.id,
+            name: projects.name,
+          }
+        })
+        .from(projectInvitations)
+        .innerJoin(projects, eq(projectInvitations.projectId, projects.id))
+        .where(eq(projectInvitations.invitedBy, userId))
+        .orderBy(desc(projectInvitations.createdAt));
+
+      return rawInvitations.map((invite) => {
+        const expiryDate = calculateExpiryDate(invite.createdAt, 30);
+        let displayStatus = invite.status as "pending" | "accepted" | "declined" | "revoked" | "expired";
+
+        if (displayStatus === "pending" && isDateExpired(expiryDate)) {
+          displayStatus = "expired";
+        }
+
+        return {
+          ...invite,
+          status: displayStatus,
+          expiryDate,
+        };
+      });
+    },
+
     create: async (data: { name: string; description?: string; ownerId: string; dueDate?: Date | null }) => {
       const [newProject] = await db.insert(projects).values(data).returning();
       return newProject;
@@ -135,7 +170,7 @@ export const queries = {
       }
     },
 
-    createInvitation: async (data: { projectId: string; email: string; invitedBy: string }) => {
+    createInvitation: async (data: { clerkId: string; projectId: string; email: string; invitedBy: string }) => {
       const existing = await db.select().from(projectInvitations).where(
         and(
           eq(projectInvitations.projectId, data.projectId),
@@ -148,6 +183,12 @@ export const queries = {
 
       const [newInvite] = await db.insert(projectInvitations).values(data).returning();
       return newInvite;
+    },
+
+    revokeInvitation: async (invitationId: string) => {
+      await db.update(projectInvitations)
+        .set({ status: 'revoked' })
+        .where(eq(projectInvitations.id, invitationId));
     },
 
     getPendingInvitationsByEmail: async (email: string) => {

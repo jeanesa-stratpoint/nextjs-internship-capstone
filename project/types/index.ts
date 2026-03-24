@@ -41,3 +41,16 @@ export interface TeamMember {
   email: string;
   imageUrl?: string;
 }
+
+export interface SentInvitation {
+  id: string;
+  clerkId: string;
+  email: string;
+  status: "pending" | "accepted" | "declined" | "revoked" | "expired";
+  createdAt: Date;
+  expiryDate: Date;
+  project: { 
+    id: string; 
+    name: string 
+  };
+}
