@@ -70,21 +70,58 @@ export async function inviteMembersAction(projectId: string, memberIds: string[]
     const canInvite = await hasSystemPermission(userId, "project-invite:create");
     if (!canInvite) return { success: false, error: "Access Denied: You cannot invite members." };
 
-    if (!projectId) return { success: false, error: "Please select a project." };
-    if (memberIds.length === 0) return { success: false, error: "Please select at least one user to invite." };
+    if (!projectId || memberIds.length === 0) return { success: false, error: "Invalid data." };
 
-    const membersToInsert = memberIds.map((id) => ({ 
-      projectId: projectId, 
-      userId: id, 
-      role: "member" 
-    }));
+    const project = await queries.projects.getById(projectId);
+    if (!project) return { success: false, error: "Project not found." };
 
-    await queries.projects.addMembers(membersToInsert);
+    const targetUsers = await queries.users.getByIds(memberIds);
+
+    let newInvitesCount = 0;
+    const alreadyInvitedNames: string[] = [];
+
+    for (const targetUser of targetUsers) {
+      const { invite, isNew } = await queries.projects.createInvitation({
+        projectId,
+        email: targetUser.email,
+        invitedBy: userId
+      });
+
+      if (isNew) {
+        newInvitesCount++;
+        await queries.notifications.create({
+          userId: targetUser.id,
+          actorId: userId,
+          type: "project_invite",
+          title: "Project Invitation",
+          message: `You have been invited to join the project "${project.name}".`,
+          referenceId: invite.id
+        });
+      } else {
+        const displayName = targetUser.firstName || targetUser.email.split("@")[0];
+        alreadyInvitedNames.push(displayName);
+      }
+    }
+      
+    if (newInvitesCount === 0 && alreadyInvitedNames.length > 0) {
+      return { 
+        success: false, 
+        error: `Invitations already pending for: ${alreadyInvitedNames.join(", ")}.` 
+      };
+    }
       
     revalidatePath("/projects");
     revalidatePath(`/projects/${projectId}`);
-    
-    return { success: true };
+    revalidatePath("/team"); 
+
+    if (alreadyInvitedNames.length > 0) {
+      return { 
+        success: true, 
+        message: `Sent ${newInvitesCount} invite(s). Note: ${alreadyInvitedNames.join(", ")} already had pending invites.` 
+      };
+    }
+
+    return { success: true, message: `Successfully sent ${newInvitesCount} invitation(s)!` };
   } catch (error: unknown) {
     console.error("Failed to invite members:", error);
     return { success: false, error: error instanceof Error ? error.message : "Failed to invite members." };
@@ -110,12 +147,16 @@ export async function inviteUserByEmailAction(projectId: string, email: string) 
       publicMetadata: { invitedToProjectId: projectId }
     });
 
-    await queries.projects.createInvitation({
+    const { isNew } = await queries.projects.createInvitation({
       clerkId: clerkInvite.id,
       projectId,
       email: cleanEmail,
       invitedBy: userId
     });
+    
+    if (!isNew) {
+      return { success: false, error: `Invitation already pending for ${cleanEmail}` };
+    }
 
     revalidatePath("/team");
     return { success: true };
@@ -125,13 +166,15 @@ export async function inviteUserByEmailAction(projectId: string, email: string) 
   }
 }
 
-export async function revokeInvitationAction(invitationId: string, clerkInviteId: string) {
+export async function revokeInvitationAction(invitationId: string, clerkInviteId: string | null) {
   try {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const client = await clerkClient();
-    await client.invitations.revokeInvitation(clerkInviteId);
+    if (clerkInviteId) {
+      const client = await clerkClient();
+      await client.invitations.revokeInvitation(clerkInviteId);
+    }
 
     await queries.projects.revokeInvitation(invitationId);
 

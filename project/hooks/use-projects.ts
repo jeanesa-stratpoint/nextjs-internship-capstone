@@ -87,7 +87,7 @@ export function useProjectMutations() {
   });
 
   const revokeInvitation = useMutation({
-    mutationFn: async ({ invitationId, clerkInviteId }: { invitationId: string; clerkInviteId: string }) => {
+    mutationFn: async ({ invitationId, clerkInviteId }: { invitationId: string; clerkInviteId: string | null }) => {
       const result = await revokeInvitationAction(invitationId, clerkInviteId);
       if (!result.success) throw new Error(result.error as string);
       return result;

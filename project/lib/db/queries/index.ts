@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles, events, projectInvitations } from "@/lib/db/schema";
+import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles, events, projectInvitations, notifications } from "@/lib/db/schema";
 import { eq, desc, inArray, asc, and, ne, gte } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 import { calculateExpiryDate, isDateExpired } from "@/lib/utils";
@@ -125,6 +125,14 @@ export const queries = {
       });
     },
 
+    getInvitationById: async (invitationId: string) => {
+      const result = await db.select()
+        .from(projectInvitations)
+        .where(eq(projectInvitations.id, invitationId))
+        .limit(1);
+      return result[0] || null;
+    },
+
     create: async (data: { name: string; description?: string; ownerId: string; dueDate?: Date | null }) => {
       const [newProject] = await db.insert(projects).values(data).returning();
       return newProject;
@@ -170,7 +178,7 @@ export const queries = {
       }
     },
 
-    createInvitation: async (data: { clerkId: string; projectId: string; email: string; invitedBy: string }) => {
+    createInvitation: async (data: { clerkId?: string; projectId: string; email: string; invitedBy: string }) => {
       const existing = await db.select().from(projectInvitations).where(
         and(
           eq(projectInvitations.projectId, data.projectId),
@@ -179,16 +187,19 @@ export const queries = {
         )
       ).limit(1);
 
-      if (existing.length > 0) return existing[0];
+      if (existing.length > 0) return { invite: existing[0], isNew: false };
 
       const [newInvite] = await db.insert(projectInvitations).values(data).returning();
-      return newInvite;
+      return { invite: newInvite, isNew: true };
     },
 
     revokeInvitation: async (invitationId: string) => {
       await db.update(projectInvitations)
         .set({ status: 'revoked' })
         .where(eq(projectInvitations.id, invitationId));
+        
+      await db.delete(notifications)
+        .where(eq(notifications.referenceId, invitationId));
     },
 
     getPendingInvitationsByEmail: async (email: string) => {
@@ -425,6 +436,16 @@ export const queries = {
 
     getById: async (userId: string) => {
       const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      return result[0] || null;
+    },
+
+    getByIds: async (userIds: string[]) => {
+      if (userIds.length === 0) return [];
+      return await db.select().from(users).where(inArray(users.id, userIds));
+    },
+
+    getByEmail: async (email: string) => {
+      const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
       return result[0] || null;
     },
 
@@ -705,6 +726,103 @@ export const queries = {
 
     delete: async (eventId: string) => {
       await db.delete(events).where(eq(events.id, eventId));
+    },
+  },
+
+  // NOTIFICATIONS QUERIES
+  notifications: {
+    getUserNotifications: async (userId: string) => {
+      return await db
+        .select({
+          id: notifications.id,
+          type: notifications.type,
+          title: notifications.title,
+          message: notifications.message,
+          isRead: notifications.isRead,
+          actionUrl: notifications.actionUrl,
+          referenceId: notifications.referenceId,
+          createdAt: notifications.createdAt,
+          actor: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+          },
+          invitationStatus: projectInvitations.status,
+        })
+        .from(notifications)
+        .leftJoin(users, eq(notifications.actorId, users.id))
+        .leftJoin(projectInvitations, eq(notifications.referenceId, projectInvitations.id))
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+    },
+
+    markAsRead: async (notificationId: string, userId: string) => {
+      await db.update(notifications)
+        .set({ isRead: true })
+        .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
+    },
+
+    markAllAsRead: async (userId: string) => {
+      await db.update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.userId, userId));
+    },
+
+    create: async (data: { 
+      userId: string; 
+      actorId: string; 
+      type: "project_invite" | "task_assigned" | "mention" | "system"; 
+      title: string; 
+      message: string; 
+      actionUrl?: string; 
+      referenceId?: string 
+    }) => {
+      const [newNotification] = await db.insert(notifications).values(data).returning();
+      return newNotification;
+    },
+
+    resolveProjectInvite: async (
+      notificationId: string, 
+      invitationId: string, 
+      status: "accepted" | "declined", 
+      userId: string, 
+      projectId?: string,
+      email?: string
+    ) => {
+      await db.update(projectInvitations).set({ status }).where(eq(projectInvitations.id, invitationId));
+      
+      await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, notificationId));
+      
+      if (status === "accepted" && projectId && email) {
+        await db.insert(projectMembers).values({ projectId, userId, role: "member" }).onConflictDoNothing();
+
+        const duplicateInvites = await db.select().from(projectInvitations).where(
+          and(
+            eq(projectInvitations.projectId, projectId),
+            eq(projectInvitations.email, email),
+            eq(projectInvitations.status, 'pending')
+          )
+        );
+
+        if (duplicateInvites.length > 0) {
+          const duplicateIds = duplicateInvites.map(i => i.id);
+          
+          await db.update(projectInvitations)
+            .set({ status: 'declined' }) // Or 'revoked'
+            .where(inArray(projectInvitations.id, duplicateIds));
+
+          
+          await db.update(notifications)
+            .set({ isRead: true })
+            .where(inArray(notifications.referenceId, duplicateIds));
+        }
+      }
+    },
+
+    markAsUnread: async (notificationId: string, userId: string) => {
+      await db.update(notifications)
+        .set({ isRead: false })
+        .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
     },
   },
 };

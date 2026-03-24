@@ -91,22 +91,61 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
       const existingIds = selectedUsers.filter((u) => !u.isExternal).map((u) => u.id);
       const externalEmails = selectedUsers.filter((u) => u.isExternal).map((u) => u.email);
 
+      let finalMessage = "";
+      const warnings: string[] = [];
+
       if (existingIds.length > 0) {
-        await inviteMembers.mutateAsync({ projectId: selectedProjectId, memberIds: existingIds });
+        try {
+          const res = await inviteMembers.mutateAsync({
+            projectId: selectedProjectId,
+            memberIds: existingIds,
+          });
+          if (res && "message" in res && typeof res.message === "string") {
+            finalMessage += res.message + " ";
+          } else {
+            finalMessage += `Successfully sent ${existingIds.length} internal invite(s). `;
+          }
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Failed to process internal invites.";
+          warnings.push(errorMessage);
+        }
       }
 
       if (externalEmails.length > 0) {
-        await Promise.all(
-          externalEmails.map((email) =>
-            inviteUserByEmail.mutateAsync({ projectId: selectedProjectId, email })
-          )
-        );
+        let extNewCount = 0;
+        const extDups: string[] = [];
+
+        for (const email of externalEmails) {
+          try {
+            await inviteUserByEmail.mutateAsync({ projectId: selectedProjectId, email });
+            extNewCount++;
+          } catch {
+            extDups.push(email);
+          }
+        }
+
+        if (extNewCount > 0) {
+          finalMessage += `Successfully sent ${extNewCount} external invite(s). `;
+        }
+        if (extDups.length > 0) {
+          warnings.push(`External invites already pending for: ${extDups.join(", ")}.`);
+        }
       }
 
-      setSuccessMessage(`Successfully sent ${selectedUsers.length} invitation(s)!`);
-    } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Failed to invite members");
+      const combinedWarnings = warnings.join(" ");
+
+      if (warnings.length > 0 && finalMessage.trim() === "") {
+        setError(combinedWarnings);
+      } else {
+        if (combinedWarnings) {
+          finalMessage = `${finalMessage.trim()} Note: ${combinedWarnings}`.trim();
+        }
+        setSuccessMessage(finalMessage.trim());
+      }
+    } catch (error: unknown) {
+      const fallbackError = error instanceof Error ? error.message : "Failed to invite members";
+      setError(fallbackError);
     } finally {
       setIsSubmitting(false);
     }

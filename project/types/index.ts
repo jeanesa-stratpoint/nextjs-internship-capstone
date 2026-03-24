@@ -44,7 +44,7 @@ export interface TeamMember {
 
 export interface SentInvitation {
   id: string;
-  clerkId: string;
+  clerkId: string | null;
   email: string;
   status: "pending" | "accepted" | "declined" | "revoked" | "expired";
   createdAt: Date;
@@ -53,4 +53,21 @@ export interface SentInvitation {
     id: string; 
     name: string 
   };
+}
+
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  actionUrl: string | null;
+  referenceId: string | null;
+  createdAt: Date;
+  actor: { 
+    id: string; 
+    firstName: string | null; 
+    lastName: string | null 
+  } | null;
+  invitationStatus?: string | null;
 }

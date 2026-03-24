@@ -51,6 +51,17 @@ export async function createTaskAction(formData: unknown, projectId: string) {
       assigneeId: validatedData.assigneeId || null,
     });
 
+    if (validatedData.assigneeId && validatedData.assigneeId !== userId) {
+      await queries.notifications.create({
+        userId: validatedData.assigneeId,
+        actorId: userId,
+        type: "task_assigned",
+        title: "New Task Assigned",
+        message: `You have been assigned to the task "${newTask.title}".`,
+        actionUrl: `/projects/${projectId}` 
+      });
+    }
+
     revalidatePath(`/projects/${projectId}`);
     return { success: true, task: newTask };
   } catch (error: unknown) {
@@ -189,6 +200,16 @@ export async function updateTaskAction(
        if (validatedData.assigneeId) {
          const newAssignee = await queries.users.getById(validatedData.assigneeId);
          if (newAssignee) newAssigneeName = `${newAssignee.firstName || ""} ${newAssignee.lastName || ""}`.trim() || newAssignee.email;
+         if (validatedData.assigneeId !== userId) {
+            await queries.notifications.create({
+              userId: validatedData.assigneeId,
+              actorId: userId,
+              type: "task_assigned",
+              title: "Task Reassigned",
+              message: `You have been assigned to the task "${validatedData.title}".`,
+              actionUrl: `/projects/${projectId}`
+            });
+          }
        }
 
        newActivities.push({ 
@@ -351,8 +372,28 @@ export async function createCommentAction(taskId: string, projectId: string, con
 
     const newComment = await queries.tasks.createComment(taskId, userId, validationResult.data.content);
 
-    await pusherServer.trigger(`task-${taskId}`, "new-comment", newComment);
+    const emailRegex = /@([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g;
+    const mentionedEmails = [...content.matchAll(emailRegex)].map(m => m[1].toLowerCase());
 
+    if (mentionedEmails.length > 0) {
+      for (const email of mentionedEmails) {
+        const mentionedUser = await queries.users.getByEmail(email);
+        
+        if (mentionedUser && mentionedUser.id !== userId) {
+          await queries.notifications.create({
+            userId: mentionedUser.id,
+            actorId: userId,
+            type: "mention",
+            title: "You were mentioned",
+            message: `You were mentioned in a comment.`,
+            actionUrl: `/projects/${projectId}`,
+            referenceId: taskId 
+          });
+        }
+      }
+    }
+
+    await pusherServer.trigger(`task-${taskId}`, "new-comment", newComment);
     return { success: true };
   } catch (error) {
     console.error("Failed to create comment:", error);
