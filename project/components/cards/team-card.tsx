@@ -91,7 +91,7 @@ export default function TeamCard({ member, canManageTeam }: TeamCardProps) {
         isDestructive={true}
       />
 
-      <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow relative">
+      <div className="bg-white rounded-[20px] shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-gray-600 transition-all duration-300 hover:-translate-y-1 cursor-default relative">
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-4">
             {member.imageUrl ? (
