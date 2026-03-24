@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { useUIStore } from "@/stores/ui-store";
 import { useEffect } from "react";
+import NotificationBadge from "@/components/notification-badge"; // <-- Import the badge!
 import {
   LayoutDashboard,
   FolderKanban,
@@ -18,7 +19,6 @@ import {
   PanelRightClose,
   Sun,
   X,
-  //   Moon
 } from "lucide-react";
 
 export default function Sidebar({ roleName = "Loading..." }: { roleName?: string }) {
@@ -26,6 +26,7 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
   const { user } = useUser();
 
   const { isSidebarCollapsed, toggleSidebar, isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768 && isMobileMenuOpen) {
@@ -37,6 +38,7 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
   }, [isMobileMenuOpen, setMobileMenuOpen]);
 
   const effectivelyCollapsed = isSidebarCollapsed && !isMobileMenuOpen;
+
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Projects", href: "/projects", icon: FolderKanban },
@@ -120,11 +122,24 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
                   ${effectivelyCollapsed ? "justify-center" : "justify-start"}
                 `}
               >
-                <Icon
-                  size={18}
-                  className={isActive ? "text-black shrink-0" : "text-gray-500 shrink-0"}
-                />
+                {/* 1. Wrap Icon in relative div so the dot can position itself */}
+                <div className="relative flex items-center justify-center">
+                  <Icon
+                    size={18}
+                    className={isActive ? "text-black shrink-0" : "text-gray-500 shrink-0"}
+                  />
+                  {/* 2. Tiny Dot Render (when collapsed) */}
+                  {item.name === "Notifications" && effectivelyCollapsed && (
+                    <NotificationBadge isCollapsed={true} />
+                  )}
+                </div>
+
                 {!effectivelyCollapsed && <span className="truncate">{item.name}</span>}
+
+                {/* 3. Numbered Pill Render (when expanded) */}
+                {item.name === "Notifications" && !effectivelyCollapsed && (
+                  <NotificationBadge isCollapsed={false} />
+                )}
               </Link>
             );
           })}

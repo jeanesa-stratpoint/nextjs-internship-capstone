@@ -52,7 +52,7 @@ export async function createTaskAction(formData: unknown, projectId: string) {
     });
 
     if (validatedData.assigneeId && validatedData.assigneeId !== userId) {
-      await queries.notifications.create({
+      const newNotif = await queries.notifications.create({
         userId: validatedData.assigneeId,
         actorId: userId,
         type: "task_assigned",
@@ -60,6 +60,8 @@ export async function createTaskAction(formData: unknown, projectId: string) {
         message: `You have been assigned to the task "${newTask.title}".`,
         actionUrl: `/projects/${projectId}` 
       });
+
+      await pusherServer.trigger(`user-${validatedData.assigneeId}`, "new-notification", { id: newNotif.id });
     }
 
     revalidatePath(`/projects/${projectId}`);
@@ -200,8 +202,9 @@ export async function updateTaskAction(
        if (validatedData.assigneeId) {
          const newAssignee = await queries.users.getById(validatedData.assigneeId);
          if (newAssignee) newAssigneeName = `${newAssignee.firstName || ""} ${newAssignee.lastName || ""}`.trim() || newAssignee.email;
+         
          if (validatedData.assigneeId !== userId) {
-            await queries.notifications.create({
+            const newNotif = await queries.notifications.create({
               userId: validatedData.assigneeId,
               actorId: userId,
               type: "task_assigned",
@@ -209,7 +212,8 @@ export async function updateTaskAction(
               message: `You have been assigned to the task "${validatedData.title}".`,
               actionUrl: `/projects/${projectId}`
             });
-          }
+            await pusherServer.trigger(`user-${validatedData.assigneeId}`, "new-notification", { id: newNotif.id });
+         }
        }
 
        newActivities.push({ 
@@ -380,7 +384,7 @@ export async function createCommentAction(taskId: string, projectId: string, con
         const mentionedUser = await queries.users.getByEmail(email);
         
         if (mentionedUser && mentionedUser.id !== userId) {
-          await queries.notifications.create({
+          const newNotif = await queries.notifications.create({
             userId: mentionedUser.id,
             actorId: userId,
             type: "mention",
@@ -389,6 +393,7 @@ export async function createCommentAction(taskId: string, projectId: string, con
             actionUrl: `/projects/${projectId}`,
             referenceId: taskId 
           });
+          await pusherServer.trigger(`user-${mentionedUser.id}`, "new-notification", { id: newNotif.id });
         }
       }
     }

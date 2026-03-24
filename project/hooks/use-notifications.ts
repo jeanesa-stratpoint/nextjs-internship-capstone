@@ -1,16 +1,20 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { 
   markNotificationAsReadAction, 
   markAllNotificationsAsReadAction,
   resolveProjectInviteAction,
-  markNotificationAsUnreadAction
+  markNotificationAsUnreadAction,
+  getUnreadNotificationCountAction
 } from "@/actions/notifications";
+
+const FALLBACK_POLLING_INTERVAL_MS = 30000;
 
 export function useNotificationMutations() {
   const queryClient = useQueryClient();
 
   const invalidateNotifications = () => {
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    queryClient.invalidateQueries({ queryKey: ["unread-notifications-count"] });
   };
 
   const markAsRead = useMutation({
@@ -61,4 +65,17 @@ export function useNotificationMutations() {
   });
 
   return { markAsRead, markAllAsRead, resolveInvite, markAsUnread };
+}
+
+export function useUnreadNotifications(userId: string | undefined, isPusherConnected: boolean) {
+  return useQuery({
+    queryKey: ["unread-notifications-count", userId],
+    queryFn: async () => {
+      if (!userId) return 0;
+      const res = await getUnreadNotificationCountAction();
+      return res.success ? res.count : 0;
+    },
+    enabled: !!userId,
+    refetchInterval: isPusherConnected ? false : FALLBACK_POLLING_INTERVAL_MS, 
+  });
 }

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles, events, projectInvitations, notifications } from "@/lib/db/schema";
-import { eq, desc, inArray, asc, and, ne, gte } from "drizzle-orm";
+import { eq, desc, inArray, asc, and, ne, gte, count } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 import { calculateExpiryDate, isDateExpired } from "@/lib/utils";
 
@@ -766,6 +766,13 @@ export const queries = {
       await db.update(notifications)
         .set({ isRead: true })
         .where(eq(notifications.userId, userId));
+    },
+
+    getUnreadCount: async (userId: string) => {
+      const result = await db.select({ value: count() })
+        .from(notifications)
+        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+      return result[0].value;
     },
 
     create: async (data: { 

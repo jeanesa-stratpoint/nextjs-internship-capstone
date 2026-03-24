@@ -88,3 +88,16 @@ export async function markNotificationAsUnreadAction(notificationId: string) {
     return { success: false, error: "Failed to update notification." };
   }
 }
+
+export async function getUnreadNotificationCountAction() {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, count: 0 };
+
+    const unreadCount = await queries.notifications.getUnreadCount(userId);
+    return { success: true, count: unreadCount };
+  } catch (error) {
+    console.error("Failed to get unread count:", error);
+    return { success: false, count: 0 };
+  }
+}

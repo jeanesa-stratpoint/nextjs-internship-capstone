@@ -6,6 +6,7 @@ import { hasSystemPermission } from "@/lib/rbac";
 import { projectSchema } from "@/lib/validations";
 import { queries } from "@/lib/db/queries";
 import { UTApi } from "uploadthing/server";
+import { pusherServer } from "@/lib/pusher";
 
 const utapi = new UTApi();
 
@@ -89,13 +90,17 @@ export async function inviteMembersAction(projectId: string, memberIds: string[]
 
       if (isNew) {
         newInvitesCount++;
-        await queries.notifications.create({
+        const newNotif = await queries.notifications.create({
           userId: targetUser.id,
           actorId: userId,
           type: "project_invite",
           title: "Project Invitation",
           message: `You have been invited to join the project "${project.name}".`,
           referenceId: invite.id
+        });
+
+        await pusherServer.trigger(`user-${targetUser.id}`, "new-notification", { 
+          id: newNotif.id 
         });
       } else {
         const displayName = targetUser.firstName || targetUser.email.split("@")[0];

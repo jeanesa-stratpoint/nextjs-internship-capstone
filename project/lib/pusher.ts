@@ -10,10 +10,15 @@ export const pusherServer = new PusherServer({
 });
 
 
+let pusherClientInstance: PusherClient | null = null;
 export const getPusherClient = () => {
   if (typeof window === "undefined") return null;
   
-  return new PusherClient(process.env.NEXT_PUBLIC_PUSHER_APP_KEY!, {
-    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-  });
+  if (!pusherClientInstance) {
+    pusherClientInstance = new PusherClient(process.env.NEXT_PUBLIC_PUSHER_APP_KEY!, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+    });
+  }
+
+  return pusherClientInstance;
 };
