@@ -40,7 +40,7 @@ export default function ConfirmActionModal({
   const modalContent = (
     <>
       <div
-        className={`w-16 h-16 ${iconBgColor} rounded-full flex items-center justify-center mb-5 border ${iconBorderColor}`}
+        className={`w-16 h-16 ${iconBgColor} rounded-full flex items-center justify-center center mb-5 border ${iconBorderColor}`}
       >
         <IconComponent size={32} className={iconColor} />
       </div>
@@ -74,7 +74,9 @@ export default function ConfirmActionModal({
   if (variant === "inner") {
     return (
       <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200 rounded-[24px]">
-        {modalContent}
+        <div className="max-w-md w-full flex flex-col items-center justify-center">
+          {modalContent}
+        </div>
       </div>
     );
   }

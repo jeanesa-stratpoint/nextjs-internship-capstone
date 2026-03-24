@@ -11,7 +11,6 @@ import {
   Trash2,
   Activity,
   LayoutList,
-  AlertTriangle,
   Paperclip,
   Download,
 } from "lucide-react";
@@ -24,6 +23,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 import { getPusherClient } from "@/lib/pusher";
 import RichTextEditor from "@/components/rich-text-editor";
+import ConfirmActionModal from "@/components/modals/confirm-action-modal";
 
 interface FeedUser {
   id: string;
@@ -104,7 +104,7 @@ export default function TaskDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-8">
-      <div className="bg-[#F8F8F8] rounded-[24px] shadow-2xl w-full max-w-5xl max-h-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col relative">
+      <div className="bg-[#F8F8F8] rounded-[24px] shadow-2xl w-full max-w-5xl h-[95vh] md:h-[85vh] min-h-[500px] overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col relative">
         {isLoading || !data ? (
           <div className="flex-1 flex flex-col items-center justify-center p-20">
             <Loader2 size={32} className="animate-spin text-gray-400 mb-4" />
@@ -342,72 +342,29 @@ function TaskDetailContent({
 
   return (
     <>
-      {showDeleteConfirm && (
-        <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 max-w-md w-full text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
-              <AlertTriangle size={32} />
-            </div>
-            <h3 className="text-xl font-bold text-black mb-2">Delete this task?</h3>
-            <p className="text-gray-500 mb-6 text-sm">
-              This action cannot be undone. All comments and activity logs will be permanently
-              removed.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleteTask.isPending}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteTask}
-                disabled={deleteTask.isPending}
-                className="flex-1 flex justify-center items-center gap-2 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
-              >
-                {deleteTask.isPending ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  "Delete Task"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmActionModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteTask}
+        title="Delete this task?"
+        description="This action cannot be undone. All comments and activity logs will be permanently removed."
+        confirmText="Delete Task"
+        isLoading={deleteTask.isPending}
+        variant="inner"
+      />
 
-      {showRemoveAttachmentConfirm && (
-        <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 max-w-md w-full text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
-              <AlertTriangle size={32} />
-            </div>
-            <h3 className="text-xl font-bold text-black mb-2">Remove Attachment?</h3>
-            <p className="text-gray-500 mb-6 text-sm">
-              Are you sure you want to remove this file? You will need to upload it again if you
-              change your mind.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowRemoveAttachmentConfirm(false)}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setAttachmentUrl("");
-                  setShowRemoveAttachmentConfirm(false);
-                }}
-                className="flex-1 flex justify-center items-center gap-2 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors"
-              >
-                Remove File
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmActionModal
+        isOpen={showRemoveAttachmentConfirm}
+        onClose={() => setShowRemoveAttachmentConfirm(false)}
+        onConfirm={() => {
+          setAttachmentUrl("");
+          setShowRemoveAttachmentConfirm(false);
+        }}
+        title="Remove Attachment?"
+        description="Are you sure you want to remove this file? You will need to upload it again if you change your mind."
+        confirmText="Remove File"
+        variant="inner"
+      />
 
       {/* HEADER */}
       <div className="flex items-center justify-between px-4 md:px-8 py-5 bg-white border-b border-gray-200 flex-shrink-0">
@@ -445,7 +402,7 @@ function TaskDetailContent({
 
       <div className="flex flex-1 overflow-y-auto md:overflow-hidden flex-col md:flex-row">
         {/* LEFT COLUMN: EDIT FORM */}
-        <div className="w-full md:w-3/5 p-4 md:p-8 md:overflow-y-auto border-b md:border-b-0 md:border-r border-gray-200 bg-white shrink-0 md:shrink">
+        <div className="w-full md:w-3/5 p-4 md:p-8 overflow-visible md:overflow-y-auto border-b md:border-b-0 md:border-r border-gray-200 bg-white shrink-0">
           {error && (
             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-sm">
               {error}
@@ -623,7 +580,7 @@ function TaskDetailContent({
         </div>
 
         {/* RIGHT COLUMN: ACTIVITY FEED */}
-        <div className="w-full md:w-2/5 flex flex-col bg-[#F8F8F8] min-h-[500px] md:min-h-0 md:h-full">
+        <div className="w-full md:w-2/5 flex flex-col bg-[#F8F8F8] h-[600px] md:h-full shrink-0">
           <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0 bg-white">
             <h3 className="font-bold text-black flex items-center gap-2">
               <Activity size={16} /> Activity & Comments
@@ -718,7 +675,7 @@ function TaskDetailContent({
             )}
           </div>
 
-          <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
+          <div className="mt-auto p-4 bg-white border-t border-gray-200 flex-shrink-0">
             <form onSubmit={handleCommentSubmit} className="relative">
               <input
                 type="text"
