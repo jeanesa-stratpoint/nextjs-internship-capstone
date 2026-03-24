@@ -1,9 +1,7 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { users, roles, projectInvitations, projectMembers } from "@/lib/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { queries } from "@/lib/db/queries";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
@@ -48,18 +46,14 @@ export async function POST(req: Request) {
     const primaryEmail = email_addresses[0].email_address.toLowerCase();
 
     try {
-      const [standardRole] = await db
-        .select()
-        .from(roles)
-        .where(eq(roles.name, "Standard User"))
-        .limit(1);
+      const standardRole = await queries.users.getRoleByName("Standard User");
 
       if (!standardRole) {
          console.error("'Standard User' role not found. Run the seed script");
          return new Response("Missing default role", { status: 500 });
       }
 
-      await db.insert(users).values({
+      await queries.users.create({
         id: id,
         email: primaryEmail,
         firstName: first_name || "",
@@ -68,14 +62,7 @@ export async function POST(req: Request) {
       });
       console.log(`Successfully synced user ${id} to database as Standard User`);
 
-      const pendingInvites = await db.select()
-        .from(projectInvitations)
-        .where(
-          and(
-            eq(projectInvitations.email, primaryEmail),
-            eq(projectInvitations.status, 'pending')
-          )
-        );
+      const pendingInvites = await queries.projects.getPendingInvitesByEmail(primaryEmail);
 
       if (pendingInvites.length > 0) {
         const membersToInsert = pendingInvites.map(invite => ({
@@ -84,16 +71,13 @@ export async function POST(req: Request) {
           role: "member"
         }));
 
-        await db.insert(projectMembers).values(membersToInsert).onConflictDoNothing();
+        await queries.projects.batchAddMembers(membersToInsert);
 
         const inviteIds = pendingInvites.map(invite => invite.id);
-        await db.update(projectInvitations)
-          .set({ status: 'accepted' })
-          .where(inArray(projectInvitations.id, inviteIds));
+        await queries.projects.batchUpdateInviteStatus(inviteIds, 'accepted');
 
         console.log(`Automatically added user ${id} to ${pendingInvites.length} projects based on pending invites.`);
       }
-
     } catch (error) {
       console.error(`Error processing user.created for ${id}:`, error);
       return new Response("Error inserting user", { status: 500 });

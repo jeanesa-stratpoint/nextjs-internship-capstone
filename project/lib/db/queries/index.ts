@@ -219,6 +219,27 @@ export const queries = {
         .set({ status: 'accepted' })
         .where(inArray(projectInvitations.id, invitationIds));
     },
+
+    getPendingInvitesByEmail: async (email: string) => {
+      return await db.select()
+        .from(projectInvitations)
+        .where(
+          and(
+            eq(projectInvitations.email, email),
+            eq(projectInvitations.status, 'pending')
+          )
+        );
+    },
+    batchAddMembers: async (members: (typeof projectMembers.$inferInsert)[]) => {
+      if (members.length === 0) return;
+      await db.insert(projectMembers).values(members).onConflictDoNothing();
+    },
+    batchUpdateInviteStatus: async (inviteIds: string[], status: "accepted" | "declined" | "pending") => {
+      if (inviteIds.length === 0) return;
+      await db.update(projectInvitations)
+        .set({ status })
+        .where(inArray(projectInvitations.id, inviteIds));
+    },
   },
 
   // KANBAN & TASK QUERIES
@@ -403,7 +424,6 @@ export const queries = {
     },
 
     unassignUserFromProjectTasks: async (projectId: string, userId: string) => {
-      // Step A: Get all lists in this project
       const projectLists = await db
         .select({ id: lists.id })
         .from(lists)
@@ -412,7 +432,6 @@ export const queries = {
       if (projectLists.length === 0) return;
       const listIds = projectLists.map(l => l.id);
 
-      // Step B: Set assigneeId to null for tasks in those lists
       return await db
         .update(tasks)
         .set({ assigneeId: null })
@@ -424,9 +443,7 @@ export const queries = {
         );
     },
 
-    // 2. Unassign globally (for all projects owned by this admin)
     unassignUserFromAllOwnedProjectsTasks: async (ownerId: string, memberIdToRemove: string) => {
-      // Step A: Find all projects this admin owns
       const ownedProjects = await db
         .select({ id: projects.id })
         .from(projects)
@@ -435,7 +452,6 @@ export const queries = {
       if (ownedProjects.length === 0) return;
       const projectIds = ownedProjects.map(p => p.id);
 
-      // Step B: Find all lists inside those projects
       const projectLists = await db
         .select({ id: lists.id })
         .from(lists)
@@ -444,7 +460,6 @@ export const queries = {
       if (projectLists.length === 0) return;
       const listIds = projectLists.map(l => l.id);
 
-      // Step C: Set assigneeId to null
       return await db
         .update(tasks)
         .set({ assigneeId: null })
@@ -453,8 +468,17 @@ export const queries = {
             inArray(tasks.listId, listIds),
             eq(tasks.assigneeId, memberIdToRemove)
           )
-        );
-    }
+      );
+    },
+
+    createDefaultLists: async (projectId: string) => {
+      return await db.insert(lists).values([
+        { name: "To Do", projectId: projectId, order: 0, stage: "unstarted" },
+        { name: "In Progress", projectId: projectId, order: 1, stage: "in_progress" },
+        { name: "Review", projectId: projectId, order: 2, stage: "in_progress" },
+        { name: "Done", projectId: projectId, order: 3, stage: "completed" }, 
+      ]).returning();
+    },
 
   },
 
@@ -575,6 +599,19 @@ export const queries = {
         ...u,
         imageUrl: avatarMap.get(u.id) || null,
       }));
+    },
+
+    getRoleByName: async (name: string) => {
+      const [role] = await db
+        .select()
+        .from(roles)
+        .where(eq(roles.name, name))
+        .limit(1);
+      return role;
+    },
+    create: async (userData: typeof users.$inferInsert) => {
+      const [newUser] = await db.insert(users).values(userData).returning();
+      return newUser;
     },
   },
 

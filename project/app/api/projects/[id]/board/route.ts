@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { queries } from "@/lib/db/queries";
-import { db } from "@/lib/db";
-import { lists } from "@/lib/db/schema";
 
 export async function GET(
   req: Request,
@@ -25,12 +23,7 @@ export async function GET(
     let boardLists = await queries.tasks.getListsByProject(projectId);
 
     if (boardLists.length === 0) {
-      boardLists = await db.insert(lists).values([
-        { name: "To Do", projectId: projectId, order: 0, stage: "unstarted" },
-        { name: "In Progress", projectId: projectId, order: 1, stage: "in_progress" },
-        { name: "Review", projectId: projectId, order: 2, stage: "in_progress" },
-        { name: "Done", projectId: projectId, order: 3, stage: "completed" }, 
-      ]).returning();
+      boardLists = await queries.tasks.createDefaultLists(projectId);
     }
     const listIds = boardLists.map((l) => l.id);
     const tasks = await queries.tasks.getByListIds(listIds);
