@@ -66,6 +66,26 @@ export default function TaskDetailModal({
   const { isTaskDetailModalOpen, selectedTaskId, closeTaskDetailModal } = useUIStore();
   const [isPusherConnected, setIsPusherConnected] = useState(false);
 
+  useEffect(() => {
+    if (!isTaskDetailModalOpen) return;
+
+    const pusher = getPusherClient();
+    if (!pusher) return;
+
+    const handleStateChange = () => {
+      setIsPusherConnected(pusher.connection.state === "connected");
+    };
+
+    const initialCheckTimer = setTimeout(handleStateChange, 0);
+
+    pusher.connection.bind("state_change", handleStateChange);
+
+    return () => {
+      clearTimeout(initialCheckTimer);
+      pusher.connection.unbind("state_change", handleStateChange);
+    };
+  }, [isTaskDetailModalOpen]);
+
   const { data, isLoading } = useTaskDetails(
     isTaskDetailModalOpen ? selectedTaskId : null,
     isPusherConnected ? false : FALLBACK_POLLING_INTERVAL_MS
@@ -98,7 +118,6 @@ export default function TaskDetailModal({
             onClose={closeTaskDetailModal}
             canEditTask={canEditTask}
             canDeleteTask={canDeleteTask}
-            setIsPusherConnected={setIsPusherConnected}
           />
         )}
       </div>
@@ -112,14 +131,12 @@ function TaskDetailContent({
   onClose,
   canEditTask,
   canDeleteTask,
-  setIsPusherConnected,
 }: {
   data: TaskData;
   taskId: string;
   onClose: () => void;
   canEditTask: boolean;
   canDeleteTask: boolean;
-  setIsPusherConnected: (connected: boolean) => void;
 }) {
   const { updateTask, deleteTask, createComment } = useTaskMutations(data.project.id);
   const queryClient = useQueryClient();
@@ -131,10 +148,6 @@ function TaskDetailContent({
   useEffect(() => {
     const pusher = getPusherClient();
     if (!pusher) return;
-
-    pusher.connection.bind("state_change", (states: { current: string }) => {
-      setIsPusherConnected(states.current === "connected");
-    });
 
     const channelName = `task-${taskId}`;
     const channel = pusher.subscribe(channelName);
@@ -164,9 +177,8 @@ function TaskDetailContent({
       channel.unbind("new-comment");
       channel.unbind("new-activity");
       pusher.unsubscribe(channelName);
-      pusher.connection.unbind("state_change");
     };
-  }, [taskId, queryClient, setIsPusherConnected]);
+  }, [taskId, queryClient]);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
