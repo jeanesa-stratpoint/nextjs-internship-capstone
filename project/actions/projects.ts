@@ -323,6 +323,8 @@ export async function removeMemberAction(projectId: string, memberId: string) {
     
     await queries.projects.removeMember(projectId, memberId);
 
+    await queries.tasks.unassignUserFromProjectTasks(projectId, memberId);
+
     revalidatePath(`/projects/${projectId}`);
     revalidatePath("/projects");
     return { success: true };
@@ -341,6 +343,8 @@ export async function removeTeamMemberGlobalAction(memberId: string) {
     if (!canManageTeam) return { success: false, error: "Access Denied: You cannot manage team members." };
 
     await queries.projects.removeMemberFromAllOwnedProjects(userId, memberId);
+
+    await queries.tasks.unassignUserFromAllOwnedProjectsTasks(userId, memberId);
 
     revalidatePath("/team");
     revalidatePath("/projects");

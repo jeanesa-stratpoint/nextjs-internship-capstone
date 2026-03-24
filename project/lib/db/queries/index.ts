@@ -401,6 +401,61 @@ export const queries = {
 
       return joinedComment[0];
     },
+
+    unassignUserFromProjectTasks: async (projectId: string, userId: string) => {
+      // Step A: Get all lists in this project
+      const projectLists = await db
+        .select({ id: lists.id })
+        .from(lists)
+        .where(eq(lists.projectId, projectId));
+        
+      if (projectLists.length === 0) return;
+      const listIds = projectLists.map(l => l.id);
+
+      // Step B: Set assigneeId to null for tasks in those lists
+      return await db
+        .update(tasks)
+        .set({ assigneeId: null })
+        .where(
+          and(
+            inArray(tasks.listId, listIds),
+            eq(tasks.assigneeId, userId)
+          )
+        );
+    },
+
+    // 2. Unassign globally (for all projects owned by this admin)
+    unassignUserFromAllOwnedProjectsTasks: async (ownerId: string, memberIdToRemove: string) => {
+      // Step A: Find all projects this admin owns
+      const ownedProjects = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(eq(projects.ownerId, ownerId));
+        
+      if (ownedProjects.length === 0) return;
+      const projectIds = ownedProjects.map(p => p.id);
+
+      // Step B: Find all lists inside those projects
+      const projectLists = await db
+        .select({ id: lists.id })
+        .from(lists)
+        .where(inArray(lists.projectId, projectIds));
+        
+      if (projectLists.length === 0) return;
+      const listIds = projectLists.map(l => l.id);
+
+      // Step C: Set assigneeId to null
+      return await db
+        .update(tasks)
+        .set({ assigneeId: null })
+        .where(
+          and(
+            inArray(tasks.listId, listIds),
+            eq(tasks.assigneeId, memberIdToRemove)
+          )
+        );
+    }
+
   },
 
   lists: {
