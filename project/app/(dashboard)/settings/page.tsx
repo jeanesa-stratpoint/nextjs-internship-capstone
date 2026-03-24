@@ -1,34 +1,32 @@
 import { User, Bell, Shield, Palette } from "lucide-react";
+import { auth } from "@clerk/nextjs/server";
+import { queries } from "@/lib/db/queries";
+import ProfileForm from "@/components/settings/profile-form";
+import { redirect } from "next/navigation";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const { userId } = await auth();
+
+  if (!userId) redirect("/sign-in");
+
+  const currentUser = await queries.users.getById(userId);
+  const assignableRoles = await queries.users.getAssignableRoles();
+
+  if (!currentUser) return <div>User not found.</div>;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div>
-        <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Settings</h1>
-        <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">
-          Manage your account and application preferences
+        <h1 className="text-3xl font-bold text-black">Settings</h1>
+        <p className="text-gray-500 mt-2">
+          Manage your account profile and application preferences.
         </p>
       </div>
 
-      {/* Implementation Tasks Banner */}
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-          ⚙️ Settings Implementation Tasks
-        </h3>
-        <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-          <li>• Task 2.4: Implement user session management</li>
-          <li>• Task 6.4: Implement project member management and permissions</li>
-        </ul>
-      </div>
-
       {/* Settings Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Settings Navigation */}
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">
-            Settings
-          </h3>
-          <nav className="space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8 mt-8">
+        <div className="lg:col-span-1">
+          <nav className="space-y-1">
             {[
               { name: "Profile", icon: User, active: true },
               { name: "Notifications", icon: Bell, active: false },
@@ -37,69 +35,26 @@ export default function SettingsPage() {
             ].map((item) => (
               <button
                 key={item.name}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                   item.active
-                    ? "bg-blue_munsell-100 dark:bg-blue_munsell-900 text-blue_munsell-700 dark:text-blue_munsell-300"
-                    : "text-outer_space-500 dark:text-platinum-500 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400"
+                    ? "bg-black text-white shadow-md"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-black"
                 }`}
               >
-                <item.icon className="mr-3" size={16} />
+                <item.icon className="mr-3" size={18} />
                 {item.name}
               </button>
             ))}
           </nav>
         </div>
 
-        {/* Settings Content */}
-        <div className="lg:col-span-2 bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-6">
+        {/* Settings Content Area */}
+        <div className="lg:col-span-3 bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 md:p-8">
+          <h3 className="text-xl font-bold text-black mb-6 pb-4 border-b border-gray-100">
             Profile Settings
           </h3>
 
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                defaultValue="John Doe"
-                className="w-full px-3 py-2 border border-french_gray-300 dark:border-payne's_gray-400 rounded-lg bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                defaultValue="john@example.com"
-                className="w-full px-3 py-2 border border-french_gray-300 dark:border-payne's_gray-400 rounded-lg bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-2">
-                Role
-              </label>
-              <select className="w-full px-3 py-2 border border-french_gray-300 dark:border-payne's_gray-400 rounded-lg bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500">
-                <option>Project Manager</option>
-                <option>Developer</option>
-                <option>Designer</option>
-                <option>QA Engineer</option>
-              </select>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button className="px-4 py-2 text-payne's_gray-500 dark:text-french_gray-400 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded-lg transition-colors">
-                Cancel
-              </button>
-              <button className="px-4 py-2 bg-blue_munsell-500 text-white rounded-lg hover:bg-blue_munsell-600 transition-colors">
-                Save Changes
-              </button>
-            </div>
-          </div>
+          <ProfileForm user={currentUser} assignableRoles={assignableRoles} />
         </div>
       </div>
     </div>

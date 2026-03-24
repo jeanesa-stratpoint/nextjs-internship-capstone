@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles, events, projectInvitations, notifications } from "@/lib/db/schema";
-import { eq, desc, inArray, asc, and, ne, gte, count } from "drizzle-orm";
+import { eq, desc, inArray, asc, and, ne, gte, count, notInArray } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 import { calculateExpiryDate, isDateExpired } from "@/lib/utils";
 
@@ -612,6 +612,23 @@ export const queries = {
     create: async (userData: typeof users.$inferInsert) => {
       const [newUser] = await db.insert(users).values(userData).returning();
       return newUser;
+    },
+
+    getAssignableRoles: async () => {
+      const restrictedRoles = ["System Admin", "Super Admin"]; 
+
+      return await db
+        .select()
+        .from(roles)
+        .where(notInArray(roles.name, restrictedRoles))
+        .orderBy(asc(roles.name)); 
+    },
+
+    updateRole: async (userId: string, roleId: string) => {
+      await db
+        .update(users)
+        .set({ roleId })
+        .where(eq(users.id, userId));
     },
   },
 

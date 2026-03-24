@@ -7,6 +7,10 @@ export const userSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
 
+export const userRoleSchema = z.object({
+  roleId: z.string().uuid({ message: "Invalid role identifier." }),
+});
+
 // PROJECT VALIDATION
 export const projectSchema = z.object({
   name: z.string().min(1, "Project name is required").max(100, "Name cannot exceed 100 characters"),
