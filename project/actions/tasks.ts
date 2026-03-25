@@ -357,6 +357,30 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
   }
 }
 
+export async function editCommentAction(commentId: string, taskId: string, projectId: string, content: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const validationResult = commentSchema.safeParse({ content, taskId });
+    if (!validationResult.success) {
+      return { success: false, error: validationResult.error.issues[0].message };
+    }
+
+    const updatedComment = await queries.tasks.updateComment(commentId, validationResult.data.content);
+
+    // Alert connected clients that a comment was edited
+    await pusherServer.trigger(`task-${taskId}`, "comment-edited", updatedComment);
+    
+    // We don't touch project activity here to prevent spamming recent projects on typos
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to edit comment:", error);
+    return { success: false, error: "Failed to edit comment." };
+  }
+}
+
 export async function createCommentAction(taskId: string, projectId: string, content: string) {
   try {
     const validationResult = commentSchema.safeParse({ content, taskId });
@@ -374,25 +398,28 @@ export async function createCommentAction(taskId: string, projectId: string, con
     }
 
     const newComment = await queries.tasks.createComment(taskId, userId, validationResult.data.content);
+    const task = await queries.tasks.getById(taskId);
+    const taskTitle = task?.title || "Unknown Task";
 
-    const emailRegex = /@([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g;
-    const mentionedEmails = [...content.matchAll(emailRegex)].map(m => m[1].toLowerCase());
+    const mentionRegex = /data-type="mention" data-id="([^"]+)"/g;
+    const extractedIds = [...content.matchAll(mentionRegex)].map(match => match[1]);
+    
+    const uniqueMentionedIds = [...new Set(extractedIds)];
 
-    if (mentionedEmails.length > 0) {
-      for (const email of mentionedEmails) {
-        const mentionedUser = await queries.users.getByEmail(email);
-        
-        if (mentionedUser && mentionedUser.id !== userId) {
+    if (uniqueMentionedIds.length > 0) {
+      for (const mentionedId of uniqueMentionedIds) {
+        const isValidMember = projectMembers.some(m => m.id === mentionedId);
+        if (isValidMember && mentionedId !== userId) {
           const newNotif = await queries.notifications.create({
-            userId: mentionedUser.id,
+            userId: mentionedId,
             actorId: userId,
             type: "mention",
             title: "You were mentioned",
-            message: `You were mentioned in a comment.`,
-            actionUrl: `/projects/${projectId}`,
+            message: `You were mentioned in a comment in task "${taskTitle}"`,
+            actionUrl: `/projects/${projectId}?task=${taskId}`,
             referenceId: taskId 
           });
-          await pusherServer.trigger(`user-${mentionedUser.id}`, "new-notification", { id: newNotif.id });
+          await pusherServer.trigger(`user-${mentionedId}`, "new-notification", { id: newNotif.id });
         }
       }
     }

@@ -508,6 +508,33 @@ export const queries = {
       return joinedComment[0];
     },
 
+    updateComment: async (commentId: string, content: string) => {
+      const [updatedComment] = await db
+        .update(comments)
+        .set({ 
+          content, 
+          isEdited: true, 
+          updatedAt: new Date() 
+        })
+        .where(eq(comments.id, commentId))
+        .returning();
+
+      const joinedComment = await db
+        .select({
+          id: comments.id,
+          content: comments.content,
+          createdAt: comments.createdAt,
+          isEdited: comments.isEdited,
+          user: { id: users.id, firstName: users.firstName, lastName: users.lastName }
+        })
+        .from(comments)
+        .leftJoin(users, eq(comments.userId, users.id))
+        .where(eq(comments.id, updatedComment.id))
+        .limit(1);
+
+      return joinedComment[0];
+    },
+
     unassignUserFromProjectTasks: async (projectId: string, userId: string) => {
       const projectLists = await db
         .select({ id: lists.id })

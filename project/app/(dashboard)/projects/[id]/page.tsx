@@ -24,7 +24,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const team = await queries.projects.getMembers(projectId);
   const localRole = await queries.projects.getMemberRole(projectId, userId);
 
-  // ✅ SECURITY: Kick out anyone who isn't a member of this project
   if (!localRole) redirect("/projects");
 
   const isOwner = project.ownerId === userId;
@@ -33,13 +32,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const userProjectsData = await queries.projects.getAllForUser(userId);
   const userProjects = userProjectsData.map((p) => p.project);
 
-  // ✅ ONLY fetch the global delete permission
   const canDeleteProject = await hasSystemPermission(userId, "project:delete");
 
   const hasEditAccess = isOwner || isProjectAdmin;
   const hasDeleteAccess = canDeleteProject && isOwner;
 
-  // ✅ EVERY MEMBER PRIVILEGE: If you are here, you can work.
   const boardPermissions = {
     canCreateList: true,
     canEditList: true,

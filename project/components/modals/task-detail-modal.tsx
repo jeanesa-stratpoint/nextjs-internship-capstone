@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import {
   X,
   Loader2,
@@ -13,6 +14,7 @@ import {
   LayoutList,
   Paperclip,
   Download,
+  Edit2,
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
 import { getTodayString, formatRelativeTime } from "@/lib/utils";
@@ -43,6 +45,7 @@ interface FeedItem {
   oldValue?: string | null;
   newValue?: string | null;
   user?: FeedUser | null;
+  isEdited?: boolean;
 }
 
 interface TaskData {
@@ -138,12 +141,16 @@ function TaskDetailContent({
   canEditTask: boolean;
   canDeleteTask: boolean;
 }) {
-  const { updateTask, deleteTask, createComment } = useTaskMutations(data.project.id);
+  const { userId: currentUserId } = useAuth();
+  const { updateTask, deleteTask, createComment, editComment } = useTaskMutations(data.project.id);
   const queryClient = useQueryClient();
   const { showToast } = useToastStore();
 
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
 
   useEffect(() => {
     const pusher = getPusherClient();
@@ -158,6 +165,16 @@ function TaskDetailContent({
         const exists = oldData.comments.some((c) => c.id === newCommentData.id);
         if (exists) return oldData;
         return { ...oldData, comments: [newCommentData, ...oldData.comments] };
+      });
+    });
+
+    channel.bind("comment-edited", (updatedCommentData: ServerComment) => {
+      queryClient.setQueryData(["taskDetails", taskId], (oldData: TaskData | undefined) => {
+        if (!oldData) return oldData;
+        const updatedComments = oldData.comments.map((c) =>
+          c.id === updatedCommentData.id ? updatedCommentData : c
+        );
+        return { ...oldData, comments: updatedComments };
       });
     });
 
@@ -179,6 +196,19 @@ function TaskDetailContent({
       pusher.unsubscribe(channelName);
     };
   }, [taskId, queryClient]);
+
+  const handleEditSubmit = async (commentId: string) => {
+    if (!editingContent.trim() || editingContent === "<p></p>") return;
+
+    try {
+      await editComment.mutateAsync({ commentId, taskId, content: editingContent });
+      setEditingCommentId(null);
+      setEditingContent("");
+    } catch (err: unknown) {
+      console.error(err);
+      showToast({ message: "Failed to edit comment", type: "error" });
+    }
+  };
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -369,7 +399,7 @@ function TaskDetailContent({
       {/* HEADER */}
       <div className="flex items-center justify-between px-4 md:px-8 py-5 bg-white border-b border-gray-200 flex-shrink-0">
         <div className="flex flex-col">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+          <span className="text-xs font-bold text-gray-400 uppercase mb-1">
             {data.project.name}
           </span>
           <input
@@ -412,7 +442,7 @@ function TaskDetailContent({
           <form id="edit-task-form" onSubmit={handleSaveChanges} className="space-y-6">
             <div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="block text-xs font-bold text-gray-700 mb-2 uppercase">
                   Description/Task Details
                 </label>
                 {canEditTask ? (
@@ -433,7 +463,7 @@ function TaskDetailContent({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 mt-2 mb-2 uppercase tracking-wide flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-700 mt-2 mb-2 uppercase flex items-center gap-2">
                   <Paperclip size={14} /> Attachment
                 </label>
 
@@ -497,7 +527,7 @@ function TaskDetailContent({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
               <div>
-                <label className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-700 mb-2 uppercase flex items-center gap-2">
                   <LayoutList size={14} /> Status
                 </label>
                 <select
@@ -514,7 +544,7 @@ function TaskDetailContent({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-700 mb-2 uppercase flex items-center gap-2">
                   <User size={14} /> Assignee
                 </label>
                 <select
@@ -532,7 +562,7 @@ function TaskDetailContent({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-700 mb-2 uppercase flex items-center gap-2">
                   <Flag size={14} /> Priority
                 </label>
                 <select
@@ -547,7 +577,7 @@ function TaskDetailContent({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-700 mb-2 uppercase flex items-center gap-2">
                   <CalendarDays size={14} /> Due Date
                 </label>
                 <input
@@ -599,6 +629,9 @@ function TaskDetailContent({
                 const timeAgo = formatRelativeTime(item.createdAt);
 
                 if (item.feedType === "comment") {
+                  const isMyComment = currentUserId === item.user?.id;
+                  const isEditing = editingCommentId === item.id;
+
                   return (
                     <div key={`comment-${item.id}`} className="flex gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
@@ -606,12 +639,60 @@ function TaskDetailContent({
                       </div>
                       <div className="flex flex-col flex-1">
                         <div className="flex items-baseline justify-between mb-1">
-                          <span className="text-sm font-bold text-black">{userName}</span>
-                          <span className="text-xs text-gray-400">{timeAgo}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-black">{userName}</span>
+                            <span className="text-xs text-gray-400">{timeAgo}</span>
+                            {/* Edited Badge */}
+                            {item.isEdited && !isEditing && (
+                              <span className="text-[10px] text-gray-400 font-medium bg-gray-100 px-1.5 py-0.5 rounded-md">
+                                (edited)
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Edit Button for the owner */}
+                          {isMyComment && !isEditing && (
+                            <button
+                              onClick={() => {
+                                setEditingCommentId(item.id);
+                                setEditingContent(item.content || "");
+                              }}
+                              className="text-gray-400 hover:text-black transition-colors"
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                          )}
                         </div>
-                        <div className="bg-white p-3 rounded-xl rounded-tl-none border border-gray-200 shadow-sm text-sm text-black">
-                          {item.content}
-                        </div>
+
+                        {/* ✅ Edit Mode vs View Mode */}
+                        {isEditing ? (
+                          <div className="mt-1 space-y-2">
+                            <RichTextEditor
+                              value={editingContent}
+                              onChange={setEditingContent}
+                              teamMembers={data.team}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                onClick={() => setEditingCommentId(null)}
+                                className="text-xs font-bold text-gray-500 hover:text-black px-3 py-1.5"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => handleEditSubmit(item.id)}
+                                className="text-xs font-bold text-white bg-black hover:bg-gray-800 rounded-md px-3 py-1.5"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="bg-white p-3 rounded-xl rounded-tl-none border border-gray-200 shadow-sm text-sm text-black [&_strong]:text-black [&_strong]:font-bold [&_p]:m-0"
+                            dangerouslySetInnerHTML={{ __html: item.content || "" }}
+                          />
+                        )}
                       </div>
                     </div>
                   );
@@ -676,27 +757,30 @@ function TaskDetailContent({
           </div>
 
           <div className="mt-auto p-4 bg-white border-t border-gray-200 flex-shrink-0">
-            <form onSubmit={handleCommentSubmit} className="relative">
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                disabled={isSubmittingComment}
-                placeholder="Write a comment..."
-                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all text-black disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                aria-label="Send comment"
-                disabled={isSubmittingComment || !newComment.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black text-white rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmittingComment ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <MessageSquare size={14} />
-                )}
-              </button>
+            <form onSubmit={handleCommentSubmit} className="flex flex-col gap-2">
+              <div className="min-h-[80px]">
+                <RichTextEditor
+                  value={newComment}
+                  onChange={setNewComment}
+                  teamMembers={data.team}
+                  placeholder="Write a comment... Type @ to mention someone!"
+                />
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSubmittingComment || !newComment.trim() || newComment === "<p></p>"}
+                  className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-2xl text-sm font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmittingComment ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <>
+                      <MessageSquare size={14} /> Send
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
   DndContext,
@@ -89,6 +90,9 @@ export default function KanbanBoard({
   const { openProjectCompletionModal } = useUIStore();
   const hasPrompted = useRef(false);
 
+  const searchParams = useSearchParams();
+  const { openTaskDetailModal } = useUIStore();
+
   useEffect(() => {
     const handleClickOutside = () => setOpenMenuId(null);
     document.addEventListener("click", handleClickOutside);
@@ -150,6 +154,13 @@ export default function KanbanBoard({
     data,
   ]);
   const listIds = useMemo(() => lists.map((l) => l.id), [lists]);
+
+  useEffect(() => {
+    const taskIdFromUrl = searchParams.get("task");
+    if (taskIdFromUrl) {
+      openTaskDetailModal(taskIdFromUrl);
+    }
+  }, [searchParams, openTaskDetailModal]);
 
   if (isLoading)
     return (

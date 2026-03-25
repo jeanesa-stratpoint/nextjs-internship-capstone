@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction, createCommentAction } from "@/actions/tasks";
+import { createTaskAction, updateTaskAction, deleteTaskAction, updateTaskStatus, updateTaskOrderAction, createCommentAction, editCommentAction } from "@/actions/tasks";
 import { TaskPayload } from "@/types/index";
 
 export function useProjectBoard(projectId: string) {
@@ -106,6 +106,13 @@ export function useTaskMutations(projectId: string) {
     onSuccess: invalidateBoard,
   });
 
+  const editComment = useMutation({
+    mutationFn: async ({ commentId, taskId, content }: { commentId: string; taskId: string; content: string }) => {
+      const result = await editCommentAction(commentId, taskId, projectId, content);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+  });
 
   return {
     createTask,
@@ -113,6 +120,7 @@ export function useTaskMutations(projectId: string) {
     moveTaskStatus,
     deleteTask,
     updateTaskOrder,
-    createComment
+    createComment,
+    editComment
   };
 }
