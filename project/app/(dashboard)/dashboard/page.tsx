@@ -29,7 +29,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6">
         <div>
           <p className="text-sm text-gray-500 font-semibold mb-2">{formatHeaderDate()}</p>
-          <h1 className="text-4xl font-bold tracking-tight">
+          <h1 className="text-4xl font-bold">
             {greeting}, {currentUser?.firstName || "User"}
           </h1>
           <p className="text-gray-500 mt-2 text-sm font-medium">
