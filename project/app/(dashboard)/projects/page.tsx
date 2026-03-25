@@ -1,4 +1,3 @@
-import { Search, Filter } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { formatHeaderDate } from "@/lib/utils";
@@ -6,10 +5,20 @@ import { hasSystemPermission } from "@/lib/rbac";
 import { queries } from "@/lib/db/queries";
 import QuickActions from "@/components/quick-actions";
 import ProjectCard from "@/components/cards/project-card";
+import SearchFilterBar from "@/components/search-filter-bar";
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
+
+  const resolvedParams = await searchParams;
+  const q = typeof resolvedParams.q === "string" ? resolvedParams.q.toLowerCase() : "";
+  const statusFilter = typeof resolvedParams.status === "string" ? resolvedParams.status : "all";
+  const roleFilter = typeof resolvedParams.role === "string" ? resolvedParams.role : "all";
 
   const [canCreateProject, canDeleteProject, canInviteMember] = await Promise.all([
     hasSystemPermission(userId, "project:create"),
@@ -18,10 +27,25 @@ export default async function ProjectsPage() {
   ]);
 
   const projectsWithMetrics = await queries.projects.getProjectsWithMetrics(userId);
+
+  const filteredProjects = projectsWithMetrics.filter((p) => {
+    const matchesSearch =
+      p.project.name.toLowerCase().includes(q) ||
+      (p.project.description?.toLowerCase() || "").includes(q);
+
+    const matchesStatus = statusFilter === "all" || p.project.status === statusFilter;
+
+    let matchesRole = true;
+    if (roleFilter === "owner") matchesRole = p.metrics.isOwner === true;
+    if (roleFilter === "shared") matchesRole = p.metrics.isOwner === false;
+
+    return matchesSearch && matchesStatus && matchesRole;
+  });
+
   const currentDate = formatHeaderDate();
-  const activeProjects = projectsWithMetrics.filter((p) => p.project.status === "active");
-  const onHoldProjects = projectsWithMetrics.filter((p) => p.project.status === "on-hold");
-  const completedProjects = projectsWithMetrics.filter((p) => p.project.status === "completed");
+  const activeProjects = filteredProjects.filter((p) => p.project.status === "active");
+  const onHoldProjects = filteredProjects.filter((p) => p.project.status === "on-hold");
+  const completedProjects = filteredProjects.filter((p) => p.project.status === "completed");
 
   const renderProjectGrid = (projects: typeof projectsWithMetrics, emptyText: string) => {
     if (projects.length === 0)
@@ -59,20 +83,30 @@ export default async function ProjectsPage() {
           <h1 className="text-3xl font-bold">Projects</h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-          <div className="relative w-full sm:flex-1 lg:w-[300px]">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input
-              type="text"
-              placeholder="Search (e.g. Projects, Tasks...)"
-              className="w-full pl-11 pr-4 py-2.5 bg-gray-100/60 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all placeholder:text-gray-400 text-black"
-            />
-          </div>
-          <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100/60 border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-200 transition-colors w-full sm:w-auto">
-            <Filter size={16} />
-            Filter
-          </button>
-        </div>
+        <SearchFilterBar
+          placeholder="Search projects..."
+          filters={[
+            {
+              id: "status",
+              label: "Project Status",
+              options: [
+                { label: "All Statuses", value: "all" },
+                { label: "Active", value: "active" },
+                { label: "On Hold", value: "on-hold" },
+                { label: "Completed", value: "completed" },
+              ],
+            },
+            {
+              id: "role",
+              label: "My Role",
+              options: [
+                { label: "All Roles", value: "all" },
+                { label: "Owned by Me", value: "owner" },
+                { label: "Shared with Me", value: "shared" },
+              ],
+            },
+          ]}
+        />
       </div>
 
       {/* QUICK ACTIONS */}
@@ -95,7 +129,7 @@ export default async function ProjectsPage() {
       </div>
 
       {/* ON-HOLD PROJECTS */}
-      {onHoldProjects.length > 0 && (
+      {(onHoldProjects.length > 0 || statusFilter === "on-hold") && (
         <div className="pt-2 animate-in slide-in-from-bottom-4 fade-in duration-700">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> On Hold (
@@ -106,13 +140,15 @@ export default async function ProjectsPage() {
       )}
 
       {/* COMPLETED PROJECTS */}
-      <div className="pt-2 pb-12 animate-in slide-in-from-bottom-4 fade-in duration-700">
-        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-lime-400"></div> Completed (
-          {completedProjects.length})
-        </h2>
-        {renderProjectGrid(completedProjects, "No completed projects yet.")}
-      </div>
+      {(completedProjects.length > 0 || statusFilter === "completed") && (
+        <div className="pt-2 pb-12 animate-in slide-in-from-bottom-4 fade-in duration-700">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-lime-400"></div> Completed (
+            {completedProjects.length})
+          </h2>
+          {renderProjectGrid(completedProjects, "No completed projects yet.")}
+        </div>
+      )}
     </div>
   );
 }

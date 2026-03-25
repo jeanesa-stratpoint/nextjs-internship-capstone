@@ -989,6 +989,7 @@ export const queries = {
         pendingTasksCount,
         dueThisWeekCount: dueThisWeekCount,
         recentProjects: projectsWithMetrics.slice(0, 3),
+        allProjects: projectsWithMetrics,
         myTasks
       };
     }
