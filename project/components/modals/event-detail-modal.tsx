@@ -130,9 +130,9 @@ export default function EventDetailModal({
     : "Unknown User";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm px-4">
       <div
-        className={`relative bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col ${isEditing ? "max-h-[90vh]" : ""}`}
+        className={`relative bg-white dark:bg-zinc-900 rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col ${isEditing ? "max-h-[90vh]" : ""}`}
       >
         <ConfirmActionModal
           isOpen={showDeleteConfirm}
@@ -145,8 +145,8 @@ export default function EventDetailModal({
           variant="inner"
         />
 
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-violet-50 flex-shrink-0">
-          <div className="flex items-center gap-2 text-violet-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-zinc-800 bg-violet-50 dark:bg-violet-900/10 flex-shrink-0">
+          <div className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
             {isEditing ? (
               <>
                 <Edit2 size={20} />
@@ -166,7 +166,7 @@ export default function EventDetailModal({
                 {canEdit && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="p-1.5 text-gray-500 hover:text-black hover:bg-white rounded-full transition-colors"
+                    className="p-1.5 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-800 rounded-full transition-colors"
                     title="Edit Event"
                   >
                     <Edit2 size={18} />
@@ -175,18 +175,18 @@ export default function EventDetailModal({
                 {canDelete && (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded-full transition-colors"
+                    className="p-1.5 text-gray-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-white dark:hover:bg-zinc-800 rounded-full transition-colors"
                     title="Delete Event"
                   >
                     <Trash2 size={18} />
                   </button>
                 )}
-                <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                <div className="w-px h-4 bg-gray-300 dark:bg-zinc-700 mx-1"></div>
               </>
             )}
             <button
               onClick={handleClose}
-              className="p-1.5 text-gray-500 hover:text-black hover:bg-white rounded-full transition-colors"
+              className="p-1.5 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-800 rounded-full transition-colors"
             >
               <X size={20} />
             </button>
@@ -194,7 +194,7 @@ export default function EventDetailModal({
         </div>
 
         {error && isEditing && (
-          <div className="mx-6 mt-4 p-3 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100 flex-shrink-0">
+          <div className="mx-6 mt-4 p-3 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-sm font-medium rounded-xl border border-red-100 dark:border-red-500/20 flex-shrink-0">
             {error}
           </div>
         )}
@@ -206,19 +206,19 @@ export default function EventDetailModal({
             className="p-6 overflow-y-auto flex-1 space-y-4"
           >
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+              <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase">
                 Project
               </label>
               <div className="relative">
                 <FolderKanban
                   size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500"
                 />
                 <select
                   required
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm appearance-none cursor-pointer text-black"
+                  className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm appearance-none cursor-pointer text-black dark:text-zinc-100"
                 >
                   {userProjects.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -230,7 +230,7 @@ export default function EventDetailModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+              <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase">
                 Event Title
               </label>
               <input
@@ -238,18 +238,18 @@ export default function EventDetailModal({
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-black"
+                className="w-full px-4 py-3 bg-white dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm text-black dark:text-zinc-100"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+              <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase">
                 Event Type
               </label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as "meeting" | "milestone" | "reminder")}
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm appearance-none text-black cursor-pointer"
+                className="w-full px-4 py-3 bg-white dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm appearance-none text-black dark:text-zinc-100 cursor-pointer"
               >
                 <option value="meeting">Meeting</option>
                 <option value="milestone">Milestone</option>
@@ -259,7 +259,7 @@ export default function EventDetailModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase">
                   Start Time
                 </label>
                 <input
@@ -267,11 +267,11 @@ export default function EventDetailModal({
                   required
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full px-3 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-gray-600"
+                  className="w-full px-3 py-3 bg-white dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm text-gray-600 dark:text-zinc-300"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase">
                   End Time
                 </label>
                 <input
@@ -280,48 +280,52 @@ export default function EventDetailModal({
                   value={endTime}
                   min={startTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full px-3 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-gray-600"
+                  className="w-full px-3 py-3 bg-white dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm text-gray-600 dark:text-zinc-300"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+              <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase">
                 Description
               </label>
               <textarea
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm resize-none text-black"
+                className="w-full px-4 py-3 bg-white dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm resize-none text-black dark:text-zinc-100"
               />
             </div>
           </form>
         ) : (
           <div className="p-6 space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-black mb-3">{selectedEvent.title}</h2>
+              <h2 className="text-2xl font-bold text-black dark:text-zinc-100 mb-3">
+                {selectedEvent.title}
+              </h2>
 
               <div className="flex flex-col gap-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <FolderKanban size={16} className="text-gray-400" />
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400">
+                  <FolderKanban size={16} className="text-gray-400 dark:text-zinc-500" />
                   <span>
-                    Project: <strong className="text-gray-900">{projectName}</strong>
+                    Project:{" "}
+                    <strong className="text-gray-900 dark:text-zinc-100">{projectName}</strong>
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <UserCircle size={16} className="text-gray-400" />
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400">
+                  <UserCircle size={16} className="text-gray-400 dark:text-zinc-500" />
                   <span>
-                    Created by: <strong className="text-gray-900">{creatorName}</strong>
+                    Created by:{" "}
+                    <strong className="text-gray-900 dark:text-zinc-100">{creatorName}</strong>
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                <Clock size={16} className="text-violet-500" />
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-gray-100 dark:border-zinc-800">
+                <Clock size={16} className="text-violet-500 dark:text-violet-400" />
                 <div>
                   <p>{formatEventDate(startDate)}</p>
-                  <p className="text-black">
+                  <p className="text-black dark:text-zinc-100">
                     {formatEventTime(startDate)} — {formatEventTime(endDate)}
                   </p>
                 </div>
@@ -329,25 +333,27 @@ export default function EventDetailModal({
             </div>
 
             <div>
-              <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase mb-2 flex items-center gap-2">
                 <AlignLeft size={14} /> Description
               </h3>
-              <div className="text-sm text-gray-700 bg-white border border-gray-200 p-4 rounded-xl min-h-[100px] whitespace-pre-wrap">
+              <div className="text-sm text-gray-700 dark:text-zinc-300 bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl min-h-[100px] whitespace-pre-wrap">
                 {selectedEvent.description || (
-                  <span className="text-gray-400 italic">No description provided.</span>
+                  <span className="text-gray-400 dark:text-zinc-600 italic">
+                    No description provided.
+                  </span>
                 )}
               </div>
             </div>
           </div>
         )}
 
-        <div className="p-4 border-t border-gray-100 flex justify-end gap-3 flex-shrink-0 bg-gray-50/50">
+        <div className="p-4 border-t border-gray-100 dark:border-zinc-800 flex justify-end gap-3 flex-shrink-0 bg-gray-50/50 dark:bg-zinc-900/50">
           {isEditing ? (
             <>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-black hover:bg-gray-200 rounded-full transition-colors"
+                className="px-5 py-2.5 text-sm font-semibold text-gray-600 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-zinc-800 rounded-full transition-colors"
               >
                 Cancel
               </button>
@@ -355,7 +361,7 @@ export default function EventDetailModal({
                 type="submit"
                 form="edit-event-form"
                 disabled={updateEventDetails.isPending}
-                className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-800 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 bg-black dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-800 dark:hover:bg-zinc-300 transition-all disabled:opacity-50"
               >
                 {updateEventDetails.isPending ? (
                   <>
@@ -371,7 +377,7 @@ export default function EventDetailModal({
           ) : (
             <button
               onClick={handleClose}
-              className="px-6 py-2.5 bg-gray-100 text-gray-700 font-bold text-sm rounded-full hover:bg-gray-200 transition-colors"
+              className="px-6 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold text-sm rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
             >
               Close
             </button>

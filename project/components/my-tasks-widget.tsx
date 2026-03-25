@@ -60,7 +60,7 @@ export default function MyTasksWidget({ tasks }: { tasks: UserTask[] }) {
       {/* Task List */}
       <div className="space-y-2">
         {displayTasks.length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-400 font-medium bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+          <div className="py-12 text-center text-sm text-gray-400 dark:text-zinc-500 font-medium bg-gray-50/50 dark:bg-zinc-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800">
             No {activeTab} tasks found.
           </div>
         ) : (
@@ -72,28 +72,28 @@ export default function MyTasksWidget({ tasks }: { tasks: UserTask[] }) {
             >
               <div className="flex items-center gap-3 sm:gap-4 flex-1 overflow-hidden">
                 {activeTab === "completed" ? (
-                  <CheckCircle2 size={18} className="text-gray-300 shrink-0" />
+                  <CheckCircle2 size={18} className="text-gray-300 dark:text-zinc-600 shrink-0" />
                 ) : activeTab === "overdue" ? (
-                  <AlertCircle size={18} className="text-red-500 shrink-0" />
+                  <AlertCircle size={18} className="text-red-500 dark:text-red-400 shrink-0" />
                 ) : (
                   <Circle
                     size={18}
-                    className="text-gray-300 shrink-0 group-hover:text-blue-400 transition-colors"
+                    className="text-gray-300 dark:text-zinc-600 shrink-0 group-hover:text-blue-400 dark:group-hover:text-blue-500 transition-colors"
                   />
                 )}
 
                 <span
-                  className={`text-sm font-bold truncate ${activeTab === "completed" ? "text-gray-400 dark:text-zinc-600 line-through" : "text-black dark:text-zinc-100"}`}
+                  className={`text-sm font-bold truncate ${activeTab === "completed" ? "text-gray-400 dark:text-zinc-500 line-through" : "text-black dark:text-zinc-100"}`}
                 >
                   {task.title}
                 </span>
 
-                <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-[10px] font-bold uppercase truncate max-w-[140px]">
+                <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 text-[10px] font-bold uppercase truncate max-w-[140px]">
                   {task.projectName}
                 </span>
               </div>
 
-              <div className="text-xs font-semibold text-gray-400 whitespace-nowrap ml-4">
+              <div className="text-xs font-semibold text-gray-400 dark:text-zinc-500 whitespace-nowrap ml-4">
                 {task.dueDate ? format(new Date(task.dueDate), "MMM d - MMM yy") : "No date"}
               </div>
             </Link>

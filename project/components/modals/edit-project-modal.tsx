@@ -71,27 +71,27 @@ export default function EditProjectModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-      <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-          <h3 className="text-lg font-bold text-black">Edit Project</h3>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm px-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
+          <h3 className="text-lg font-bold text-black dark:text-zinc-100">Edit Project</h3>
           <button
             onClick={closeEditProjectModal}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-gray-500 dark:text-zinc-400"
           >
             <X size={20} />
           </button>
         </div>
 
         {error && (
-          <div className="mx-6 mt-4 p-3 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100">
+          <div className="mx-6 mt-4 p-3 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-sm font-medium rounded-xl border border-red-100 dark:border-red-500/20">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-5">
           <div>
-            <label className="text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
               <Type size={14} /> Project Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -99,12 +99,12 @@ export default function EditProjectModal() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-black"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm text-black dark:text-zinc-100"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
               <AlignLeft size={14} /> Description
             </label>
             <textarea
@@ -112,34 +112,34 @@ export default function EditProjectModal() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What is this project about?"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-black resize-none"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm text-black dark:text-zinc-100 resize-none placeholder:text-gray-400 dark:placeholder:text-zinc-600"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
               <CalendarDays size={14} /> Due Date
             </label>
             <input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm text-gray-600"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm text-gray-600 dark:text-zinc-300"
             />
           </div>
 
-          <div className="pt-4 flex items-center justify-end gap-3 flex-shrink-0 border-t border-gray-100 mt-2">
+          <div className="pt-4 flex items-center justify-end gap-3 flex-shrink-0 border-t border-gray-100 dark:border-zinc-800 mt-2">
             <button
               type="button"
               onClick={closeEditProjectModal}
-              className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-black hover:bg-gray-100 rounded-full transition-colors"
+              className="px-5 py-2.5 text-sm font-semibold text-gray-600 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading || !name.trim()}
-              className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-black dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-800 dark:hover:bg-zinc-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>

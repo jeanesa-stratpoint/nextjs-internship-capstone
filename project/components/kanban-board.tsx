@@ -165,11 +165,15 @@ export default function KanbanBoard({
   if (isLoading)
     return (
       <div className="h-full flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-gray-400" />
+        <Loader2 size={32} className="animate-spin text-gray-400 dark:text-zinc-500" />
       </div>
     );
   if (error || !data)
-    return <div className="p-4 text-red-500 bg-red-50">Failed to load board data.</div>;
+    return (
+      <div className="p-4 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl">
+        Failed to load board data.
+      </div>
+    );
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -311,7 +315,7 @@ export default function KanbanBoard({
             ) : (
               <form
                 onSubmit={handleCreateList}
-                className="bg-[#F0F0F0] p-4 rounded-[20px] shadow-sm border border-[#BDBDBD] flex flex-col gap-3 w-[320px]"
+                className="bg-[#F0F0F0] dark:bg-zinc-900 p-4 rounded-[20px] shadow-sm border border-[#BDBDBD] dark:border-zinc-700 flex flex-col gap-3 w-[320px]"
               >
                 <input
                   autoFocus
@@ -319,7 +323,7 @@ export default function KanbanBoard({
                   placeholder="List name..."
                   value={newListName}
                   onChange={(e) => setNewListName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 text-black dark:text-zinc-100 bg-white dark:bg-zinc-950"
                 />
                 <div className="flex justify-between items-center px-1 mt-1">
                   {PRESET_COLORS.map((color) => (
@@ -327,7 +331,7 @@ export default function KanbanBoard({
                       key={color}
                       type="button"
                       onClick={() => setNewListColor(color)}
-                      className={`w-5 h-5 rounded-full transition-transform ${newListColor === color ? "scale-125 ring-2 ring-offset-2 ring-black" : "hover:scale-110"}`}
+                      className={`w-5 h-5 rounded-full transition-transform ${newListColor === color ? "scale-125 ring-2 ring-offset-2 ring-black dark:ring-zinc-400" : "hover:scale-110"}`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
@@ -336,7 +340,7 @@ export default function KanbanBoard({
                   <button
                     type="submit"
                     disabled={createList.isPending || !newListName.trim()}
-                    className="flex-1 bg-black text-white text-xs font-bold py-2.5 rounded-xl hover:bg-gray-800 disabled:opacity-50"
+                    className="flex-1 bg-black dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold py-2.5 rounded-xl hover:bg-gray-800 dark:hover:bg-zinc-300 disabled:opacity-50"
                   >
                     {createList.isPending ? (
                       <Loader2 size={14} className="animate-spin mx-auto" />
@@ -347,7 +351,7 @@ export default function KanbanBoard({
                   <button
                     type="button"
                     onClick={() => setIsAddingList(false)}
-                    className="px-4 bg-gray-200 text-gray-600 rounded-xl hover:bg-gray-300 font-bold text-xs"
+                    className="px-4 bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 rounded-xl hover:bg-gray-300 dark:hover:bg-zinc-700 font-bold text-xs"
                   >
                     Cancel
                   </button>
@@ -499,7 +503,7 @@ function KanbanColumn({
       <div
         ref={setNodeRef}
         style={style}
-        className="flex-shrink-0 w-[85vw] max-w-[320px] sm:w-[320px] bg-gray-100 border-2 border-dashed border-gray-300 rounded-[20px] h-[500px] opacity-50"
+        className="flex-shrink-0 w-[85vw] max-w-[320px] sm:w-[320px] bg-gray-100 dark:bg-zinc-900 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-[20px] h-[500px] opacity-50"
       />
     );
 
@@ -540,14 +544,14 @@ function KanbanColumn({
         {isEditing ? (
           <form
             onSubmit={handleSaveEdit}
-            className="p-4 border-b border-gray-50/50 bg-white rounded-t-[20px]"
+            className="p-4 border-b border-gray-50/50 dark:border-zinc-800/50 bg-white dark:bg-zinc-900 rounded-t-[20px]"
           >
             <input
               autoFocus
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm font-bold border border-gray-300 rounded-lg mb-3 text-black"
+              className="w-full px-2 py-1.5 text-sm font-bold border border-gray-300 dark:border-zinc-700 rounded-lg mb-3 text-black dark:text-zinc-100 bg-white dark:bg-zinc-950"
             />
             <div className="flex justify-between items-center px-1 mb-3">
               {PRESET_COLORS.map((c) => (
@@ -556,7 +560,9 @@ function KanbanColumn({
                   type="button"
                   onClick={() => setEditColor(c)}
                   className={`w-4 h-4 rounded-full transition-transform ${
-                    editColor === c ? "scale-125 ring-2 ring-offset-2 ring-black" : ""
+                    editColor === c
+                      ? "scale-125 ring-2 ring-offset-2 ring-black dark:ring-zinc-400"
+                      : "hover:scale-110"
                   }`}
                   style={{ backgroundColor: c }}
                 />
@@ -566,14 +572,14 @@ function KanbanColumn({
               <button
                 type="submit"
                 disabled={updateListDetails.isPending}
-                className="flex-1 bg-black text-white text-xs font-bold py-1.5 rounded-2xl hover:bg-gray-800"
+                className="flex-1 bg-black dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold py-1.5 rounded-2xl hover:bg-gray-800 dark:hover:bg-zinc-300 disabled:opacity-50"
               >
                 {updateListDetails.isPending ? "Saving..." : "Save"}
               </button>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-3 bg-gray-200 text-gray-600 text-xs font-bold rounded-2xl hover:bg-gray-300"
+                className="px-3 bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 text-xs font-bold rounded-2xl hover:bg-gray-300 dark:hover:bg-zinc-700"
               >
                 Cancel
               </button>
@@ -583,12 +589,14 @@ function KanbanColumn({
           <div
             {...attributes}
             {...listeners}
-            className="flex items-center justify-between p-5 border-b border-gray-50/50 cursor-grab active:cursor-grabbing group relative touch-none"
+            className="flex items-center justify-between p-5 border-b border-gray-50/50 dark:border-zinc-800/50 cursor-grab active:cursor-grabbing group relative touch-none"
           >
             <div className="flex items-center gap-2">
               <Icon size={18} style={{ color: colStyle.color }} />
               <h3 className="font-bold text-black dark:text-zinc-100">{column.name}</h3>
-              <span className="text-xs font-bold text-gray-400 ml-1">{columnTasks.length}</span>
+              <span className="text-xs font-bold text-gray-400 dark:text-zinc-500 ml-1">
+                {columnTasks.length}
+              </span>
             </div>
 
             {(permissions.canEditList || permissions.canDeleteList) && (
@@ -604,15 +612,15 @@ function KanbanColumn({
                   onClick={() => setMenuOpen(!isMenuOpen)}
                   className={`p-1.5 rounded-md transition-colors focus:opacity-100 ${
                     isMenuOpen
-                      ? "opacity-100 bg-white text-black shadow-sm"
-                      : "opacity-0 text-gray-400 hover:text-black hover:bg-white group-hover:opacity-100"
+                      ? "opacity-100 bg-white dark:bg-zinc-800 text-black dark:text-zinc-100 shadow-sm"
+                      : "opacity-0 text-gray-400 dark:text-zinc-500 hover:text-black dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-800 group-hover:opacity-100"
                   }`}
                 >
                   <MoreHorizontal size={18} />
                 </button>
 
                 {isMenuOpen && (
-                  <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                  <div className="absolute top-full right-0 mt-1 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-100 dark:border-zinc-800 py-2 z-50">
                     {permissions.canEditList && (
                       <>
                         <button
@@ -620,37 +628,37 @@ function KanbanColumn({
                             setIsEditing(true);
                             setMenuOpen(false);
                           }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-medium"
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800/50 font-medium"
                         >
                           Edit details
                         </button>
                         {!isSystemColumn && (
                           <>
-                            <div className="h-px bg-gray-100 my-1"></div>
+                            <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1"></div>
                             <button
                               onClick={() => handleMoveColumn("left")}
                               disabled={!canMoveLeft}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800/50 disabled:opacity-50"
                             >
                               Move left
                             </button>
                             <button
                               onClick={() => handleMoveColumn("right")}
                               disabled={!canMoveRight}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800/50 disabled:opacity-50"
                             >
                               Move right
                             </button>
                           </>
                         )}
-                        <div className="h-px bg-gray-100 my-1"></div>
+                        <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1"></div>
                         <button
                           onClick={() => {
                             setMenuOpen(false);
                             setShowClearTasksModal(true);
                           }}
                           disabled={columnTasks.length === 0}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium disabled:opacity-50"
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 font-medium disabled:opacity-50"
                         >
                           Delete all tasks
                         </button>
@@ -662,7 +670,7 @@ function KanbanColumn({
                           setMenuOpen(false);
                           setShowDeleteListModal(true);
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 font-medium"
                       >
                         Delete this list
                       </button>
@@ -700,10 +708,10 @@ function KanbanColumn({
         </div>
 
         {permissions.canCreateTask && (
-          <div className="p-3 mt-auto border-t border-gray-50/50">
+          <div className="p-3 mt-auto border-t border-gray-50/50 dark:border-zinc-800/50">
             <button
               onClick={() => setActiveListId(column.id)}
-              className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 hover:text-black hover:bg-white rounded-xl transition-colors"
+              className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-400 dark:text-zinc-500 hover:text-black dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-800 rounded-xl transition-colors"
             >
               <Plus size={16} /> Add task
             </button>

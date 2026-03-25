@@ -115,7 +115,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
       case "mention":
         return <MessageSquare size={18} className="text-amber-500" />;
       default:
-        return <Bell size={18} className="text-gray-500" />;
+        return <Bell size={18} className="text-gray-500 dark:text-zinc-400" />;
     }
   };
 
@@ -134,9 +134,9 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
   }
 
   return (
-    <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden flex flex-col animate-in fade-in duration-500">
+    <div className="bg-white dark:bg-zinc-900 rounded-[24px] shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden flex flex-col animate-in fade-in duration-500">
       {/* Header */}
-      <div className="bg-white dark:bg-zinc-900 rounded-[24px] shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden flex flex-col animate-in fade-in duration-500">
+      <div className="flex items-center justify-between p-4 border-b border-gray-50 dark:border-zinc-800/50 bg-gray-50/30 dark:bg-zinc-900/50 flex-shrink-0">
         <span className="text-sm font-bold text-gray-500 dark:text-zinc-400">
           {unreadCount} Unread {unreadCount === 1 ? "Notification" : "Notifications"}
         </span>
@@ -144,7 +144,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
           <button
             onClick={handleMarkAllAsRead}
             disabled={markAllAsRead.isPending}
-            className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors disabled:opacity-50"
           >
             {markAllAsRead.isPending ? (
               <Loader2 size={14} className="animate-spin" />
@@ -157,7 +157,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
       </div>
 
       {/* Notification List */}
-      <div className="divide-y divide-gray-50">
+      <div className="divide-y divide-gray-50 dark:divide-zinc-800/50">
         {paginatedNotifications.map((notification) => {
           const isProcessing = processingId === notification.id;
 
@@ -198,7 +198,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
                   </h4>
 
                   <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                    <span className="text-[11px] font-medium text-gray-400 whitespace-nowrap">
+                    <span className="text-[11px] font-medium text-gray-400 dark:text-zinc-500 whitespace-nowrap">
                       {formatNotificationDate(notification.createdAt)}
                     </span>
 
@@ -208,8 +208,8 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
                       }
                       className={`p-1.5 rounded-full transition-opacity ${
                         notification.isRead
-                          ? "opacity-0 group-hover:opacity-100 text-gray-400 hover:bg-gray-200 hover:text-black"
-                          : "text-blue-500 hover:bg-blue-100"
+                          ? "opacity-0 group-hover:opacity-100 text-gray-400 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-black dark:hover:text-white"
+                          : "text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30"
                       }`}
                       title={notification.isRead ? "Mark as unread" : "Mark as read"}
                     >
@@ -278,8 +278,8 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
                     <span
                       className={`px-2.5 py-1 text-[10px] font-bold rounded-xl uppercase ${
                         resolveStatus === "accepted"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-200 text-gray-600"
+                          ? "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                          : "bg-gray-200 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400"
                       }`}
                     >
                       {resolveStatus}
@@ -296,7 +296,10 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 dark:border-zinc-800/50 bg-gray-50/30 dark:bg-zinc-900/50">
         {/* Left Side: Items Per Page Input */}
         <div className="flex items-center gap-2">
-          <label htmlFor="itemsPerPage" className="text-xs text-gray-500 font-medium">
+          <label
+            htmlFor="itemsPerPage"
+            className="text-xs text-gray-500 dark:text-zinc-400 font-medium"
+          >
             Items per page:
           </label>
           <input
@@ -306,7 +309,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
             max="100"
             value={itemsPerPage}
             onChange={handleItemsPerPageChange}
-            className="w-16 px-2 py-1.5 text-xs text-black dark:text-zinc-100 border border-gray-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-zinc-600 focus:border-black dark:focus:border-zinc-600 transition-all bg-white dark:bg-zinc-950 shadow-sm"
+            className="w-16 px-2 py-1.5 text-xs text-black dark:text-zinc-100 border border-gray-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-zinc-600 transition-all bg-white dark:bg-zinc-950 shadow-sm"
           />
         </div>
 
@@ -317,7 +320,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
               Showing{" "}
               <span className="font-bold text-gray-900 dark:text-zinc-100">{startIndex + 1}</span>{" "}
               to{" "}
-              <span className="font-bold text-gray-900">
+              <span className="font-bold text-gray-900 dark:text-zinc-100">
                 {Math.min(startIndex + itemsPerPage, localNotifications.length)}
               </span>{" "}
               of{" "}
@@ -332,16 +335,18 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
                 onClick={goToPrevPage}
                 disabled={currentPage === 1}
                 className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Previous page"
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="text-xs font-semibold text-gray-700 px-2">
+              <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300 px-2">
                 Page {currentPage} of {totalPages}
               </span>
               <button
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
                 className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Next page"
               >
                 <ChevronRight size={16} />
               </button>

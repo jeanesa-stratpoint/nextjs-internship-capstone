@@ -46,42 +46,44 @@ const CustomToolbar = (toolbar: ToolbarProps<UnifiedCalendarEvent, object>) => {
       <div className="flex items-center space-x-2 sm:space-x-4">
         <button
           onClick={goToBack}
-          className="p-2 hover:bg-gray-100 text-gray-500 hover:text-black rounded-2xl transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-100 rounded-2xl transition-colors"
         >
           <ChevronLeft size={20} />
         </button>
         <button
           onClick={goToCurrent}
-          className="px-3 py-1.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-2xl transition-colors"
+          className="px-3 py-1.5 text-sm font-semibold text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-zinc-100 rounded-2xl transition-colors"
         >
           Today
         </button>
         <button
           onClick={goToNext}
-          className="p-2 hover:bg-gray-100 text-gray-500 hover:text-black rounded-2xl transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-100 rounded-2xl transition-colors"
         >
           <ChevronRight size={20} />
         </button>
       </div>
       <div className="flex-1 text-center">
-        <h2 className="text-lg sm:text-xl font-bold text-black">{toolbar.label}</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-black dark:text-zinc-100">
+          {toolbar.label}
+        </h2>
       </div>
-      <div className="hidden sm:flex space-x-2 bg-gray-100 p-1 rounded-2xl">
+      <div className="hidden sm:flex space-x-2 bg-gray-100 dark:bg-zinc-800/50 p-1 rounded-2xl">
         <button
           onClick={() => setView("month")}
-          className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-colors ${toolbar.view === "month" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"}`}
+          className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-colors ${toolbar.view === "month" ? "bg-white dark:bg-zinc-700 text-black dark:text-zinc-100 shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-100"}`}
         >
           Month
         </button>
         <button
           onClick={() => setView("week")}
-          className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-colors ${toolbar.view === "week" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"}`}
+          className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-colors ${toolbar.view === "week" ? "bg-white dark:bg-zinc-700 text-black dark:text-zinc-100 shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-100"}`}
         >
           Week
         </button>
         <button
           onClick={() => setView("day")}
-          className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-colors ${toolbar.view === "day" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"}`}
+          className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-colors ${toolbar.view === "day" ? "bg-white dark:bg-zinc-700 text-black dark:text-zinc-100 shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-100"}`}
         >
           Day
         </button>
@@ -93,8 +95,10 @@ const CustomToolbar = (toolbar: ToolbarProps<UnifiedCalendarEvent, object>) => {
 const CustomDateHeader = ({ date }: { date: Date }) => {
   return (
     <div className="flex flex-col items-center justify-center py-1.5">
-      <span className="text-sm font-semibold text-gray-500 uppercase">{format(date, "EEE")}</span>
-      <span className="text-lg sm:text-xl font-bold text-[#4b5563] mt-0.25">
+      <span className="text-sm font-semibold text-gray-500 dark:text-zinc-400 uppercase">
+        {format(date, "EEE")}
+      </span>
+      <span className="text-lg sm:text-xl font-bold text-[#4b5563] dark:text-zinc-100 mt-0.25">
         {format(date, "d")}
       </span>
     </div>
@@ -187,13 +191,13 @@ export default function CalendarWidget({ tasks, projects, events }: CalendarWidg
   return (
     <div className="h-[720px] bg-white dark:bg-zinc-900 rounded-[20px] p-6 border border-gray-200 dark:border-zinc-800 shadow-sm">
       <div className="flex items-center gap-4 mb-2 px-2">
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-zinc-400">
           <div className="w-3 h-3 rounded-full bg-blue-200"></div> Tasks
         </div>
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-zinc-400">
           <div className="w-3 h-3 rounded-full bg-rose-200"></div> Project Deadlines
         </div>
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-zinc-400">
           <div className="w-3 h-3 rounded-full bg-indigo-300"></div> Events
         </div>
       </div>

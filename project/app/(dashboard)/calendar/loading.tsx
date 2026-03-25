@@ -17,7 +17,7 @@ export default function CalendarLoading() {
       </div>
 
       {/* --- Calendar Widget Skeleton --- */}
-      <div className="h-[720px] bg-white rounded-[20px] p-6 border border-gray-200 shadow-sm flex flex-col">
+      <div className="h-[720px] bg-gray-800 rounded-[20px] p-6 border border-gray-200 shadow-sm flex flex-col">
         {/* Legend Skeleton */}
         <div className="flex items-center gap-4 mb-4 px-2">
           <div className="h-4 w-16 bg-blue-100 rounded animate-pulse"></div>

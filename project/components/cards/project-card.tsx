@@ -238,7 +238,7 @@ export default function ProjectCard({
             {isMenuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setIsMenuOpen(false)}></div>
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-20">
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border dark:border-zinc-800 dark:text-zinc-100 border-gray-100 py-2 z-20">
                   <button
                     onClick={(e) => {
                       e.preventDefault();

@@ -156,36 +156,38 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
   if (!isGlobalInviteModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-      <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm px-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         {successMessage ? (
           <div className="p-8 flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-5">
-              <CheckCircle2 size={32} className="text-green-600" />
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-500/10 rounded-full flex items-center justify-center mb-5">
+              <CheckCircle2 size={32} className="text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-2xl font-bold text-black mb-2">Invites Sent!</h2>
-            <p className="text-gray-500 mb-8">{successMessage}</p>
+            <h2 className="text-2xl font-bold text-black dark:text-zinc-100 mb-2">Invites Sent!</h2>
+            <p className="text-gray-500 dark:text-zinc-400 mb-8">{successMessage}</p>
             <button
               onClick={handleClose}
-              className="w-full py-3 bg-black text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+              className="w-full py-3 bg-black dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold rounded-xl hover:bg-gray-800 dark:hover:bg-zinc-300 transition-colors"
             >
               Done
             </button>
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-              <h2 className="text-lg font-bold text-black">Invite Team Member</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
+              <h2 className="text-lg font-bold text-black dark:text-zinc-100">
+                Invite Team Member
+              </h2>
               <button
                 onClick={handleClose}
-                className="text-gray-400 hover:text-black transition-colors p-1 rounded-full hover:bg-gray-100"
+                className="text-gray-400 hover:text-black dark:text-zinc-500 dark:hover:text-zinc-100 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
               >
                 <X size={20} />
               </button>
             </div>
 
             {error && (
-              <div className="mx-6 mt-4 p-3 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100">
+              <div className="mx-6 mt-4 p-3 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-sm font-medium rounded-xl border border-red-100 dark:border-red-500/20">
                 {error}
               </div>
             )}
@@ -193,19 +195,19 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1">
               <div className="space-y-6 mb-6">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 uppercase tracking-wide">
                     Select Project <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <FolderKanban
                       size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500"
                     />
                     <select
                       required
                       value={selectedProjectId}
                       onChange={(e) => setSelectedProjectId(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm appearance-none cursor-pointer text-black"
+                      className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-zinc-600 transition-all text-sm appearance-none cursor-pointer text-black dark:text-zinc-100"
                     >
                       <option value="" disabled>
                         Choose a project...
@@ -219,8 +221,8 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100">
-                  <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-2 uppercase tracking-wide">
                     Search Users or Enter Email <span className="text-red-500">*</span>
                   </label>
 
@@ -229,12 +231,14 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                       {selectedUsers.map((u) => (
                         <div
                           key={u.id}
-                          className={`flex items-center gap-2 pl-2 pr-1 py-1 rounded-full text-xs font-medium text-black ${
-                            u.isExternal ? "bg-blue-50 border border-blue-100" : "bg-gray-100"
+                          className={`flex items-center gap-2 pl-2 pr-1 py-1 rounded-full text-xs font-medium text-black dark:text-zinc-100 ${
+                            u.isExternal
+                              ? "bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20"
+                              : "bg-gray-100 dark:bg-zinc-800"
                           }`}
                         >
                           {u.isExternal ? (
-                            <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-blue-700">
+                            <div className="w-5 h-5 rounded-full bg-blue-200 dark:bg-blue-500/20 flex items-center justify-center text-blue-700 dark:text-blue-400">
                               <Mail size={10} />
                             </div>
                           ) : u.imageUrl ? (
@@ -246,7 +250,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                               className="w-5 h-5 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] text-blue-700 font-bold flex-shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-[10px] text-blue-700 dark:text-blue-400 font-bold flex-shrink-0">
                               {(u.firstName?.[0] || u.email[0]).toUpperCase()}
                             </div>
                           )}
@@ -258,7 +262,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                             onClick={() =>
                               setSelectedUsers(selectedUsers.filter((usr) => usr.id !== u.id))
                             }
-                            className="p-0.5 hover:bg-black/10 rounded-full transition-colors text-gray-500"
+                            className="p-0.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors text-gray-500 dark:text-zinc-400"
                           >
                             <X size={14} />
                           </button>
@@ -268,21 +272,21 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                   )}
 
                   <div className="relative">
-                    <div className="flex items-center px-3 py-2 border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-black transition-all">
-                      <Search size={16} className="text-gray-400 mr-2" />
+                    <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 rounded-xl focus-within:ring-2 focus-within:ring-black dark:focus-within:ring-zinc-600 transition-all">
+                      <Search size={16} className="text-gray-400 dark:text-zinc-500 mr-2" />
                       <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search by name or email address..."
-                        className="w-full text-sm outline-none text-black bg-transparent py-1"
+                        className="w-full text-sm outline-none text-black dark:text-zinc-100 bg-transparent py-1 placeholder:text-gray-400 dark:placeholder:text-zinc-600"
                       />
                     </div>
 
                     {(searchQuery.length >= 2 || isSearching) && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 shadow-lg rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 shadow-lg rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto">
                         {isSearching ? (
-                          <div className="p-3 text-center text-xs text-gray-500 flex justify-center items-center gap-2">
+                          <div className="p-3 text-center text-xs text-gray-500 dark:text-zinc-400 flex justify-center items-center gap-2">
                             <Loader2 size={14} className="animate-spin" /> Searching...
                           </div>
                         ) : (
@@ -297,7 +301,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                                     setSearchQuery("");
                                     setSearchResults([]);
                                   }}
-                                  className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0"
+                                  className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors flex items-center gap-3 border-b border-gray-50 dark:border-zinc-800/50 last:border-0"
                                 >
                                   {u.imageUrl ? (
                                     <Image
@@ -305,18 +309,20 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                                       alt="Avatar"
                                       width={32}
                                       height={32}
-                                      className="w-8 h-8 rounded-full bg-gray-200 object-cover"
+                                      className="w-8 h-8 rounded-full bg-gray-200 dark:bg-zinc-800 object-cover"
                                     />
                                   ) : (
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs text-blue-700 font-bold flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-xs text-blue-700 dark:text-blue-400 font-bold flex-shrink-0">
                                       {(u.firstName?.[0] || u.email[0]).toUpperCase()}
                                     </div>
                                   )}
                                   <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-black">
+                                    <span className="text-sm font-bold text-black dark:text-zinc-100">
                                       {u.firstName} {u.lastName}
                                     </span>
-                                    <span className="text-xs text-gray-500">{u.email}</span>
+                                    <span className="text-xs text-gray-500 dark:text-zinc-400">
+                                      {u.email}
+                                    </span>
                                   </div>
                                 </button>
                               ))}
@@ -339,16 +345,16 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                                     setSearchQuery("");
                                     setSearchResults([]);
                                   }}
-                                  className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center gap-3 border-t border-gray-50"
+                                  className="w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors flex items-center gap-3 border-t border-gray-50 dark:border-zinc-800/50"
                                 >
-                                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
                                     <Mail size={16} />
                                   </div>
                                   <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-blue-700">
+                                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
                                       Invite new user via email
                                     </span>
-                                    <span className="text-xs text-blue-600">
+                                    <span className="text-xs text-blue-600 dark:text-blue-500">
                                       {searchQuery.toLowerCase()}
                                     </span>
                                   </div>
@@ -356,7 +362,7 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                               )}
 
                             {searchResults.length === 0 && !isValidEmail && (
-                              <div className="p-3 text-center text-xs text-gray-500">
+                              <div className="p-3 text-center text-xs text-gray-500 dark:text-zinc-400">
                                 No users found. Enter a full email to invite them.
                               </div>
                             )}
@@ -368,18 +374,18 @@ export default function GlobalInviteModal({ userProjects }: GlobalInviteModalPro
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 flex-shrink-0 border-t border-gray-100 mt-4">
+              <div className="flex items-center justify-end gap-3 pt-4 flex-shrink-0 border-t border-gray-100 dark:border-zinc-800 mt-4 bg-gray-50/50 dark:bg-zinc-900/50 p-6 -mx-6 -mb-6">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-black hover:bg-gray-100 rounded-full transition-colors"
+                  className="px-5 py-2.5 text-sm font-semibold text-gray-600 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || !selectedProjectId || selectedUsers.length === 0}
-                  className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 bg-black dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-800 dark:hover:bg-zinc-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>

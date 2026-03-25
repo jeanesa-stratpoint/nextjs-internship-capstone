@@ -185,7 +185,7 @@ export default function TaskCard({
       <div
         ref={setNodeRef}
         style={style}
-        className="p-4 bg-gray-50 border-2 border-blue_munsell-500 border-dashed rounded-xl h-[100px] opacity-50"
+        className="p-4 bg-gray-50 dark:bg-zinc-900 border-2 border-blue_munsell-500 dark:border-blue-500 border-dashed rounded-xl h-[100px] opacity-50"
       />
     );
   }
@@ -208,10 +208,10 @@ export default function TaskCard({
         {...attributes}
         {...listeners}
         onClick={() => openTaskDetailModal(task.id)}
-        className={`p-4 bg-white dark:bg-zinc-900 border ${isOverdue ? "border-red-300 dark:border-red-500/30 shadow-sm shadow-red-100 dark:shadow-none" : "border-gray-200 dark:border-zinc-800 shadow-sm hover:shadow-md"} rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none`}
+        className={`p-4 bg-white dark:bg-zinc-900 border ${isOverdue ? "border-red-300 dark:border-red-500/30 shadow-sm shadow-red-100 dark:shadow-none" : "border-gray-200 dark:border-zinc-800 shadow-sm hover:shadow-md dark:hover:border-zinc-600"} rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none`}
       >
         <div className="flex justify-between items-start mb-1">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase">
             <StatusIcon size={12} style={{ color: colStyle.hexColor }} />
             <span className="truncate max-w-[150px]">{projectName}</span>
           </div>
@@ -244,25 +244,25 @@ export default function TaskCard({
                     setIsMenuOpen(!isMenuOpen);
                     setShowMoveMenu(false);
                   }}
-                  className="p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md transition-colors"
+                  className="p-1 text-gray-400 hover:text-black dark:text-zinc-500 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
                 >
                   <MoreVertical size={16} />
                 </button>
 
                 {isMenuOpen && (
-                  <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                  <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-100 dark:border-zinc-800 py-2 z-50">
                     {!showMoveMenu ? (
                       <>
                         {permissions.canEditTask && (
                           <button
                             onClick={() => setShowMoveMenu(true)}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 flex items-center gap-2"
                           >
                             <ArrowRightLeft size={14} /> Move to column...
                           </button>
                         )}
                         {permissions.canEditTask && permissions.canDeleteTask && (
-                          <div className="h-px bg-gray-100 my-1"></div>
+                          <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1"></div>
                         )}
                         {permissions.canDeleteTask && (
                           <button
@@ -270,7 +270,7 @@ export default function TaskCard({
                               setIsMenuOpen(false);
                               setShowDeleteConfirm(true);
                             }}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2 font-medium"
                           >
                             <Trash2 size={14} /> Delete from project
                           </button>
@@ -278,7 +278,7 @@ export default function TaskCard({
                       </>
                     ) : (
                       <>
-                        <div className="px-4 py-1.5 text-xs font-bold text-gray-400 uppercase">
+                        <div className="px-4 py-1.5 text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase">
                           Select List
                         </div>
                         {lists.map((list) => (
@@ -286,7 +286,7 @@ export default function TaskCard({
                             key={list.id}
                             onClick={() => handleMoveToColumn(list.id)}
                             disabled={list.id === task.listId}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:bg-gray-50 truncate"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-zinc-900 truncate"
                           >
                             {list.name} {list.id === task.listId && "(Current)"}
                           </button>
@@ -307,7 +307,7 @@ export default function TaskCard({
             {task.title}
           </h4>
           {task.description && (
-            <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed">
               {task.description}
             </p>
           )}
@@ -321,7 +321,7 @@ export default function TaskCard({
               {task.priority || "Medium"}
             </span>
             <div
-              className="flex items-center gap-1.5 text-gray-400"
+              className="flex items-center gap-1.5 text-gray-400 dark:text-zinc-500"
               title={`${task.commentCount || 0} comments`}
             >
               <MessageSquare size={12} />
@@ -330,11 +330,11 @@ export default function TaskCard({
           </div>
 
           {isOverdue ? (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-md">
+            <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded-md">
               <AlertCircle size={10} /> Overdue
             </span>
           ) : (
-            <span className="text-[10px] font-medium text-gray-400">
+            <span className="text-[10px] font-medium text-gray-400 dark:text-zinc-500">
               {formatDate(task.dueDate)}
             </span>
           )}

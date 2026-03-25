@@ -43,7 +43,7 @@ export default function NotificationBadge({ isCollapsed }: { isCollapsed: boolea
   // Tiny dot for collapsed sidebar
   if (isCollapsed) {
     return (
-      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border-2 border-[#E7E2DC] rounded-full animate-in zoom-in duration-300" />
+      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border-2 border-[#E7E2DC] dark:border-zinc-950 rounded-full animate-in zoom-in duration-300" />
     );
   }
 

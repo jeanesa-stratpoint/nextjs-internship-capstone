@@ -9,7 +9,7 @@ export default function CreateEventButton() {
   return (
     <button
       onClick={openCreateEventModal}
-      className="inline-flex items-center px-5 py-2.5 bg-black text-white text-sm font-bold rounded-full hover:bg-gray-800 transition-colors shadow-sm hover:shadow-md"
+      className="inline-flex items-center px-5 py-2.5 bg-black dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-bold rounded-full hover:bg-gray-800 dark:hover:bg-zinc-300 transition-colors shadow-sm hover:shadow-md"
     >
       <Plus size={18} className="mr-1.5" />
       Add Event

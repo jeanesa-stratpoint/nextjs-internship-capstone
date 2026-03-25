@@ -67,13 +67,13 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
     <>
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 z-40 md:hidden backdrop-blur-sm transition-opacity"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       <aside
-        className={`fixed md:relative top-0 left-0 z-50 flex flex-col py-6 bg-[#E7E2DC] md:bg-transparent border-r border-white/50 md:border-none h-full transition-all duration-300 ease-in-out
+        className={`fixed md:relative top-0 left-0 z-50 flex flex-col py-6 bg-[#E7E2DC] dark:bg-zinc-950 md:bg-transparent md:dark:bg-transparent border-r border-white/50 dark:border-zinc-800 md:border-none md:dark:border-none h-full transition-all duration-300 ease-in-out
           ${isSidebarCollapsed ? "md:w-20" : "md:w-64"}
           ${isMobileMenuOpen ? "translate-x-0 w-64 px-4 shadow-2xl" : "-translate-x-full md:translate-x-0 px-0 md:px-0"}
         `}
@@ -87,7 +87,7 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
               alt="Levera Logo"
               width={120}
               height={32}
-              className="h-10 w-auto object-contain"
+              className="h-10 w-auto object-contain dark:invert"
               priority
             />
           ) : (
@@ -96,14 +96,14 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
               alt="Levera Logo"
               width={20}
               height={10}
-              className="h-10 w-auto object-contain"
+              className="h-10 w-auto object-contain dark:invert"
               priority
             />
           )}
 
           <button
             onClick={toggleSidebar}
-            className="hidden md:block text-gray-500 hover:text-black transition-colors"
+            className="hidden md:block text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-100 transition-colors"
           >
             {isSidebarCollapsed ? (
               <PanelRightClose size={20} className="ml-5" />
@@ -114,7 +114,7 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
 
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="md:hidden text-gray-500 hover:text-black transition-colors ml-auto"
+            className="md:hidden text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-100 transition-colors ml-auto"
           >
             <X size={24} />
           </button>
@@ -139,13 +139,16 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
                   ${effectivelyCollapsed ? "justify-center" : "justify-start"}
                 `}
               >
-                {/* 1. Wrap Icon in relative div so the dot can position itself */}
                 <div className="relative flex items-center justify-center">
                   <Icon
                     size={18}
-                    className={isActive ? "text-black shrink-0" : "text-gray-500 shrink-0"}
+                    className={
+                      isActive
+                        ? "text-black dark:text-white shrink-0"
+                        : "text-gray-500 dark:text-zinc-400 shrink-0"
+                    }
                   />
-                  {/* 2. Tiny Dot Render (when collapsed) */}
+
                   {item.name === "Notifications" && effectivelyCollapsed && (
                     <NotificationBadge isCollapsed={true} />
                   )}
@@ -153,7 +156,6 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
 
                 {!effectivelyCollapsed && <span className="truncate">{item.name}</span>}
 
-                {/* 3. Numbered Pill Render (when expanded) */}
                 {item.name === "Notifications" && !effectivelyCollapsed && (
                   <NotificationBadge isCollapsed={false} />
                 )}
@@ -180,7 +182,7 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
                 className={`w-8 h-4 rounded-full relative transition-colors ${isDark ? "bg-blue-600" : "bg-gray-300"}`}
               >
                 <div
-                  className={`w-3 h-3 bg-white rounded-full absolute top-0.5 shadow-sm transition-all duration-300 ${isDark ? "left-4.5 translate-x-full" : "left-0.5"}`}
+                  className={`w-3 h-3 bg-white rounded-full absolute top-0.5 shadow-sm transition-all duration-300 ${isDark ? "left-1 translate-x-full" : "left-0.5"}`}
                 ></div>
               </div>
             </div>
