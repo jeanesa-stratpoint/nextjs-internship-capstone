@@ -1,4 +1,3 @@
-// TODO: Task 2.3 - Create sign-in and sign-up pages
 import { SignIn } from "@clerk/nextjs";
 import Image from "next/image";
 
@@ -58,10 +57,3 @@ export default function SignInPage() {
     </div>
   );
 }
-/*
-TODO: Task 2.3 Implementation Notes:
-- Import SignIn from @clerk/nextjs
-- Configure sign-in redirects
-- Style to match design system
-- Add proper error handling
-*/

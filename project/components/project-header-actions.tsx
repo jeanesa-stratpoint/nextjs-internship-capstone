@@ -11,7 +11,7 @@ import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import ConfirmActionModal from "./modals/confirm-action-modal";
-import ProjectTeamModal from "./modals/project-team-modal"; // <-- Ensure this is imported!
+import ProjectTeamModal from "./modals/project-team-modal";
 
 interface HeaderProps {
   project: DbProject;

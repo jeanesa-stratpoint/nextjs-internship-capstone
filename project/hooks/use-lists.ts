@@ -4,7 +4,7 @@ import {
   deleteListAction, 
   clearListTasksAction, 
   createListAction,
-  updateListDetailsAction // We will create this for Revision 4
+  updateListDetailsAction,
 } from "@/actions/lists";
 
 export function useListMutations(projectId: string) {
