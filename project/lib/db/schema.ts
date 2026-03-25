@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { pgTable, text, varchar, timestamp, uuid, primaryKey, integer, boolean, pgEnum } from 'drizzle-orm/pg-core';
 
+export const projectRoleEnum = pgEnum('project_role', ['admin', 'member']);
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high']);
 export const projectStatusEnum = pgEnum('project_status', ['active', 'completed', 'on-hold']);
 export const listStageEnum = pgEnum("list_stage", ["unstarted", "in_progress", "completed"]);
@@ -50,7 +51,7 @@ export const projects = pgTable('projects', {
 export const projectMembers = pgTable('project_members', {
   projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
   userId: text('user_id').notNull(), 
-  role: text('role').notNull().default('member'), // Can be 'owner', 'admin', or 'member'
+  role: projectRoleEnum('role').notNull().default('member'),
   joinedAt: timestamp('joined_at').defaultNow().notNull(),
 }, (t) => [
   // user can only be added to a specific project once

@@ -46,9 +46,13 @@ export async function createProjectAction(
       dueDate: validatedData.dueDate || null,
     });
 
-    const membersToInsert = [
+    const membersToInsert: { projectId: string; userId: string; role: "admin" | "member" }[] = [
       { projectId: newProject.id, userId: userId, role: "admin" },
-      ...memberIds.map((id) => ({ projectId: newProject.id, userId: id, role: "member" })),
+      ...memberIds.map((id) => ({ 
+        projectId: newProject.id, 
+        userId: id, 
+        role: "member" as const
+      })),
     ];
 
     await queries.projects.addMembers(membersToInsert);
@@ -199,6 +203,21 @@ export async function updateProjectDetailsAction(projectId: string, data: { name
     const canEdit = await hasSystemPermission(userId, "project:edit");
     if (!canEdit) return { success: false, error: "Access Denied" };
 
+    const project = await queries.projects.getById(projectId);
+    if (!project) return { success: false, error: "Project not found." };
+
+    const isOwner = project.ownerId === userId;
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    const isProjectAdmin = localRole === "admin";
+
+    if (!isOwner && !isProjectAdmin) {
+      console.warn(`User ${userId} attempted to edit project ${projectId} without admin rights.`);
+      return { 
+        success: false, 
+        error: "Access Denied: You must be a Project Admin or Owner to edit project details." 
+      };
+    }
+    
     const validationResult = projectSchema.safeParse({
       name: data.name,
       description: data.description || undefined,
@@ -230,6 +249,21 @@ export async function updateProjectStatusAction(projectId: string, status: "acti
     const canEdit = await hasSystemPermission(userId, "project:edit");
     if (!canEdit) return { success: false, error: "Access Denied" };
 
+    const project = await queries.projects.getById(projectId);
+    if (!project) return { success: false, error: "Project not found." };
+
+    const isOwner = project.ownerId === userId;
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    const isProjectAdmin = localRole === "admin";
+
+    if (!isOwner && !isProjectAdmin) {
+      console.warn(`User ${userId} attempted to update status for project ${projectId} without admin rights.`);
+      return { 
+        success: false, 
+        error: "Access Denied: You must be a Project Admin or Owner to change the project status." 
+      };
+    }
+    
     await queries.projects.updateStatus(projectId, status);
 
     revalidatePath(`/projects/${projectId}`);
@@ -290,6 +324,17 @@ export async function deleteProjectAction(projectId: string) {
     const canDelete = await hasSystemPermission(userId, "project:delete");
     if (!canDelete) return { success: false, error: "Access Denied" };
 
+    const project = await queries.projects.getById(projectId);
+    if (!project) return { success: false, error: "Project not found." };
+
+    if (project.ownerId !== userId) {
+      console.warn(`User ${userId} attempted to delete project ${projectId} without ownership rights.`);
+      return { 
+        success: false, 
+        error: "Access Denied: Only the project owner can delete this workspace." 
+      };
+    }
+
     const projectLists = await queries.tasks.getListsByProject(projectId);
     if (projectLists.length > 0) {
       const allProjectTasks = await queries.tasks.getByListIds(projectLists.map(l => l.id));
@@ -314,15 +359,29 @@ export async function removeMemberAction(projectId: string, memberId: string) {
     if (!userId) return { success: false, error: "Unauthorized" };
 
     const canEdit = await hasSystemPermission(userId, "project:edit");
-    if (!canEdit) return { success: false, error: "Access Denied" };
+    if (!canEdit) return { success: false, error: "Access Denied: Missing global permissions." };
 
     const project = await queries.projects.getById(projectId);
-    if (project?.ownerId === memberId) {
+    if (!project) return { success: false, error: "Project not found." };
+
+
+    if (project.ownerId === memberId) {
       return { success: false, error: "Cannot remove the project owner." };
     }
     
-    await queries.projects.removeMember(projectId, memberId);
+    const isOwner = project.ownerId === userId;
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    const isProjectAdmin = localRole === "admin";
 
+    if (!isOwner && !isProjectAdmin) {
+      console.warn(` User ${userId} attempted to remove a member from project ${projectId} without admin rights.`);
+      return { 
+        success: false, 
+        error: "Access Denied: You must be a Project Admin or Owner to remove members." 
+      };
+    }
+
+    await queries.projects.removeMember(projectId, memberId);
     await queries.tasks.unassignUserFromProjectTasks(projectId, memberId);
 
     revalidatePath(`/projects/${projectId}`);

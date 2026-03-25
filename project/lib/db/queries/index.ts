@@ -29,6 +29,21 @@ export const queries = {
         .where(eq(projectMembers.projectId, projectId));
     },
 
+    getMemberRole: async (projectId: string, userId: string) => {
+      const result = await db
+        .select({ role: projectMembers.role })
+        .from(projectMembers)
+        .where(
+          and(
+            eq(projectMembers.projectId, projectId),
+            eq(projectMembers.userId, userId)
+          )
+        )
+        .limit(1);
+      
+      return result[0]?.role || null;
+    },
+
     getMembersForMultiple: async (projectIds: string[]) => {
       if (projectIds.length === 0) return [];
       return await db.select().from(projectMembers).where(inArray(projectMembers.projectId, projectIds));
@@ -138,7 +153,7 @@ export const queries = {
       return newProject;
     },
 
-    addMembers: async (membersToInsert: { projectId: string; userId: string; role: string }[]) => {
+    addMembers: async (membersToInsert: { projectId: string; userId: string; role: "admin" | "member" }[]) => {
       await db.insert(projectMembers).values(membersToInsert).onConflictDoNothing();
     },
 
@@ -609,6 +624,7 @@ export const queries = {
         .limit(1);
       return role;
     },
+    
     create: async (userData: typeof users.$inferInsert) => {
       const [newUser] = await db.insert(users).values(userData).returning();
       return newUser;

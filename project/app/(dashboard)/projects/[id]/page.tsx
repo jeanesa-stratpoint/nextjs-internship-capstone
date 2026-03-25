@@ -19,17 +19,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!userId) redirect("/sign-in");
 
   const project = await queries.projects.getById(projectId);
+
+  if (!project) notFound();
+
   const team = await queries.projects.getMembers(projectId);
+  const localRole = await queries.projects.getMemberRole(projectId, userId);
+  const isOwner = project.ownerId === userId;
 
   const userProjectsData = await queries.projects.getAllForUser(userId);
   const userProjects = userProjectsData.map((p) => p.project);
 
-  const canDeleteProject = await hasSystemPermission(userId, "project:delete");
-
-  if (!project) notFound();
-
   const [
     canEditProject,
+    canDeleteProject,
     canCreateList,
     canEditList,
     canDeleteList,
@@ -38,6 +40,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     canDeleteTask,
   ] = await Promise.all([
     hasSystemPermission(userId, "project:edit"),
+    hasSystemPermission(userId, "project:delete"),
     hasSystemPermission(userId, "list:create"),
     hasSystemPermission(userId, "list:edit"),
     hasSystemPermission(userId, "list:delete"),
@@ -45,6 +48,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     hasSystemPermission(userId, "task:edit"),
     hasSystemPermission(userId, "task:delete"),
   ]);
+
+  const hasEditAccess = canEditProject && (isOwner || localRole === "admin");
+  const hasDeleteAccess = canDeleteProject && isOwner;
 
   const boardPermissions = {
     canCreateList,
@@ -75,8 +81,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <ProjectHeaderActions
           project={project}
           team={team}
-          canEditProject={canEditProject}
-          canDeleteProject={canDeleteProject}
+          canEditProject={hasEditAccess}
+          canDeleteProject={hasDeleteAccess}
         />
       </div>
 

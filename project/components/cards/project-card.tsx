@@ -43,6 +43,7 @@ export default function ProjectCard({
   isOwner,
   canEdit,
   canDelete,
+  projectRole,
 }: {
   project: DbProject;
   index: number;
@@ -53,6 +54,7 @@ export default function ProjectCard({
   isOwner: boolean;
   canEdit: boolean;
   canDelete: boolean;
+  projectRole: "admin" | "member" | string;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -82,6 +84,9 @@ export default function ProjectCard({
   const colorIndex = index % colors.length;
 
   const progress = taskCount > 0 ? Math.round((completedTaskCount / taskCount) * 100) : 0;
+
+  const hasEditAccess = canEdit && (isOwner || projectRole === "admin");
+  const hasDeleteAccess = canDelete && isOwner;
 
   const handleStatusChange = async (status: "active" | "on-hold") => {
     setIsLoading(true);
@@ -214,10 +219,13 @@ export default function ProjectCard({
           </div>
         </Link>
 
-        {canEdit && (
+        {hasEditAccess && (
           <div className="absolute top-5 right-4 z-20">
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={(e) => {
+                e.preventDefault(); // Prevent Link navigation
+                setIsMenuOpen(!isMenuOpen);
+              }}
               className={`p-1.5 rounded-full transition-all ${isMenuOpen ? "opacity-100 bg-gray-100 text-black" : "opacity-0 group-hover:opacity-100 text-gray-400 hover:text-black hover:bg-gray-100"}`}
             >
               <MoreHorizontal size={20} />
@@ -265,11 +273,12 @@ export default function ProjectCard({
                     </button>
                   ) : null}
                   <div className="h-px bg-gray-100 my-1"></div>
-                  {canDelete && (
+                  {hasDeleteAccess && (
                     <>
                       <div className="h-px bg-gray-100 my-1"></div>
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
                           setIsMenuOpen(false);
                           setShowDeleteModal(true);
                         }}
