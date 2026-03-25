@@ -25,6 +25,8 @@ export async function createListAction(projectId: string, name: string, newOrder
     const newList = await queries.lists.create({
       projectId, name: name.trim(), order: newOrder, color
     });
+    
+    await queries.projects.touchActivity(projectId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true, list: newList };
@@ -44,6 +46,7 @@ export async function updateListDetailsAction(projectId: string, listId: string,
     if (!name.trim()) return { success: false, error: "List name is required" };
 
     await queries.lists.updateDetails(listId, name.trim(), color);
+    await queries.projects.touchActivity(projectId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
@@ -62,6 +65,7 @@ export async function updateListOrderAction(projectId: string, listUpdates: { id
     if (!localRole) return { success: false, error: "Access Denied: You must be a project member." };
 
     await Promise.all(listUpdates.map((list) => queries.lists.updateOrder(list.id, list.order)));
+    await queries.projects.touchActivity(projectId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
@@ -80,6 +84,7 @@ export async function deleteListAction(projectId: string, listId: string) {
     if (!localRole) return { success: false, error: "Access Denied: You must be a project member." };
 
     await queries.lists.delete(listId);
+    await queries.projects.touchActivity(projectId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
@@ -99,6 +104,7 @@ export async function clearListTasksAction(projectId: string, listId: string) {
     if (!localRole) return { success: false, error: "Access Denied: You must be a project member." };
 
     await queries.tasks.deleteAllInList(listId);
+    await queries.projects.touchActivity(projectId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };

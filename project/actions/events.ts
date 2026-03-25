@@ -41,7 +41,7 @@ export async function createEventAction(formData: unknown) {
       projectId: validatedData.projectId,
       creatorId: userId,
     });
-
+    await queries.projects.touchActivity(project.id);
     revalidatePath("/calendar");
     revalidatePath(`/projects/${validatedData.projectId}`);
     
@@ -79,6 +79,7 @@ export async function updateEventDetailsAction(eventId: string, formData: unknow
       endTime: validatedData.endTime,
     });
 
+    await queries.projects.touchActivity(project.id);
     revalidatePath("/calendar");
     revalidatePath(`/projects/${validatedData.projectId}`);
     
@@ -100,7 +101,8 @@ export async function deleteEventAction(eventId: string, projectId: string) {
     }
 
     await queries.events.delete(eventId);
-
+    await queries.projects.touchActivity(projectId);
+    
     revalidatePath("/calendar");
     revalidatePath(`/projects/${projectId}`);
     

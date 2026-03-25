@@ -62,6 +62,7 @@ export async function createTaskAction(formData: unknown, projectId: string) {
 
       await pusherServer.trigger(`user-${validatedData.assigneeId}`, "new-notification", { id: newNotif.id });
     }
+    await queries.projects.touchActivity(projectId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true, task: newTask };
@@ -81,6 +82,7 @@ export async function updateTaskStatus(taskId: string, newListId: string, projec
     if (!existingTask) return { success: false, error: "Task not found." };
 
     await queries.tasks.updateStatus(taskId, newListId);
+    await queries.projects.touchActivity(projectId);
 
     if (existingTask.listId !== newListId) {
        const oldList = await queries.tasks.getListById(existingTask.listId);
@@ -245,6 +247,7 @@ export async function updateTaskAction(
         revalidatePath("/projects");
       }
     }
+    await queries.projects.touchActivity(projectId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
@@ -268,6 +271,8 @@ export async function deleteTaskAction(taskId: string, projectId: string) {
     if (existingTask?.attachmentUrl) {
       await deleteFilesFromUploadThing([existingTask.attachmentUrl]);
     }
+
+    await queries.projects.touchActivity(projectId);
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
@@ -342,6 +347,8 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
       }
     }
 
+    await queries.projects.touchActivity(projectId);
+    
     revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {

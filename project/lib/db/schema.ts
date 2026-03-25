@@ -47,6 +47,7 @@ export const projects = pgTable('projects', {
   dueDate: timestamp('due_date'),
   status: projectStatusEnum("status").default("active").notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const projectMembers = pgTable('project_members', {
