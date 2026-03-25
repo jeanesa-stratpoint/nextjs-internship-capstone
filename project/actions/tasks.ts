@@ -398,6 +398,8 @@ export async function createCommentAction(taskId: string, projectId: string, con
     }
 
     await pusherServer.trigger(`task-${taskId}`, "new-comment", newComment);
+    await queries.projects.touchActivity(projectId);
+    revalidatePath(`/projects/${projectId}`);
     return { success: true };
   } catch (error) {
     console.error("Failed to create comment:", error);

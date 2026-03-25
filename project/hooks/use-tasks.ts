@@ -103,6 +103,7 @@ export function useTaskMutations(projectId: string) {
       if (!result.success) throw new Error(result.error as string);
       return result;
     },
+    onSuccess: invalidateBoard,
   });
 
 

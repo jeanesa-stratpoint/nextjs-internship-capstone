@@ -25,8 +25,9 @@ export async function GET(
     if (boardLists.length === 0) {
       boardLists = await queries.tasks.createDefaultLists(projectId);
     }
-    const listIds = boardLists.map((l) => l.id);
-    const tasks = await queries.tasks.getByListIds(listIds);
+
+    const tasks = await queries.tasks.getTasksByProjectId(projectId);
+    
     const team = await queries.projects.getMembers(projectId);
 
     return NextResponse.json({

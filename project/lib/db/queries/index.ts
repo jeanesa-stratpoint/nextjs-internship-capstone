@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { projects, projectMembers, lists, tasks, comments, taskActivities, users, roles, events, projectInvitations, notifications } from "@/lib/db/schema";
-import { eq, desc, inArray, asc, and, ne, gte, count, notInArray } from "drizzle-orm";
+import { eq, desc, inArray, asc, and, ne, gte, count, notInArray, sql } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 import { calculateExpiryDate, isDateExpired } from "@/lib/utils";
 
@@ -375,6 +375,27 @@ export const queries = {
         .innerJoin(projects, eq(lists.projectId, projects.id))
         .where(eq(tasks.assigneeId, userId))
         .orderBy(asc(tasks.dueDate));
+    },
+
+    getTasksByProjectId: async (projectId: string) => {
+      return await db
+        .select({
+          id: tasks.id,
+          title: tasks.title,
+          description: tasks.description,
+          listId: tasks.listId,
+          assigneeId: tasks.assigneeId,
+          priority: tasks.priority,
+          dueDate: tasks.dueDate,
+          order: tasks.order,
+          commentCount: sql<number>`count(${comments.id})::int`, 
+        })
+        .from(tasks)
+        .innerJoin(lists, eq(tasks.listId, lists.id))
+        .leftJoin(comments, eq(tasks.id, comments.taskId)) 
+        .where(eq(lists.projectId, projectId))
+        .groupBy(tasks.id, lists.id) 
+        .orderBy(asc(tasks.order));
     },
 
     create: async (data: { 
