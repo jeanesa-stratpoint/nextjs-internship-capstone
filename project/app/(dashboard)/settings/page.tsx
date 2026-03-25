@@ -30,13 +30,15 @@ export default async function SettingsPage({
   return (
     <div className="space-y-6 pb-10 mx-auto">
       <div>
-        <h1 className="text-3xl font-bold text-black">Settings</h1>
-        <p className="text-gray-500 mt-2">Manage your account profile and security preferences.</p>
+        <h1 className="text-3xl font-bold text-black dark:text-zinc-100">Settings</h1>
+        <p className="text-gray-500 dark:text-zinc-400 mt-2">
+          Manage your account profile and security preferences.
+        </p>
       </div>
 
-      <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden flex flex-col mt-8">
+      <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col mt-8 transition-colors duration-300">
         {/* HORIZONTAL TOPBAR NAVIGATION */}
-        <div className="flex items-center overflow-x-auto no-scrollbar border-b border-gray-100 bg-gray-50/50 px-4 sm:px-8 pt-4">
+        <div className="flex items-center overflow-x-auto no-scrollbar border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/50 px-4 sm:px-8 pt-4">
           <nav className="flex space-x-6">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
@@ -45,17 +47,19 @@ export default async function SettingsPage({
                   key={item.id}
                   href={`/settings?tab=${item.id}`}
                   className={`flex items-center pb-4 text-sm font-medium transition-all relative whitespace-nowrap ${
-                    isActive ? "text-black" : "text-gray-500 hover:text-black"
+                    isActive
+                      ? "text-black dark:text-zinc-100"
+                      : "text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-200"
                   }`}
                 >
                   <item.icon
-                    className={`mr-2 ${isActive ? "text-black" : "text-gray-400"}`}
+                    className={`mr-2 ${isActive ? "text-black dark:text-zinc-100" : "text-gray-400 dark:text-zinc-500"}`}
                     size={18}
                   />
                   {item.name}
 
                   {isActive && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded-t-full" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black dark:bg-zinc-100 rounded-t-full" />
                   )}
                 </Link>
               );
@@ -66,7 +70,7 @@ export default async function SettingsPage({
         <div className="p-4 sm:p-8 min-h-[500px]">
           {activeTab === "profile" && (
             <div className="animate-in fade-in duration-300 max-w-3xl">
-              <h3 className="text-xl font-bold text-black mb-6 pb-4 border-b border-gray-50">
+              <h3 className="text-xl font-bold text-black dark:text-zinc-100 mb-6 pb-4 border-b border-gray-50 dark:border-zinc-800">
                 Profile Settings
               </h3>
               <ProfileForm user={currentUser} assignableRoles={assignableRoles} />
@@ -75,8 +79,10 @@ export default async function SettingsPage({
 
           {activeTab === "security" && (
             <div className="animate-in fade-in duration-300 w-full">
-              <h3 className="text-xl font-bold text-black mb-2">Security & Authentication</h3>
-              <p className="text-sm text-gray-500 mb-8 pb-4 border-b border-gray-50 max-w-3xl">
+              <h3 className="text-xl font-bold text-black dark:text-zinc-100 mb-2">
+                Security & Authentication
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-8 pb-4 border-b border-gray-50 dark:border-zinc-800 max-w-3xl">
                 Manage your password, two-factor authentication, and active device sessions.
               </p>
 
@@ -96,6 +102,15 @@ export default async function SettingsPage({
                   [&_.cl-pageScrollBox]:p-0 
                   [&_.cl-profileSection__profile]:hidden 
                   sm:[&_.cl-pageScrollBox]:px-2
+
+                  dark:[&_.cl-headerTitle]:text-zinc-100
+                  dark:[&_.cl-headerSubtitle]:text-zinc-400
+                  dark:[&_.cl-internal-1dauvpw]:text-zinc-400
+                  dark:[&_.cl-profileSectionTitle]:text-zinc-100
+                  dark:[&_.cl-profileSectionTitleText]:text-zinc-100
+                  dark:[&_.cl-profileSectionPrimaryButton]:text-zinc-100
+                  dark:[&_.cl-badge]:bg-zinc-800
+                  dark:[&_.cl-badge]:text-zinc-300
                 "
                 >
                   <UserProfile routing="hash" />

@@ -185,7 +185,7 @@ export default function CalendarWidget({ tasks, projects, events }: CalendarWidg
   };
 
   return (
-    <div className="h-[720px] bg-white rounded-[20px] p-6 border border-gray-200 shadow-sm">
+    <div className="h-[720px] bg-white dark:bg-zinc-900 rounded-[20px] p-6 border border-gray-200 dark:border-zinc-800 shadow-sm">
       <div className="flex items-center gap-4 mb-2 px-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
           <div className="w-3 h-3 rounded-full bg-blue-200"></div> Tasks

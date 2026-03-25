@@ -50,8 +50,8 @@ export default async function ProjectsPage({
   const renderProjectGrid = (projects: typeof projectsWithMetrics, emptyText: string) => {
     if (projects.length === 0)
       return (
-        <div className="border-2 border-dashed border-gray-200 rounded-[20px] p-8 text-center bg-gray-50/50">
-          <p className="text-gray-400 text-sm font-medium">{emptyText}</p>
+        <div className="border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-[20px] p-8 text-center bg-gray-50/50 dark:bg-zinc-800/50">
+          <p className="text-gray-400 dark:text-zinc-500 text-sm font-medium">{emptyText}</p>
         </div>
       );
     return (
@@ -75,11 +75,11 @@ export default async function ProjectsPage({
   };
 
   return (
-    <div className="space-y-8 text-black h-full flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-700">
+    <div className="space-y-8 text-black dark:text-zinc-100 h-full flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-700">
       {/* TOP ROW */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
         <div>
-          <p className="text-sm text-gray-500 font-medium mb-2">{currentDate}</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium mb-2">{currentDate}</p>
           <h1 className="text-3xl font-bold">Projects</h1>
         </div>
 
@@ -111,7 +111,9 @@ export default async function ProjectsPage({
 
       {/* QUICK ACTIONS */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <p className="text-gray-600 text-sm">Manage and organize your team projects</p>
+        <p className="text-gray-600 dark:text-zinc-400 text-sm">
+          Manage and organize your team projects
+        </p>
         <QuickActions
           canCreateProject={canCreateProject}
           canInviteMember={canInviteMember}

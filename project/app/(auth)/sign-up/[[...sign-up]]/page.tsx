@@ -23,29 +23,33 @@ export default function SignUpPage() {
               card: "bg-transparent shadow-none border-none",
 
               logoBox: "hidden",
-
-              headerTitle: "text-2xl sm:text-3xl font-bold text-black text-center",
-              headerSubtitle: "text-sm sm:text-base text-gray-800 text-center mb-4 mt-2",
+              headerTitle:
+                "text-2xl sm:text-3xl font-bold text-black dark:text-zinc-100 text-center",
+              headerSubtitle:
+                "text-sm sm:text-base text-gray-800 dark:text-zinc-400 text-center mb-4 mt-2",
 
               socialButtonsBlockButton:
-                "border border-gray-300 rounded-full py-2.5 hover:bg-gray-50 text-sm font-medium transition-colors",
+                "border border-gray-300 dark:border-zinc-700 rounded-full py-2.5 hover:bg-gray-50 dark:hover:bg-zinc-800/50 text-sm font-medium transition-colors text-black dark:text-zinc-200",
               socialButtonsBlockButtonText: "font-semibold",
 
               dividerRow: "my-4",
-              dividerLine: "bg-gray-200",
-              dividerText: "text-gray-400 text-xs",
+              dividerLine: "bg-gray-200 dark:bg-zinc-800",
+              dividerText: "text-gray-400 dark:text-zinc-500 text-xs",
 
-              formFieldLabel: "text-xs font-bold text-black mb-1",
+              formFieldLabel: "text-xs font-bold text-black dark:text-zinc-300 mb-1",
               formFieldInput:
-                "rounded-lg border border-gray-300 focus:ring-black focus:border-black py-2.5 px-3 text-sm",
+                "rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-black dark:text-zinc-100 focus:ring-black dark:focus:ring-zinc-600 focus:border-black dark:focus:border-zinc-600 py-2.5 px-3 text-sm transition-colors",
+
+              formFieldErrorText: "text-red-500 dark:text-red-400 text-xs font-medium mt-1.5",
 
               formButtonPrimary:
-                "bg-black text-white hover:bg-gray-900 rounded-full py-3 mt-4 text-sm font-bold uppercase tracking-wide transition-colors",
+                "bg-black dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-gray-900 dark:hover:bg-zinc-300 rounded-full py-3 mt-4 text-sm font-bold uppercase tracking-wide transition-colors",
 
               footer: "bg-transparent border-none p-0 mt-6",
               footerAction: "bg-transparent border-none p-0 justify-center",
-              footerActionText: "text-gray-600 text-sm",
-              footerActionLink: "text-black font-bold hover:text-gray-800 text-sm",
+              footerActionText: "text-gray-600 dark:text-zinc-400 text-sm",
+              footerActionLink:
+                "text-black dark:text-zinc-100 font-bold hover:text-gray-800 dark:hover:text-zinc-300 text-sm",
 
               watermark: "hidden",
             },

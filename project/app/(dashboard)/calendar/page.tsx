@@ -27,7 +27,7 @@ export default async function CalendarPage() {
   const canCreateEvent = userProjects.length > 0;
 
   return (
-    <div className="space-y-4 text-black">
+    <div className="space-y-4 text-black dark:text-zinc-100">
       {canCreateEvent && <CreateEventModal userProjects={userProjects} />}
 
       <TaskDetailModal canEditTask={true} canDeleteTask={true} />
@@ -35,9 +35,9 @@ export default async function CalendarPage() {
       <EventDetailModal canEdit={true} canDelete={true} userProjects={userProjects} />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <p className="text-sm text-gray-500 font-medium mb-2">{currentDate}</p>
-          <h1 className="text-3xl font-bold text-black">Calendar</h1>
-          <p className="text-gray-500 mt-2 text-sm">
+          <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium mb-2">{currentDate}</p>
+          <h1 className="text-3xl font-bold text-black dark:text-zinc-100">Calendar</h1>
+          <p className="text-gray-500 dark:text-zinc-400 mt-2 text-sm">
             View project deadlines, task due dates, and team events.
           </p>
         </div>

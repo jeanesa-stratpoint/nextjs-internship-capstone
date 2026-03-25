@@ -4,16 +4,21 @@
 
 @layer base {
   :root {
-    /* Custom color palette variables */
-    --platinum: #dcdcdd;
-    --french-gray: #c5c3c6;
-    --outer-space: #46494c;
-    --paynes-gray: #4c5c68;
-    --blue-munsell: #1985a1;
+    /* Existing variables */
+    --bg-light: #ffffff;
+    --text-light: #000000;
   }
 
   .dark {
     /* Dark theme color adjustments */
+    --bg-dark: #09090b; /* zinc-950 */
+    --text-dark: #f4f4f5; /* zinc-100 */
+    --card-dark: #18181b; /* zinc-900 */
+    --border-dark: #27272a; /* zinc-800 */
+  }
+
+  body {
+    @apply bg-white dark:bg-zinc-950 text-black dark:text-zinc-100 transition-colors duration-300;
   }
 }
 
@@ -139,6 +144,52 @@
 
 .rbc-time-view .rbc-allday-cell::-webkit-scrollbar-thumb:hover {
   background-color: #94a3b8;
+}
+
+/* --- DARK MODE CALENDAR OVERRIDES --- */
+.dark .rbc-calendar {
+  color: #f4f4f5 !important; /* zinc-100 */
+}
+.dark .rbc-header {
+  color: #a1a1aa !important; /* zinc-400 */
+  border-bottom: 1px solid #27272a !important; /* zinc-800 */
+}
+.dark .rbc-month-view .rbc-header + .rbc-header {
+  border-left: 2px solid #27272a !important;
+}
+.dark .rbc-month-view, .dark .rbc-time-view, .dark .rbc-agenda-view {
+  border: 1px solid #27272a !important;
+}
+.dark .rbc-day-bg + .rbc-day-bg, .dark .rbc-month-row + .rbc-month-row {
+  border-left: 1px solid #27272a !important;
+  border-top: 1px solid #27272a !important;
+}
+.dark .rbc-off-range-bg {
+  background: #18181b !important; /* zinc-900 */
+}
+.dark .rbc-today {
+  background: #27272a !important; /* zinc-800 */
+}
+.dark .rbc-date-cell {
+  color: #d4d4d8 !important; /* zinc-300 */
+}
+.dark .rbc-time-content {
+  border-top: 2px solid #27272a !important;
+}
+.dark .rbc-timeslot-group {
+  border-bottom: 1px solid #27272a !important;
+}
+.dark .rbc-timeslot-group .rbc-time-slot:not(:first-child) {
+  border-top: 1px dashed #3f3f46 !important; /* zinc-700 */
+}
+.dark .rbc-time-header-content {
+  border-left: 1px solid #27272a !important;
+}
+.dark .rbc-time-gutter .rbc-label {
+  color: #a1a1aa !important;
+}
+.dark .rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid #27272a !important;
 }
 
 /* Tiptap Placeholder Styles */

@@ -47,16 +47,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   };
 
   return (
-    <div className="h-full flex flex-col text-black overflow-hidden">
+    <div className="h-full flex flex-col text-black dark:text-zinc-100 overflow-hidden">
       <div className="flex items-start justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <Link href="/projects" className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-            <ArrowLeft size={24} className="text-black" />
+          <Link
+            href="/projects"
+            className="p-2 hover:bg-gray-200 dark:hover:bg-zinc-800 rounded-full transition-colors"
+          >
+            <ArrowLeft size={24} className="text-black dark:text-zinc-100" />
           </Link>
           <div className="flex flex-col">
             <h1 className="text-3xl font-bold">{project.name}</h1>
             {project.dueDate && (
-              <span className="text-sm text-gray-500 font-semibold mt-1">
+              <span className="text-sm text-gray-500 dark:text-zinc-400 font-semibold mt-1">
                 Due on {formatDate(new Date(project.dueDate))}
               </span>
             )}
@@ -71,7 +74,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         />
       </div>
 
-      <p className="text-gray-600 ml-14 max-w-4xl mb-8 flex-shrink-0">
+      <p className="text-gray-600 dark:text-zinc-400 ml-14 max-w-4xl mb-8 flex-shrink-0">
         {project.description || "No description provided for this project."}
       </p>
 

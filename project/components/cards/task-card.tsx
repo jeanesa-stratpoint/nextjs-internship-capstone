@@ -54,9 +54,11 @@ const getColumnStyle = (column: StoreList) => {
 };
 
 const getPriorityStyle = (priority?: string | null) => {
-  if (priority === "high") return "bg-[#FFD3D3] text-[#7B0002] border-[#7B0002]";
-  if (priority === "low") return "bg-[#D3FFD8] text-[#007B50] border-[#007B50]";
-  return "bg-[#D2E9FF] text-[#15538D] border-[#15538D]";
+  if (priority === "high")
+    return "bg-[#FFD3D3] text-[#7B0002] border-[#7B0002] dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20";
+  if (priority === "low")
+    return "bg-[#D3FFD8] text-[#007B50] border-[#007B50] dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20";
+  return "bg-[#D2E9FF] text-[#15538D] border-[#15538D] dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20";
 };
 
 const getInitials = (firstName?: string | null, lastName?: string | null, email?: string) => {
@@ -206,7 +208,7 @@ export default function TaskCard({
         {...attributes}
         {...listeners}
         onClick={() => openTaskDetailModal(task.id)}
-        className={`p-4 bg-white border ${isOverdue ? "border-red-300 shadow-sm shadow-red-100" : "border-gray-200 shadow-sm hover:shadow-md"} rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none`}
+        className={`p-4 bg-white dark:bg-zinc-900 border ${isOverdue ? "border-red-300 dark:border-red-500/30 shadow-sm shadow-red-100 dark:shadow-none" : "border-gray-200 dark:border-zinc-800 shadow-sm hover:shadow-md"} rounded-[16px] cursor-grab active:cursor-grabbing flex flex-col gap-2 relative group touch-none`}
       >
         <div className="flex justify-between items-start mb-1">
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
@@ -299,7 +301,9 @@ export default function TaskCard({
         </div>
 
         <div>
-          <h4 className={`text-sm font-bold ${isOverdue ? "text-red-700" : "text-black"}`}>
+          <h4
+            className={`text-sm font-bold ${isOverdue ? "text-red-700 dark:text-red-400" : "text-black dark:text-zinc-100"}`}
+          >
             {task.title}
           </h4>
           {task.description && (
@@ -309,7 +313,7 @@ export default function TaskCard({
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50 dark:border-zinc-800/50">
           <div className="flex items-center gap-2">
             <span
               className={`px-2 py-1 text-[10px] font-bold rounded-xl capitalize border ${getPriorityStyle(task.priority)}`}

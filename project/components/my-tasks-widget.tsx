@@ -36,20 +36,22 @@ export default function MyTasksWidget({ tasks }: { tasks: UserTask[] }) {
         : completedTasks;
 
   return (
-    <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-6 md:p-8 flex-1 min-h-[400px]">
+    <div className="bg-white dark:bg-zinc-900 rounded-[24px] shadow-sm border border-gray-100 dark:border-zinc-800 p-6 md:p-8 flex-1 min-h-[400px]">
       {/* Tabs */}
-      <div className="flex gap-6 border-b border-gray-100 mb-6">
+      <div className="flex gap-6 border-b border-gray-100 dark:border-zinc-800 mb-6">
         {(["upcoming", "overdue", "completed"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`pb-3 text-sm font-bold capitalize relative transition-colors ${
-              activeTab === tab ? "text-black" : "text-gray-400 hover:text-gray-600"
+              activeTab === tab
+                ? "text-black dark:text-zinc-100"
+                : "text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300"
             }`}
           >
             {tab}
             {activeTab === tab && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded-t-full"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black dark:bg-zinc-100 rounded-t-full"></div>
             )}
           </button>
         ))}
@@ -66,7 +68,7 @@ export default function MyTasksWidget({ tasks }: { tasks: UserTask[] }) {
             <Link
               href={`/projects/${task.projectId}`}
               key={task.id}
-              className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100 group"
+              className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors border border-transparent hover:border-gray-100 dark:hover:border-zinc-700 group"
             >
               <div className="flex items-center gap-3 sm:gap-4 flex-1 overflow-hidden">
                 {activeTab === "completed" ? (
@@ -81,7 +83,7 @@ export default function MyTasksWidget({ tasks }: { tasks: UserTask[] }) {
                 )}
 
                 <span
-                  className={`text-sm font-bold truncate ${activeTab === "completed" ? "text-gray-400 line-through" : "text-black"}`}
+                  className={`text-sm font-bold truncate ${activeTab === "completed" ? "text-gray-400 dark:text-zinc-600 line-through" : "text-black dark:text-zinc-100"}`}
                 >
                   {task.title}
                 </span>

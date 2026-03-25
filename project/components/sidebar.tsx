@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { useUIStore } from "@/stores/ui-store";
-import { useEffect } from "react";
-import NotificationBadge from "@/components/notification-badge"; // <-- Import the badge!
+import { useEffect, useState } from "react";
+import NotificationBadge from "@/components/notification-badge";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -18,10 +19,14 @@ import {
   PanelLeftClose,
   PanelRightClose,
   Sun,
+  Moon,
   X,
 } from "lucide-react";
 
 export default function Sidebar({ roleName = "Loading..." }: { roleName?: string }) {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
   const pathname = usePathname();
   const { user } = useUser();
 
@@ -48,6 +53,15 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
     { name: "Notifications", href: "/notifications", icon: Bell },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
+  const isDark = theme === "dark";
 
   return (
     <>
@@ -115,10 +129,13 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
               <Link
                 key={item.name}
                 href={item.href}
-                title={effectivelyCollapsed ? item.name : undefined}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium text-sm whitespace-nowrap
-                  ${isActive ? "bg-white/60 text-black font-semibold shadow-sm" : "text-gray-600 hover:bg-white/40 hover:text-black"}
+                  ${
+                    isActive
+                      ? "bg-white/60 dark:bg-zinc-800 text-black dark:text-white font-semibold shadow-sm"
+                      : "text-gray-600 dark:text-zinc-400 hover:bg-white/40 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-zinc-200"
+                  }
                   ${effectivelyCollapsed ? "justify-center" : "justify-start"}
                 `}
               >
@@ -145,14 +162,26 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
           })}
         </nav>
 
-        <div className="space-y-4 px-4 mt-auto pt-4">
-          {!effectivelyCollapsed && (
-            <div className="flex items-center justify-between px-3 py-2 bg-white/40 rounded-xl text-sm font-medium text-gray-700">
+        <div className="space-y-4 px-4 mt-auto pt-4 border-t border-transparent dark:border-zinc-800/50">
+          {!effectivelyCollapsed && mounted && (
+            <div
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="flex items-center justify-between px-3 py-2 bg-white/40 dark:bg-zinc-900/50 rounded-xl text-sm font-medium text-gray-700 dark:text-zinc-300 cursor-pointer hover:bg-white/60 dark:hover:bg-zinc-800 transition-colors"
+            >
               <span className="flex items-center gap-2">
-                <Sun size={16} className="text-gray-500" /> Light
+                {isDark ? (
+                  <Moon size={16} className="text-zinc-400" />
+                ) : (
+                  <Sun size={16} className="text-gray-500" />
+                )}
+                {isDark ? "Dark" : "Light"}
               </span>
-              <div className="w-8 h-4 bg-gray-300 rounded-full relative cursor-pointer">
-                <div className="w-3 h-3 bg-white rounded-full absolute top-0.5 left-0.5 shadow-sm"></div>
+              <div
+                className={`w-8 h-4 rounded-full relative transition-colors ${isDark ? "bg-blue-600" : "bg-gray-300"}`}
+              >
+                <div
+                  className={`w-3 h-3 bg-white rounded-full absolute top-0.5 shadow-sm transition-all duration-300 ${isDark ? "left-4.5 translate-x-full" : "left-0.5"}`}
+                ></div>
               </div>
             </div>
           )}
@@ -160,13 +189,19 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
           <div
             className={`flex items-center gap-3 py-2 ${effectivelyCollapsed ? "justify-center" : "px-2"}`}
           >
-            <UserButton />
+            <UserButton
+              appearance={{
+                elements: { userButtonPopoverCard: "dark:bg-zinc-900 dark:border-zinc-800" },
+              }}
+            />
             {!effectivelyCollapsed && (
               <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-bold text-black truncate w-full">
+                <span className="text-sm font-bold text-black dark:text-white truncate w-full">
                   {user?.fullName || "Loading..."}
                 </span>
-                <span className="text-xs text-gray-500 font-medium truncate">{roleName}</span>
+                <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium truncate">
+                  {roleName}
+                </span>
               </div>
             )}
           </div>

@@ -14,20 +14,20 @@ import { useUIStore } from "@/stores/ui-store";
 const StatusBadge = ({ status }: { status: string }) => {
   if (status === "completed") {
     return (
-      <span className="px-2.5 py-1 bg-lime-200 text-lime-700 text-[10px] font-bold rounded-xl uppercase">
+      <span className="px-2.5 py-1 bg-lime-200 text-lime-700 dark:bg-lime-500/10 dark:text-lime-400 text-[10px] font-bold rounded-xl uppercase">
         Completed
       </span>
     );
   }
   if (status === "on-hold") {
     return (
-      <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-xl uppercase">
+      <span className="px-2.5 py-1 bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 text-[10px] font-bold rounded-xl uppercase">
         On Hold
       </span>
     );
   }
   return (
-    <span className="px-2.5 py-1 bg-sky-100 text-sky-700 text-[10px] font-bold rounded-xl uppercase">
+    <span className="px-2.5 py-1 bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400 text-[10px] font-bold rounded-xl uppercase">
       Active
     </span>
   );
@@ -175,13 +175,15 @@ export default function ProjectCard({
       <div className="relative group block h-full">
         <Link
           href={`/projects/${project.id}`}
-          className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden"
+          className="bg-white dark:bg-zinc-800 rounded-[20px] p-6 shadow-sm border border-gray-100 dark:border-zinc-800 hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden"
         >
           <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${colors[colorIndex]}`}></div>
 
           <div className="pl-2 flex-1 flex flex-col">
             <div className="flex justify-between items-start mb-6 gap-2 pr-6">
-              <h3 className="text-lg font-bold text-black line-clamp-1">{project.name}</h3>
+              <h3 className="text-lg font-bold text-black dark:text-zinc-100 line-clamp-1">
+                {project.name}
+              </h3>
               <StatusBadge status={project.status} />
             </div>
 
@@ -190,24 +192,28 @@ export default function ProjectCard({
                 Created on <span className="font-bold">{formatDate(project.createdAt)}</span>
               </p>
               {project.dueDate && (
-                <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                <p className="text-xs text-gray-400 dark:text-zinc-400 mb-2 flex items-center gap-1">
                   Due on <span className="font-bold">{formatDate(project.dueDate)}</span>
                 </p>
               )}
-              <p className="text-xs text-gray-400 font-medium mt-3">
+              <p className="text-xs text-gray-400 dark:text-zinc-400 font-medium mt-3">
                 Owned by{" "}
-                <span className="text-gray-400 font-bold">{isOwner ? "You" : ownerName}</span>
+                <span className="text-gray-400 dark:text-zinc-400 font-bold">
+                  {isOwner ? "You" : ownerName}
+                </span>
               </p>
             </div>
 
             <div className="mt-auto">
               <div className="flex justify-between items-end mb-2">
-                <span className="text-xs font-bold text-black">{memberCount} members</span>
-                <span className="text-xs font-bold text-black">
+                <span className="text-xs font-bold text-black dark:text-zinc-100">
+                  {memberCount} members
+                </span>
+                <span className="text-xs font-bold text-black dark:text-zinc-100">
                   {taskCount} tasks ({progress}%)
                 </span>
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${progressColors[colorIndex]}`}
                   style={{ width: `${progress}%` }}

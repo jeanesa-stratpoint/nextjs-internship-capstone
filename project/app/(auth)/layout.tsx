@@ -1,8 +1,8 @@
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#FAFAFA]">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#FAFAFA] dark:bg-zinc-950 transition-colors duration-300">
       {/* The Gradient SVG Background */}
-      <div className="absolute inset-0 z-0 flex items-center justify-center w-full h-full object-cover">
+      <div className="absolute inset-0 z-0 flex items-center justify-center w-full h-full object-cover dark:opacity-10 transition-opacity duration-300">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="100%"

@@ -19,7 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
+        <body
+          className={`${inter.className}bg-white dark:bg-zinc-950 text-black dark:text-zinc-100`}
+        >
           <ThemeProvider>
             <QueryProvider>
               <GlobalToast />

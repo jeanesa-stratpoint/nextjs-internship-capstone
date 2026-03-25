@@ -121,12 +121,12 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
 
   if (localNotifications.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 border-2 border-dashed border-gray-200 rounded-[24px] bg-white animate-in fade-in zoom-in-95 duration-500">
-        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300">
+      <div className="flex flex-col items-center justify-center py-20 px-4 border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-[24px] bg-white dark:bg-zinc-900 animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-16 h-16 bg-gray-50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mb-4 text-gray-300 dark:text-zinc-600">
           <Bell size={32} />
         </div>
-        <h3 className="text-lg font-bold text-black mb-2">All caught up!</h3>
-        <p className="text-gray-500 text-sm text-center max-w-sm">
+        <h3 className="text-lg font-bold text-black dark:text-zinc-100 mb-2">All caught up!</h3>
+        <p className="text-gray-500 dark:text-zinc-500 text-sm text-center max-w-sm">
           You have no notifications right now.
         </p>
       </div>
@@ -136,8 +136,8 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
   return (
     <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden flex flex-col animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-50 bg-gray-50/30">
-        <span className="text-sm font-bold text-gray-500">
+      <div className="bg-white dark:bg-zinc-900 rounded-[24px] shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden flex flex-col animate-in fade-in duration-500">
+        <span className="text-sm font-bold text-gray-500 dark:text-zinc-400">
           {unreadCount} Unread {unreadCount === 1 ? "Notification" : "Notifications"}
         </span>
         {unreadCount > 0 && (
@@ -172,15 +172,17 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
               key={notification.id}
               className={`p-4 sm:p-5 flex gap-3 sm:gap-4 transition-colors cursor-pointer group ${
                 notification.isRead
-                  ? "bg-white hover:bg-gray-50"
-                  : "bg-blue-50/40 hover:bg-blue-50/70"
+                  ? "bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
+                  : "bg-blue-50/40 dark:bg-blue-900/10 hover:bg-blue-50/70 dark:hover:bg-blue-900/20"
               }`}
               onClick={() => handleMarkAsRead(notification.id, notification.actionUrl)}
             >
               {/* Icon */}
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  notification.isRead ? "bg-gray-100" : "bg-white shadow-sm border border-blue-100"
+                  notification.isRead
+                    ? "bg-gray-100 dark:bg-zinc-800"
+                    : "bg-white dark:bg-zinc-900 shadow-sm border border-blue-100 dark:border-blue-900/30"
                 }`}
               >
                 {getIconForType(notification.type)}
@@ -190,7 +192,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
               <div className="flex-1 min-w-0 flex flex-col">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4 mb-1">
                   <h4
-                    className={`text-sm truncate ${notification.isRead ? "font-semibold text-gray-700" : "font-bold text-black"}`}
+                    className={`text-sm truncate ${notification.isRead ? "font-semibold text-gray-700 dark:text-zinc-300" : "font-bold text-black dark:text-zinc-100"}`}
                   >
                     {notification.title}
                   </h4>
@@ -221,7 +223,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
                 </div>
 
                 <p
-                  className={`text-xs sm:text-sm line-clamp-2 sm:line-clamp-none ${notification.isRead ? "text-gray-500" : "text-gray-600"}`}
+                  className={`text-xs sm:text-sm line-clamp-2 sm:line-clamp-none ${notification.isRead ? "text-gray-500 dark:text-zinc-500" : "text-gray-600 dark:text-zinc-400"}`}
                 >
                   {notification.message}
                 </p>
@@ -239,7 +241,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
                         )
                       }
                       disabled={isProcessing}
-                      className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-black text-white text-[11px] sm:text-xs font-bold rounded-2xl hover:bg-gray-800 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-black dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] sm:text-xs font-bold rounded-2xl hover:bg-gray-800 dark:hover:bg-zinc-300 transition-colors disabled:opacity-50"
                     >
                       {isProcessing ? (
                         <Loader2 size={14} className="animate-spin" />
@@ -258,7 +260,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
                         )
                       }
                       disabled={isProcessing}
-                      className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 text-[11px] sm:text-xs font-bold rounded-2xl hover:bg-gray-200 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 text-[11px] sm:text-xs font-bold rounded-2xl hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
                     >
                       {isProcessing ? (
                         <Loader2 size={14} className="animate-spin" />
@@ -291,7 +293,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
       </div>
 
       {/* Dynamic Pagination Footer */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 bg-gray-50/30">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 dark:border-zinc-800/50 bg-gray-50/30 dark:bg-zinc-900/50">
         {/* Left Side: Items Per Page Input */}
         <div className="flex items-center gap-2">
           <label htmlFor="itemsPerPage" className="text-xs text-gray-500 font-medium">
@@ -304,19 +306,24 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
             max="100"
             value={itemsPerPage}
             onChange={handleItemsPerPageChange}
-            className="w-16 px-2 py-1.5 text-xs text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all bg-white shadow-sm"
+            className="w-16 px-2 py-1.5 text-xs text-black dark:text-zinc-100 border border-gray-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-zinc-600 focus:border-black dark:focus:border-zinc-600 transition-all bg-white dark:bg-zinc-950 shadow-sm"
           />
         </div>
 
         {/* Right Side: Page Controls (Only show if totalPages > 1) */}
         {totalPages > 1 && (
           <div className="flex items-center gap-4 sm:gap-6">
-            <span className="text-xs text-gray-500 font-medium text-center hidden sm:block">
-              Showing <span className="font-bold text-gray-900">{startIndex + 1}</span> to{" "}
+            <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium text-center hidden sm:block">
+              Showing{" "}
+              <span className="font-bold text-gray-900 dark:text-zinc-100">{startIndex + 1}</span>{" "}
+              to{" "}
               <span className="font-bold text-gray-900">
                 {Math.min(startIndex + itemsPerPage, localNotifications.length)}
               </span>{" "}
-              of <span className="font-bold text-gray-900">{localNotifications.length}</span>{" "}
+              of{" "}
+              <span className="font-bold text-gray-900 dark:text-zinc-100">
+                {localNotifications.length}
+              </span>{" "}
               entries
             </span>
 
@@ -324,7 +331,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
               <button
                 onClick={goToPrevPage}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -334,7 +341,7 @@ export default function NotificationsList({ initialData }: { initialData: Notifi
               <button
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight size={16} />
               </button>

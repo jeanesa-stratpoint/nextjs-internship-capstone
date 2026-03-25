@@ -301,7 +301,7 @@ export default function KanbanBoard({
             {!isAddingList ? (
               <button
                 onClick={() => setIsAddingList(true)}
-                className="w-[60px] h-[60px] rounded-[20px] bg-[#F0F0F0]/50 border-2 border-dashed border-[#BDBDBD] flex items-center justify-start px-[18px] text-gray-500 hover:bg-[#F0F0F0] hover:text-black transition-all duration-300 hover:w-[200px] group overflow-hidden"
+                className="w-[60px] h-[60px] rounded-[20px] bg-[#F0F0F0]/50 dark:bg-zinc-900/50 border-2 border-dashed border-[#BDBDBD] dark:border-zinc-700 flex items-center justify-start px-[18px] text-gray-500 dark:text-zinc-400 hover:bg-[#F0F0F0] dark:hover:bg-zinc-800 hover:text-black dark:hover:text-zinc-200 transition-all duration-300 hover:w-[200px] group overflow-hidden"
               >
                 <Plus size={20} className="flex-shrink-0" />
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity font-medium whitespace-nowrap ml-3">
@@ -533,7 +533,7 @@ function KanbanColumn({
       <div
         ref={setNodeRef}
         style={style}
-        className={`flex-shrink-0 w-[85vw] max-w-[320px] sm:w-[320px] bg-[#F0F0F0] border border-[#BDBDBD] rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px] ${
+        className={`flex-shrink-0 w-[85vw] max-w-[320px] sm:w-[320px] bg-[#F0F0F0] dark:bg-zinc-950 border border-[#BDBDBD] dark:border-zinc-800 rounded-[20px] shadow-sm flex flex-col h-full max-h-[800px] ${
           isOverlay ? "rotate-2 scale-105 shadow-2xl cursor-grabbing" : ""
         }`}
       >
@@ -587,7 +587,7 @@ function KanbanColumn({
           >
             <div className="flex items-center gap-2">
               <Icon size={18} style={{ color: colStyle.color }} />
-              <h3 className="font-bold text-black">{column.name}</h3>
+              <h3 className="font-bold text-black dark:text-zinc-100">{column.name}</h3>
               <span className="text-xs font-bold text-gray-400 ml-1">{columnTasks.length}</span>
             </div>
 
@@ -680,7 +680,7 @@ function KanbanColumn({
             strategy={verticalListSortingStrategy}
           >
             {columnTasks.length === 0 ? (
-              <div className="border-2 border-dashed border-gray-200 rounded-xl h-24 flex items-center justify-center text-sm text-gray-400 font-medium bg-gray-50/50">
+              <div className="border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-xl h-24 flex items-center justify-center text-sm text-gray-400 dark:text-zinc-500 font-medium bg-gray-50/50 dark:bg-zinc-900/50">
                 Drop tasks here
               </div>
             ) : (

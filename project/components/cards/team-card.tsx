@@ -91,7 +91,7 @@ export default function TeamCard({ member, canManageTeam }: TeamCardProps) {
         isDestructive={true}
       />
 
-      <div className="bg-white rounded-[20px] shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-gray-600 transition-all duration-300 hover:-translate-y-1 cursor-default relative">
+      <div className="bg-white dark:bg-zinc-900 rounded-[20px] shadow-sm border border-gray-200 dark:border-zinc-800 p-6 hover:shadow-md hover:border-gray-600 dark:hover:border-zinc-600 transition-all duration-300 hover:-translate-y-1 cursor-default relative">
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-4">
             {member.imageUrl ? (
@@ -103,13 +103,17 @@ export default function TeamCard({ member, canManageTeam }: TeamCardProps) {
                 className="w-12 h-12 rounded-full object-cover border-2 border-gray-50"
               />
             ) : (
-              <div className="w-12 h-12 bg-gray-300 text-gray-900 rounded-full flex items-center justify-center font-bold text-lg border-2 border-white">
+              <div className="w-12 h-12 bg-gray-300 dark:bg-zinc-800 text-gray-900 dark:text-zinc-300 rounded-full flex items-center justify-center font-bold text-lg border-2 border-white dark:border-zinc-900">
                 {initials}
               </div>
             )}
             <div className="flex flex-col">
-              <h3 className="font-bold text-black text-lg line-clamp-1">{fullName}</h3>
-              <span className="text-xs font-semibold text-gray-500 uppercase">{member.role}</span>
+              <h3 className="font-bold text-black dark:text-zinc-100 text-lg line-clamp-1">
+                {fullName}
+              </h3>
+              <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">
+                {member.role}
+              </span>
             </div>
           </div>
 
@@ -118,23 +122,23 @@ export default function TeamCard({ member, canManageTeam }: TeamCardProps) {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`p-1.5 rounded-lg transition-colors ${
                 isMenuOpen
-                  ? "bg-gray-100 text-black"
-                  : "text-gray-400 hover:bg-gray-50 hover:text-black"
+                  ? "bg-gray-100 dark:bg-zinc-800 text-black dark:text-zinc-100"
+                  : "text-gray-400 hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-zinc-200"
               }`}
             >
               <MoreHorizontal size={20} />
             </button>
 
             {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-20 animate-in fade-in zoom-in-95 duration-200">
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-100 dark:border-zinc-800 py-2 z-20 animate-in fade-in zoom-in-95 duration-200">
                 <Link
                   href="/projects"
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800/50 flex items-center gap-2 font-medium"
                 >
                   <FolderKanban size={14} /> View Projects
                 </Link>
 
-                <div className="h-px bg-gray-100 my-1"></div>
+                <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1"></div>
 
                 <button
                   onClick={handleCopyEmail}
@@ -172,23 +176,24 @@ export default function TeamCard({ member, canManageTeam }: TeamCardProps) {
           </div>
         </div>
 
-        <div className="flex items-center text-sm font-medium text-gray-500 mb-6">
+        <div className="flex items-center text-sm font-medium text-gray-500 dark:text-zinc-400 mb-6">
           <Mail size={16} className="mr-2 text-gray-400" />
           <span className="truncate">{member.email}</span>
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+        <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-zinc-800/50">
           <span
             className={`px-3 py-1 text-xs font-bold rounded-full ${
               isActive
-                ? "bg-green-50 text-green-700 border border-green-100"
-                : "bg-gray-100 text-gray-600 border border-gray-200"
+                ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-500/20"
+                : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700"
             }`}
           >
             {isActive ? "Active" : "Available"}
           </span>
-          <div className="text-sm font-bold text-black">
-            {member.activeProjectCount} <span className="text-gray-400 font-medium">projects</span>
+          <div className="text-sm font-bold text-black dark:text-zinc-100">
+            {member.activeProjectCount}{" "}
+            <span className="text-gray-400 dark:text-zinc-500 font-medium">projects</span>
           </div>
         </div>
       </div>

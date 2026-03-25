@@ -49,14 +49,16 @@ export default async function DashboardPage({
   const greeting = getGreeting();
 
   return (
-    <div className="space-y-10 text-black flex flex-col pb-10 mx-auto animate-in slide-in-from-bottom-4 fade-in duration-700">
+    <div className="space-y-10 text-black dark:text-zinc-100 flex flex-col pb-10 mx-auto animate-in slide-in-from-bottom-4 fade-in duration-700">
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-6">
         {/* Top Row: Greeting & Search/Filter */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
-            <p className="text-sm text-gray-500 font-semibold mb-2">{formatHeaderDate()}</p>
-            <h1 className="text-4xl font-bold">
+            <p className="text-sm text-gray-500 dark:text-zinc-400 font-semibold mb-2">
+              {formatHeaderDate()}
+            </p>
+            <h1 className="text-4xl font-bold text-black dark:text-zinc-100">
               {greeting}, {currentUser?.firstName || "User"}
             </h1>
           </div>
@@ -90,7 +92,7 @@ export default async function DashboardPage({
 
         {/* Bottom Row: Subtitle & Quick Actions */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
-          <p className="text-gray-500 text-sm font-medium">
+          <p className="text-gray-500 dark:text-zinc-400 text-sm font-medium">
             Here&apos;s an overview of your projects and tasks.
           </p>
 
@@ -138,8 +140,10 @@ export default async function DashboardPage({
         <div>
           <h2 className="text-xl font-bold mb-4">Recent Projects</h2>
           {filteredRecentProjects.length === 0 ? (
-            <div className="border-2 border-dashed border-gray-200 rounded-[20px] p-8 text-center bg-gray-50/50">
-              <p className="text-gray-400 text-sm font-medium">No projects match your search.</p>
+            <div className="border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-[20px] p-8 text-center bg-gray-50/50 dark:bg-zinc-800/50">
+              <p className="text-gray-400 dark:text-zinc-500 text-sm font-medium">
+                No projects match your search.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -185,19 +189,21 @@ function StatCard({
   isNegativeBadge?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden flex flex-col justify-between h-36 transition-colors duration-300 hover:border-orange-300">
-      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-100"></div>
-      <div className="pl-3 flex items-center gap-3 text-gray-500 mb-2">
+    <div className="bg-white dark:bg-zinc-800 rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-zinc-800 relative overflow-hidden flex flex-col justify-between h-36 transition-colors duration-300 hover:border-orange-300 dark:hover:border-orange-500/50">
+      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-100 dark:bg-orange-500/20"></div>
+      <div className="pl-3 flex items-center gap-3 text-gray-500 dark:text-zinc-400 mb-2">
         <Icon size={20} />
         <span className="text-sm font-bold">{title}</span>
       </div>
       <div className="pl-3 flex items-end justify-between mt-auto">
-        <span className="text-[52px] leading-none font-bold text-black tracking-tight">
+        <span className="text-[52px] leading-none font-bold text-black dark:text-zinc-100 tracking-tight">
           {value}
         </span>
         <span
           className={`px-2.5 py-1 mb-1 text-[11px] font-bold rounded-full ${
-            isNegativeBadge ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+            isNegativeBadge
+              ? "bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400"
+              : "bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400"
           }`}
         >
           {badge}

@@ -13,10 +13,10 @@ export default async function NotificationsPage() {
   const notifications: NotificationItem[] = rawNotifications as NotificationItem[];
 
   return (
-    <div className="space-y-8 text-black pb-12 w-full">
+    <div className="space-y-8 text-black dark:text-zinc-100 pb-12 w-full">
       <div>
         <h1 className="text-3xl font-bold">Notifications</h1>
-        <p className="text-gray-500 mt-2 text-sm">
+        <p className="text-gray-500 dark:text-zinc-400 mt-2 text-sm">
           Stay updated on project invites, task assignments, and team activity.
         </p>
       </div>

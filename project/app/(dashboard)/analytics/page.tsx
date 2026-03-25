@@ -15,15 +15,15 @@ export default async function AnalyticsPage() {
   const currentDate = formatHeaderDate();
 
   return (
-    <div className="space-y-8 text-black h-full flex flex-col">
+    <div className="space-y-8 text-black dark:text-zinc-100 h-full flex flex-col">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <p className="text-sm text-gray-500 font-medium mb-2">{currentDate}</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium mb-2">{currentDate}</p>
           <h1 className="text-3xl font-bold">Analytics</h1>
         </div>
       </div>
 
-      <p className="text-gray-600 text-sm">
+      <p className="text-gray-600 dark:text-zinc-400 text-sm">
         Track project performance, team productivity, and task velocity across your collaborative
         workspaces.
       </p>
@@ -60,9 +60,9 @@ export default async function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12 mt-8 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-150 fill-mode-both">
-        <div className="bg-white rounded-[20px] border border-gray-200 p-6 shadow-sm flex flex-col">
-          <h3 className="text-lg font-bold text-black mb-1">Project Progress</h3>
-          <p className="text-xs text-gray-500 mb-6 font-medium">
+        <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-gray-200 dark:border-zinc-800 p-6 shadow-sm flex flex-col">
+          <h3 className="text-lg font-bold text-black dark:text-zinc-100 mb-1">Project Progress</h3>
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mb-6 font-medium">
             Distribution of tasks across your projects
           </p>
           <div className="h-64 w-full">
@@ -70,9 +70,9 @@ export default async function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-[20px] border border-gray-200 p-6 shadow-sm flex flex-col">
-          <h3 className="text-lg font-bold text-black mb-1">Team Activity</h3>
-          <p className="text-xs text-gray-500 mb-6 font-medium">
+        <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-gray-200 dark:border-zinc-800 p-6 shadow-sm flex flex-col">
+          <h3 className="text-lg font-bold text-black dark:text-zinc-100 mb-1">Team Activity</h3>
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mb-6 font-medium">
             Task movements and comments (last 7 days)
           </p>
           <div className="h-64 w-full">

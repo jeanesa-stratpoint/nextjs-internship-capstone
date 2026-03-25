@@ -164,9 +164,9 @@ export default function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm " +
+          "prose prose-sm dark:prose-invert" +
           "max-w-none " +
-          "focus:outline-none min-h-[80px] p-3 text-black " +
+          "focus:outline-none min-h-[80px] p-3 text-black dark:text-zinc-100 " +
           "[&_p]:text-sm [&_p]:m-0 [&_p]:leading-relaxed",
       },
     },
@@ -181,19 +181,19 @@ export default function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white focus-within:ring-2 focus-within:ring-black transition-all">
-      <div className="flex items-center gap-1 bg-gray-50 border-b border-gray-200 p-1">
+    <div className="border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900 focus-within:ring-2 focus-within:ring-black dark:focus-within:ring-zinc-600 transition-all">
+      <div className="flex items-center gap-1 bg-gray-50 dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 p-1">
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`p-1.5 rounded-md transition-colors ${editor.isActive("bold") ? "bg-gray-200 text-black" : "text-gray-500 hover:bg-gray-100"}`}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive("bold") ? "bg-gray-200 text-black" : "text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800"}`}
         >
           <Bold size={14} />
         </button>
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`p-1.5 rounded-md transition-colors ${editor.isActive("italic") ? "bg-gray-200 text-black" : "text-gray-500 hover:bg-gray-100"}`}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive("italic") ? "bg-gray-200 text-black" : "text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800"}`}
         >
           <Italic size={14} />
         </button>
@@ -201,14 +201,14 @@ export default function RichTextEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`p-1.5 rounded-md transition-colors ${editor.isActive("bulletList") ? "bg-gray-200 text-black" : "text-gray-500 hover:bg-gray-100"}`}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive("bulletList") ? "bg-gray-200 text-black" : "text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800"}`}
         >
           <List size={14} />
         </button>
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`p-1.5 rounded-md transition-colors ${editor.isActive("orderedList") ? "bg-gray-200 text-black" : "text-gray-500 hover:bg-gray-100"}`}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive("orderedList") ? "bg-gray-200 text-black" : "text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800"}`}
         >
           <ListOrdered size={14} />
         </button>
