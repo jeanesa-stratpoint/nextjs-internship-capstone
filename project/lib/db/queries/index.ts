@@ -849,13 +849,12 @@ export const queries = {
     },
 
     getDashboardStats: async (userId: string) => {
-      // 1. Fetch raw data
       const teamMembers = await queries.users.getTeamMembers(userId);
       const projectsWithMetrics = await queries.projects.getProjectsWithMetrics(userId);
       const myTasks = await queries.tasks.getUserTasks(userId);
       const analyticsData = await queries.analytics.getDashboardMetrics(userId);
 
-      // ✅ FIX 1: Fetch ALL tasks in your projects to check due dates (even unassigned ones!)
+      // Fetch all tasks in your projects to check due dates
       const allProjectTasks = await db
         .select({
           id: tasks.id,
@@ -867,7 +866,6 @@ export const queries = {
         .innerJoin(projectMembers, eq(lists.projectId, projectMembers.projectId))
         .where(eq(projectMembers.userId, userId));
 
-      // 2. Base Calculations
       const activeProjects = projectsWithMetrics.filter(p => p.project.status === "active");
       const activeProjectsCount = activeProjects.length;
       const teamCount = teamMembers.length;
@@ -880,22 +878,20 @@ export const queries = {
         pendingTasksCount += (p.metrics.taskCount - p.metrics.completedTaskCount);
       });
 
-      // 3. Strict Time Windows
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const thisWeekStart = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
       const lastWeekStart = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
       const nextSevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-      // Helper for formatting growth percentages
       const formatGrowth = (pct: number) => {
         if (pct > 0) return `+${pct}%`;
         if (pct < 0) return `${pct}%`; // Negative already includes the '-' sign
         return "0%";
       };
 
-      // ✅ FIX 2: Strict This Week vs Last Week Growth Math
-      // A. Projects Growth
+      // This Week vs Last Week 
+      // Projects Growth
       const createdThisWeek = activeProjects.filter(p => new Date(p.project.createdAt) >= thisWeekStart).length;
       const createdLastWeek = activeProjects.filter(p => {
         const d = new Date(p.project.createdAt);
@@ -909,24 +905,23 @@ export const queries = {
         projectGrowthPct = 100; // Infinite growth from zero
       }
 
-      // B. Completed Tasks Growth
+      // Completed Tasks Growth
       const completedThisWeek = analyticsData.velocity;
       const oldCompletedCount = completedTasksCount - completedThisWeek;
       
       let completedGrowthPct = 0;
       if (oldCompletedCount > 0) {
-        // Approximating prior velocity based on totals
         completedGrowthPct = Math.round(((completedThisWeek - oldCompletedCount) / oldCompletedCount) * 100);
       } else if (completedThisWeek > 0) {
         completedGrowthPct = 100;
       }
 
-      // C. Team Activity
+      // Team Activity
       const activeTeamPercentage = teamCount > 0 
         ? Math.round((Math.min(analyticsData.activeUsers, teamCount) / teamCount) * 100) 
         : 0;
 
-      // D. Pending Tasks Due Soon (Now uses ALL project tasks, not just assigned ones)
+      // Pending Tasks Due Soon (all project tasks)
       const dueThisWeekCount = allProjectTasks.filter(t => {
         if (t.listStage === "completed" || !t.dueDate) return false;
         
@@ -944,7 +939,7 @@ export const queries = {
         completedTasksCount,
         completedGrowth: formatGrowth(completedGrowthPct),
         pendingTasksCount,
-        dueThisWeekCount: `${dueThisWeekCount} due soon`,
+        dueThisWeekCount: dueThisWeekCount,
         recentProjects: projectsWithMetrics.slice(0, 3),
         myTasks
       };

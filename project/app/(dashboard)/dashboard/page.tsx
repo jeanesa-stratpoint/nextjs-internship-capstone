@@ -88,8 +88,9 @@ export default async function DashboardPage() {
         <StatCard
           title="Pending Tasks"
           value={stats.pendingTasksCount}
-          badge={stats.dueThisWeekCount}
+          badge={`${stats.dueThisWeekCount} due soon`}
           icon={ListTodo}
+          isNegativeBadge={stats.dueThisWeekCount > 0}
         />
       </div>
 
