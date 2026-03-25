@@ -23,9 +23,17 @@ export const queries = {
 
     getMembers: async (projectId: string) => {
       return await db
-        .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email })
+        .select({ 
+          id: users.id, 
+          firstName: users.firstName, 
+          lastName: users.lastName, 
+          email: users.email, 
+          role: projectMembers.role,
+          jobTitle: roles.name       
+        })
         .from(projectMembers)
         .innerJoin(users, eq(projectMembers.userId, users.id))
+        .leftJoin(roles, eq(users.roleId, roles.id))
         .where(eq(projectMembers.projectId, projectId));
     },
 
@@ -245,15 +253,29 @@ export const queries = {
           )
         );
     },
+
     batchAddMembers: async (members: (typeof projectMembers.$inferInsert)[]) => {
       if (members.length === 0) return;
       await db.insert(projectMembers).values(members).onConflictDoNothing();
     },
+
     batchUpdateInviteStatus: async (inviteIds: string[], status: "accepted" | "declined" | "pending") => {
       if (inviteIds.length === 0) return;
       await db.update(projectInvitations)
         .set({ status })
         .where(inArray(projectInvitations.id, inviteIds));
+    },
+
+    updateMemberRole: async (projectId: string, userId: string, newRole: "admin" | "member") => {
+      await db
+        .update(projectMembers)
+        .set({ role: newRole })
+        .where(
+          and(
+            eq(projectMembers.projectId, projectId),
+            eq(projectMembers.userId, userId)
+          )
+        );
     },
   },
 

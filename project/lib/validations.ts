@@ -20,6 +20,13 @@ export const projectSchema = z.object({
   status: z.enum(["active", "completed", "on-hold"]).optional(),
 });
 
+// PROJECT MEMBER VALIDATION
+export const updateProjectMemberRoleSchema = z.object({
+  projectId: z.string().uuid("Invalid project ID"),
+  memberIdToUpdate: z.string().min(1, "Member ID is required"),
+  newRole: z.enum(["admin", "member"], { message: "Invalid role" }),
+});
+
 // TASK VALIDATION
 export const taskSchema = z.object({
   title: z.string().min(1, "Task title is required").max(100, "Title cannot exceed 100 characters"),

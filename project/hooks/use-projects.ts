@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createProjectAction,
   updateProjectDetailsAction,
@@ -9,11 +9,14 @@ import {
   removeMemberAction,
   removeTeamMemberGlobalAction,
   inviteUserByEmailAction,
-  revokeInvitationAction
+  revokeInvitationAction,
+  updateProjectMemberRoleAction
 } from "@/actions/projects";
 
 // MUTATIONS (WRITES)
 export function useProjectMutations() {
+  const queryClient = useQueryClient();
+  
   const createProject = useMutation({
     mutationFn: async (data: { name: string; description: string; dueDate: string | null; memberIds: string[] }) => {
       const result = await createProjectAction(data.name, data.description, data.dueDate, data.memberIds);
@@ -94,6 +97,18 @@ export function useProjectMutations() {
     },
   });
 
+  const updateMemberRole = useMutation({
+    mutationFn: async ({ projectId, memberId, role }: { projectId: string; memberId: string; role: "admin" | "member" }) => {
+      const result = await updateProjectMemberRoleAction(projectId, memberId, role);
+      if (!result.success) throw new Error(result.error as string);
+      return result;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["projects", variables.projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    }
+  });
+
   return {
     createProject,
     updateProjectDetails,
@@ -104,6 +119,7 @@ export function useProjectMutations() {
     inviteUserByEmail,
     removeMember,
     removeTeamMemberGlobal,
-    revokeInvitation
+    revokeInvitation,
+    updateMemberRole
   };
 }

@@ -3,7 +3,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { hasSystemPermission } from "@/lib/rbac";
-import { projectSchema } from "@/lib/validations";
+import { projectSchema, updateProjectMemberRoleSchema } from "@/lib/validations";
 import { queries } from "@/lib/db/queries";
 import { UTApi } from "uploadthing/server";
 import { pusherServer } from "@/lib/pusher";
@@ -432,5 +432,47 @@ async function deleteFilesFromUploadThing(urls: (string | null | undefined)[]) {
     } catch (error) {
       console.error("Failed to delete files from UploadThing:", error);
     }
+  }
+}
+
+export async function updateProjectMemberRoleAction(projectId: string, memberIdToUpdate: string, newRole: "admin" | "member") {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const validation = updateProjectMemberRoleSchema.safeParse({ projectId, memberIdToUpdate, newRole });
+    
+    if (!validation.success) {
+      return { success: false, error: validation.error.issues[0].message };
+    }
+    const canEdit = await hasSystemPermission(userId, "project:edit");
+    if (!canEdit) return { success: false, error: "Access Denied: Missing global permissions." };
+
+    const project = await queries.projects.getById(projectId);
+    if (!project) return { success: false, error: "Project not found." };
+
+    if (project.ownerId === memberIdToUpdate) {
+      return { success: false, error: "The project owner's role cannot be modified." };
+    }
+
+    const isOwner = project.ownerId === userId;
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    const isProjectAdmin = localRole === "admin";
+
+    if (!isOwner && !isProjectAdmin) {
+      console.warn(`User ${userId} attempted to change roles in project ${projectId} without admin rights.`);
+      return { 
+        success: false, 
+        error: "Access Denied: You must be a Project Admin or Owner to manage team roles." 
+      };
+    }
+
+    await queries.projects.updateMemberRole(projectId, memberIdToUpdate, newRole);
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update member role:", error);
+    return { success: false, error: "Failed to update team member role." };
   }
 }

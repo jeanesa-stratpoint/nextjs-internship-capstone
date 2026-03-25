@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, CheckCircle2, UserPlus, X, Trash2, Edit } from "lucide-react";
+import { MoreVertical, CheckCircle2, Trash2, Edit } from "lucide-react";
 import { useBoardStore } from "@/stores/board-store";
 import { useUIStore } from "@/stores/ui-store";
 import { DbProject, TeamMember } from "@/types/index";
@@ -11,6 +11,7 @@ import { useToastStore, DEFAULT_TOAST_DURATION } from "@/stores/toast-store";
 import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import ConfirmActionModal from "./modals/confirm-action-modal";
+import ProjectTeamModal from "./modals/project-team-modal"; // <-- Ensure this is imported!
 
 interface HeaderProps {
   project: DbProject;
@@ -27,42 +28,19 @@ export default function ProjectHeaderActions({
 }: HeaderProps) {
   const router = useRouter();
   const { lists, tasks } = useBoardStore();
-  const { openProjectCompletionModal, openGlobalInviteModal, openEditProjectModal } = useUIStore();
+  const { openProjectCompletionModal, openEditProjectModal, openGlobalInviteModal } = useUIStore();
 
   const { showToast } = useToastStore();
   const queryClient = useQueryClient();
-  const { removeMember, deleteProject } = useProjectMutations();
+  const { deleteProject } = useProjectMutations();
 
-  const [isTeamMenuOpen, setIsTeamMenuOpen] = useState(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null);
-  const [isRemoving, setIsRemoving] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
 
   const endListId = lists.length > 0 ? lists[lists.length - 1].id : null;
   const allTasksCompleted =
     tasks.length > 0 && endListId && tasks.every((t) => t.listId === endListId);
-
-  const handleConfirmRemoveMember = async () => {
-    if (!memberToRemove) return;
-    setIsRemoving(true);
-
-    try {
-      await removeMember.mutateAsync({
-        projectId: project.id,
-        memberId: memberToRemove.id,
-      });
-      showToast({ message: "Member removed from project", type: "success" });
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        showToast({ message: error.message || "Failed to remove member", type: "error" });
-      }
-    } finally {
-      setIsRemoving(false);
-      setMemberToRemove(null);
-    }
-  };
 
   const handleDeleteProject = () => {
     setShowDeleteModal(false);
@@ -117,14 +95,15 @@ export default function ProjectHeaderActions({
         confirmText="Delete Project"
         isLoading={false}
       />
-      <ConfirmActionModal
-        isOpen={!!memberToRemove}
-        onClose={() => setMemberToRemove(null)}
-        onConfirm={handleConfirmRemoveMember}
-        title="Remove Team Member?"
-        description={`Are you sure you want to remove ${memberToRemove?.firstName || "this user"} from the project? They will lose access to all tasks and lists.`}
-        confirmText="Remove Member"
-        isLoading={isRemoving}
+
+      <ProjectTeamModal
+        isOpen={isTeamModalOpen}
+        onClose={() => setIsTeamModalOpen(false)}
+        projectId={project.id}
+        team={team}
+        projectOwnerId={project.ownerId}
+        hasEditAccess={canEditProject}
+        openInviteModal={() => openGlobalInviteModal(project.id)}
       />
 
       <div className="flex items-center gap-4">
@@ -137,10 +116,9 @@ export default function ProjectHeaderActions({
           </button>
         )}
 
-        {/* TEAM MENU */}
         <div className="relative">
           <button
-            onClick={() => setIsTeamMenuOpen(!isTeamMenuOpen)}
+            onClick={() => setIsTeamModalOpen(true)}
             className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 rounded-xl transition-colors group"
           >
             <div className="flex -space-x-2 mr-1">
@@ -169,64 +147,8 @@ export default function ProjectHeaderActions({
               )}
             </div>
           </button>
-
-          {isTeamMenuOpen && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setIsTeamMenuOpen(false)}></div>
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-20">
-                {canEditProject && (
-                  <button
-                    onClick={() => {
-                      setIsTeamMenuOpen(false);
-                      openGlobalInviteModal(project.id);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-black hover:bg-gray-50 rounded-lg mb-2"
-                  >
-                    <UserPlus size={16} className="text-gray-500" /> Add Member
-                  </button>
-                )}
-                <div className="text-xs font-bold text-gray-400 uppercase px-3 mb-2">
-                  Project Team
-                </div>
-                <div className="max-h-48 overflow-y-auto space-y-1">
-                  {team.map((user) => {
-                    const isOwner = user.id === project.ownerId;
-                    return (
-                      <div
-                        key={user.id}
-                        className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-lg group"
-                      >
-                        <div className="flex flex-col overflow-hidden pr-2">
-                          <span className="text-sm font-semibold text-gray-800 truncate">
-                            {`${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-                              user.email.split("@")[0]}
-                          </span>
-                          {isOwner && (
-                            <span className="text-[10px] text-gray-400 font-bold uppercase">
-                              Owner
-                            </span>
-                          )}
-                        </div>
-
-                        {canEditProject && !isOwner && (
-                          <button
-                            onClick={() => setMemberToRemove(user)}
-                            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Remove"
-                          >
-                            <X size={14} />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          )}
         </div>
 
-        {/* SETTINGS MENU */}
         {(canEditProject || canDeleteProject) && (
           <div className="relative">
             <button
