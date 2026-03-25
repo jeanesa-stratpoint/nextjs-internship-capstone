@@ -21,9 +21,17 @@ import {
   Sun,
   Moon,
   X,
+  ShieldCheck,
+  Users2,
+  Key,
 } from "lucide-react";
 
-export default function Sidebar({ roleName = "Loading..." }: { roleName?: string }) {
+interface SidebarProps {
+  roleName?: string;
+  isAdmin?: boolean;
+}
+
+export default function Sidebar({ roleName = "Loading...", isAdmin = false }: SidebarProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -31,6 +39,9 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
   const { user } = useUser();
 
   const { isSidebarCollapsed, toggleSidebar, isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
+
+  // Detect if we are in the Admin section to swap the menu
+  const isInAdminMode = pathname.startsWith("/admin");
 
   useEffect(() => {
     const handleResize = () => {
@@ -54,13 +65,19 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
+  const adminItems = [
+    { name: "Admin Home", href: "/admin", icon: ShieldCheck },
+    { name: "User Management", href: "/admin/users", icon: Users2 },
+    { name: "Global Roles", href: "/admin/roles", icon: Key },
+  ];
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
     }, 0);
-
     return () => clearTimeout(timer);
   }, []);
+
   const isDark = theme === "dark";
 
   return (
@@ -78,28 +95,31 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
           ${isMobileMenuOpen ? "translate-x-0 w-64 px-4 shadow-2xl" : "-translate-x-full md:translate-x-0 px-0 md:px-0"}
         `}
       >
+        {/* LOGO SECTION - Now a Link to go back to App */}
         <div
           className={`flex items-center mb-8 px-4 ${effectivelyCollapsed ? "justify-center" : "justify-between"}`}
         >
-          {!effectivelyCollapsed ? (
-            <Image
-              src="/levera-logo.svg"
-              alt="Levera Logo"
-              width={120}
-              height={32}
-              className="h-10 w-auto object-contain dark:invert"
-              priority
-            />
-          ) : (
-            <Image
-              src="/levera.svg"
-              alt="Levera Logo"
-              width={20}
-              height={10}
-              className="h-10 w-auto object-contain dark:invert"
-              priority
-            />
-          )}
+          <Link href="/dashboard" className="transition-opacity hover:opacity-80">
+            {!effectivelyCollapsed ? (
+              <Image
+                src="/levera-logo.svg"
+                alt="Levera Logo"
+                width={120}
+                height={32}
+                className="h-10 w-auto object-contain dark:invert"
+                priority
+              />
+            ) : (
+              <Image
+                src="/levera.svg"
+                alt="Levera Logo"
+                width={20}
+                height={10}
+                className="h-10 w-auto object-contain dark:invert"
+                priority
+              />
+            )}
+          </Link>
 
           <button
             onClick={toggleSidebar}
@@ -120,50 +140,92 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
           </button>
         </div>
 
+        {/* NAVIGATION LINKS */}
         <nav className="flex-1 space-y-1 px-2 overflow-y-auto overflow-x-hidden no-scrollbar">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium text-sm whitespace-nowrap
-                  ${
-                    isActive
-                      ? "bg-white/60 dark:bg-zinc-800 text-black dark:text-white font-semibold shadow-sm"
-                      : "text-gray-600 dark:text-zinc-400 hover:bg-white/40 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-zinc-200"
-                  }
-                  ${effectivelyCollapsed ? "justify-center" : "justify-start"}
-                `}
-              >
-                <div className="relative flex items-center justify-center">
+          {isInAdminMode ? (
+            /* ADMIN MODE: Show ONLY Admin Tabs */
+            adminItems.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium text-sm whitespace-nowrap
+                    ${isActive ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold shadow-sm" : "text-gray-600 dark:text-zinc-400 hover:bg-white/40 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-zinc-200"}
+                    ${effectivelyCollapsed ? "justify-center" : "justify-start"}
+                  `}
+                >
                   <Icon
                     size={18}
-                    className={
-                      isActive
-                        ? "text-black dark:text-white shrink-0"
-                        : "text-gray-500 dark:text-zinc-400 shrink-0"
-                    }
+                    className={isActive ? "text-orange-600 dark:text-orange-400" : "text-gray-500"}
                   />
+                  {!effectivelyCollapsed && <span className="truncate">{item.name}</span>}
+                </Link>
+              );
+            })
+          ) : (
+            /* STANDARD MODE: Show standard tabs + Admin Entry Point */
+            <>
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium text-sm whitespace-nowrap
+                      ${isActive ? "bg-white/60 dark:bg-zinc-800 text-black dark:text-white font-semibold shadow-sm" : "text-gray-600 dark:text-zinc-400 hover:bg-white/40 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-zinc-200"}
+                      ${effectivelyCollapsed ? "justify-center" : "justify-start"}
+                    `}
+                  >
+                    <div className="relative flex items-center justify-center">
+                      <Icon
+                        size={18}
+                        className={
+                          isActive
+                            ? "text-black dark:text-white shrink-0"
+                            : "text-gray-500 dark:text-zinc-400 shrink-0"
+                        }
+                      />
+                      {item.name === "Notifications" && effectivelyCollapsed && (
+                        <NotificationBadge isCollapsed={true} />
+                      )}
+                    </div>
+                    {!effectivelyCollapsed && <span className="truncate">{item.name}</span>}
+                    {item.name === "Notifications" && !effectivelyCollapsed && (
+                      <NotificationBadge isCollapsed={false} />
+                    )}
+                  </Link>
+                );
+              })}
 
-                  {item.name === "Notifications" && effectivelyCollapsed && (
-                    <NotificationBadge isCollapsed={true} />
+              {isAdmin && (
+                <div className="pt-4 mt-4 border-t border-white/20 dark:border-zinc-800/50">
+                  {!effectivelyCollapsed && (
+                    <p className="px-3 mb-2 text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest">
+                      System
+                    </p>
                   )}
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium text-sm whitespace-nowrap text-gray-600 dark:text-zinc-400 hover:bg-white/40 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-zinc-200
+                      ${effectivelyCollapsed ? "justify-center" : "justify-start"}
+                    `}
+                  >
+                    <ShieldCheck size={18} className="text-gray-500" />
+                    {!effectivelyCollapsed && <span>Admin Panel</span>}
+                  </Link>
                 </div>
-
-                {!effectivelyCollapsed && <span className="truncate">{item.name}</span>}
-
-                {item.name === "Notifications" && !effectivelyCollapsed && (
-                  <NotificationBadge isCollapsed={false} />
-                )}
-              </Link>
-            );
-          })}
+              )}
+            </>
+          )}
         </nav>
 
+        {/* FOOTER SECTION */}
         <div className="space-y-4 px-4 mt-auto pt-4 border-t border-transparent dark:border-zinc-800/50">
           {!effectivelyCollapsed && mounted && (
             <div
@@ -182,7 +244,7 @@ export default function Sidebar({ roleName = "Loading..." }: { roleName?: string
                 className={`w-8 h-4 rounded-full relative transition-colors ${isDark ? "bg-blue-600" : "bg-gray-300"}`}
               >
                 <div
-                  className={`w-3 h-3 bg-white rounded-full absolute top-0.5 shadow-sm transition-all duration-300 ${isDark ? "left-1 translate-x-full" : "left-0.5"}`}
+                  className={`w-3 h-3 bg-white rounded-full absolute top-0.5 shadow-sm transition-all duration-300 ${isDark ? "left-4.5 translate-x-full" : "left-0.5"}`}
                 ></div>
               </div>
             </div>

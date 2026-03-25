@@ -3,6 +3,8 @@ import { projects, projectMembers, lists, tasks, comments, taskActivities, users
 import { eq, desc, inArray, asc, and, ne, gte, count, notInArray, sql } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 import { calculateExpiryDate, isDateExpired } from "@/lib/utils";
+import { adminQueries } from "./admin";
+
 
 export const queries = {
   // PROJECT QUERIES
@@ -1156,4 +1158,6 @@ export const queries = {
         .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
     },
   },
+
+  admin: adminQueries,
 };

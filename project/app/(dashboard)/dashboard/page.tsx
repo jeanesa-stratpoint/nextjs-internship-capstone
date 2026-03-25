@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { queries } from "@/lib/db/queries";
 import { hasSystemPermission } from "@/lib/rbac";
+import { checkIsSystemAdmin } from "@/lib/db/queries/admin";
 import { formatHeaderDate, getGreeting } from "@/lib/utils";
 import { TrendingUp, Users, CheckCircle, ListTodo, LucideIcon } from "lucide-react";
 import QuickActions from "@/components/quick-actions";
@@ -16,6 +17,12 @@ export default async function DashboardPage({
 }) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
+
+  const isAdmin = await checkIsSystemAdmin(userId);
+
+  if (isAdmin) {
+    redirect("/admin");
+  }
 
   const resolvedParams = await searchParams;
   const q = typeof resolvedParams.q === "string" ? resolvedParams.q.toLowerCase() : "";
