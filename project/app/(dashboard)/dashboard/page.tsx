@@ -25,20 +25,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-10 text-black flex flex-col pb-10 mx-auto animate-in slide-in-from-bottom-4 fade-in duration-700">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6">
-        <div>
-          <p className="text-sm text-gray-500 font-semibold mb-2">{formatHeaderDate()}</p>
-          <h1 className="text-4xl font-bold">
-            {greeting}, {currentUser?.firstName || "User"}
-          </h1>
-          <p className="text-gray-500 mt-2 text-sm font-medium">
-            Here&apos;s an overview of your projects and tasks.
-          </p>
-        </div>
+      {/* HEADER */}
+      <div className="flex flex-col gap-6">
+        {/* Top Row: Greeting & Search/Filter */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+          <div>
+            <p className="text-sm text-gray-500 font-semibold mb-2">{formatHeaderDate()}</p>
+            <h1 className="text-4xl font-bold">
+              {greeting}, {currentUser?.firstName || "User"}
+            </h1>
+          </div>
 
-        <div className="flex flex-col w-full xl:w-auto gap-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-end">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
             <div className="relative w-full sm:w-[320px]">
               <Search
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -54,8 +52,15 @@ export default async function DashboardPage() {
               <Filter size={16} /> Filter
             </button>
           </div>
+        </div>
 
-          <div className="flex flex-col xl:items-end w-full">
+        {/* Bottom Row: Subtitle & Quick Actions */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+          <p className="text-gray-500 text-sm font-medium">
+            Here&apos;s an overview of your projects and tasks.
+          </p>
+
+          <div className="w-full xl:w-auto">
             <QuickActions
               canCreateProject={canCreateProject}
               canInviteMember={canInviteMember}
