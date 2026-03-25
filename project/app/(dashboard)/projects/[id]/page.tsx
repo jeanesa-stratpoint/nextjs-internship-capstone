@@ -19,46 +19,34 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!userId) redirect("/sign-in");
 
   const project = await queries.projects.getById(projectId);
-
   if (!project) notFound();
 
   const team = await queries.projects.getMembers(projectId);
   const localRole = await queries.projects.getMemberRole(projectId, userId);
+
+  // ✅ SECURITY: Kick out anyone who isn't a member of this project
+  if (!localRole) redirect("/projects");
+
   const isOwner = project.ownerId === userId;
+  const isProjectAdmin = localRole === "admin";
 
   const userProjectsData = await queries.projects.getAllForUser(userId);
   const userProjects = userProjectsData.map((p) => p.project);
 
-  const [
-    canEditProject,
-    canDeleteProject,
-    canCreateList,
-    canEditList,
-    canDeleteList,
-    canCreateTask,
-    canEditTask,
-    canDeleteTask,
-  ] = await Promise.all([
-    hasSystemPermission(userId, "project:edit"),
-    hasSystemPermission(userId, "project:delete"),
-    hasSystemPermission(userId, "list:create"),
-    hasSystemPermission(userId, "list:edit"),
-    hasSystemPermission(userId, "list:delete"),
-    hasSystemPermission(userId, "task:create"),
-    hasSystemPermission(userId, "task:edit"),
-    hasSystemPermission(userId, "task:delete"),
-  ]);
+  // ✅ ONLY fetch the global delete permission
+  const canDeleteProject = await hasSystemPermission(userId, "project:delete");
 
-  const hasEditAccess = canEditProject && (isOwner || localRole === "admin");
+  const hasEditAccess = isOwner || isProjectAdmin;
   const hasDeleteAccess = canDeleteProject && isOwner;
 
+  // ✅ EVERY MEMBER PRIVILEGE: If you are here, you can work.
   const boardPermissions = {
-    canCreateList,
-    canEditList,
-    canDeleteList,
-    canCreateTask,
-    canEditTask,
-    canDeleteTask,
+    canCreateList: true,
+    canEditList: true,
+    canDeleteList: true,
+    canCreateTask: true,
+    canEditTask: true,
+    canDeleteTask: true,
   };
 
   return (
@@ -94,7 +82,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <KanbanBoard project={project} permissions={boardPermissions} />
       </div>
 
-      <TaskDetailModal canEditTask={canEditTask} canDeleteTask={canDeleteTask} />
+      <TaskDetailModal canEditTask={true} canDeleteTask={true} />
       <ProjectCompletionModal projectId={project.id} />
       <GlobalInviteModal userProjects={userProjects} />
     </div>

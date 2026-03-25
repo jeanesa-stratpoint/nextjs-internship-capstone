@@ -1,7 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { queries } from "@/lib/db/queries";
-import { hasSystemPermission } from "@/lib/rbac";
 import { formatHeaderDate } from "@/lib/utils";
 
 import CreateEventButton from "@/components/buttons/create-event-button";
@@ -14,12 +13,6 @@ export default async function CalendarPage() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
-  // RBAC Permissions
-  const canCreateEvent = await hasSystemPermission(userId, "event:create");
-  const canEditEvent = await hasSystemPermission(userId, "event:edit");
-  const canDeleteEvent = await hasSystemPermission(userId, "event:delete");
-
-  // Fetch Data
   const userProjectsData = await queries.projects.getAllForUser(userId);
   const userProjects = userProjectsData.map((p) => p.project);
   const projectIds = userProjects.map((p) => p.id);
@@ -31,16 +24,15 @@ export default async function CalendarPage() {
 
   const currentDate = formatHeaderDate();
 
+  const canCreateEvent = userProjects.length > 0;
+
   return (
     <div className="space-y-4 text-black">
-      <CreateEventModal userProjects={userProjects} />
-      <TaskDetailModal />
-      <EventDetailModal
-        canEdit={canEditEvent}
-        canDelete={canDeleteEvent}
-        userProjects={userProjects}
-      />
+      {canCreateEvent && <CreateEventModal userProjects={userProjects} />}
 
+      <TaskDetailModal canEditTask={true} canDeleteTask={true} />
+
+      <EventDetailModal canEdit={true} canDelete={true} userProjects={userProjects} />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <p className="text-sm text-gray-500 font-medium mb-2">{currentDate}</p>

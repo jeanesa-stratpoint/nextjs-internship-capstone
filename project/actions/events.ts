@@ -2,7 +2,6 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import { hasSystemPermission } from "@/lib/rbac";
 import { eventSchema } from "@/lib/validations";
 import { queries } from "@/lib/db/queries";
 
@@ -11,15 +10,17 @@ export async function createEventAction(formData: unknown) {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized: You must be logged in." };
 
-    const canCreateEvent = await hasSystemPermission(userId, "event:create"); 
-    if (!canCreateEvent) return { success: false, error: "Access Denied: Your role cannot create events." };
-
     const validationResult = eventSchema.safeParse(formData);
     if (!validationResult.success) {
       return { success: false, error: validationResult.error.issues[0].message };
     }
 
     const validatedData = validationResult.data;
+
+    const localRole = await queries.projects.getMemberRole(validatedData.projectId, userId);
+    if (!localRole) {
+      return { success: false, error: "Access Denied: You must be a project member to schedule events." };
+    }
 
     const project = await queries.projects.getById(validatedData.projectId);
     if (!project) return { success: false, error: "Project not found." };
@@ -55,13 +56,15 @@ export async function updateEventDetailsAction(eventId: string, formData: unknow
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const canEdit = await hasSystemPermission(userId, "event:edit");
-    if (!canEdit) return { success: false, error: "Access Denied" };
-
     const validationResult = eventSchema.safeParse(formData);
     if (!validationResult.success) return { success: false, error: validationResult.error.issues[0].message };
 
     const validatedData = validationResult.data;
+
+    const localRole = await queries.projects.getMemberRole(validatedData.projectId, userId);
+    if (!localRole) {
+      return { success: false, error: "Access Denied: You must be a project member to edit events." };
+    }
 
     const project = await queries.projects.getById(validatedData.projectId);
     if (project?.dueDate && validatedData.endTime > project.dueDate) {
@@ -91,8 +94,10 @@ export async function deleteEventAction(eventId: string, projectId: string) {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const canDelete = await hasSystemPermission(userId, "event:delete"); 
-    if (!canDelete) return { success: false, error: "Access Denied" };
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) {
+      return { success: false, error: "Access Denied: You must be a project member to delete events." };
+    }
 
     await queries.events.delete(eventId);
 

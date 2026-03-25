@@ -10,8 +10,8 @@ export async function createListAction(projectId: string, name: string, newOrder
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const canCreate = await hasSystemPermission(userId, "list:create");
-    if (!canCreate) return { success: false, error: "Access Denied" };
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member." };
     if (!name.trim()) return { success: false, error: "List name is required" };
 
     const existingLists = await queries.tasks.getListsByProject(projectId);
@@ -39,8 +39,8 @@ export async function updateListDetailsAction(projectId: string, listId: string,
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const canEdit = await hasSystemPermission(userId, "list:edit");
-    if (!canEdit) return { success: false, error: "Access Denied" };
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member." };
     if (!name.trim()) return { success: false, error: "List name is required" };
 
     await queries.lists.updateDetails(listId, name.trim(), color);
@@ -58,8 +58,8 @@ export async function updateListOrderAction(projectId: string, listUpdates: { id
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const canEdit = await hasSystemPermission(userId, "list:edit");
-    if (!canEdit) return { success: false, error: "Access Denied" };
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member." };
 
     await Promise.all(listUpdates.map((list) => queries.lists.updateOrder(list.id, list.order)));
 
@@ -76,8 +76,8 @@ export async function deleteListAction(projectId: string, listId: string) {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const canDeleteList = await hasSystemPermission(userId, "list:delete"); 
-    if (!canDeleteList) return { success: false, error: "Access Denied" };
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member." };
 
     await queries.lists.delete(listId);
 
@@ -95,7 +95,8 @@ export async function clearListTasksAction(projectId: string, listId: string) {
     if (!userId) return { success: false, error: "Unauthorized" };
 
     const canEdit = await hasSystemPermission(userId, "list:edit");
-    if (!canEdit) return { success: false, error: "Access Denied" };
+    if (!canEdit) return { success: false, error: "Access Denied" };const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member." };
 
     await queries.tasks.deleteAllInList(listId);
 

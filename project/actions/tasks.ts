@@ -3,7 +3,6 @@
 import { taskSchema, commentSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
-import { hasSystemPermission } from "@/lib/rbac";
 import { queries } from "@/lib/db/queries/index";
 import { TaskPayload } from "@/types/index";
 import { UTApi } from "uploadthing/server";
@@ -16,8 +15,8 @@ export async function createTaskAction(formData: unknown, projectId: string) {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized: You must be logged in." };
 
-    const canCreateTask = await hasSystemPermission(userId, "task:create");
-    if (!canCreateTask) return { success: false, error: "Access Denied: Your role cannot create tasks." };
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member to create tasks." };
 
     const validationResult = taskSchema.safeParse(formData);
     if (!validationResult.success) return { success: false, error: validationResult.error.issues[0].message };
@@ -76,9 +75,8 @@ export async function updateTaskStatus(taskId: string, newListId: string, projec
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const canEdit = await hasSystemPermission(userId, "task:edit");
-    if (!canEdit) return { success: false, error: "Access Denied: You do not have permission to move tasks." };
-
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member to create tasks." };
     const existingTask = await queries.tasks.getById(taskId);
     if (!existingTask) return { success: false, error: "Task not found." };
 
@@ -128,8 +126,8 @@ export async function updateTaskAction(
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
 
-    const canEdit = await hasSystemPermission(userId, "task:edit");
-    if (!canEdit) return { success: false, error: "Access Denied" };
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member to create tasks." };
 
     const validationResult = taskSchema.safeParse(data);
     if (!validationResult.success) {
@@ -260,8 +258,9 @@ export async function deleteTaskAction(taskId: string, projectId: string) {
   try {
     const { userId } = await auth();
     if (!userId) return { success: false, error: "Unauthorized" };
-    const canDelete = await hasSystemPermission(userId, "task:delete"); 
-    if (!canDelete) return { success: false, error: "Access Denied: You do not have permission to delete tasks." };
+    
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member to create tasks." };
 
     const existingTask = await queries.tasks.getById(taskId);
     await queries.tasks.delete(taskId);
@@ -284,8 +283,8 @@ export async function updateTaskOrderAction(projectId: string, taskUpdates: { id
     if (!userId) return { success: false, error: "Unauthorized" };
     if (taskUpdates.length === 0) return { success: true };
 
-    const canEdit = await hasSystemPermission(userId, "task:edit");
-    if (!canEdit) return { success: false, error: "Access Denied" };
+    const localRole = await queries.projects.getMemberRole(projectId, userId);
+    if (!localRole) return { success: false, error: "Access Denied: You must be a project member to create tasks." };
 
     const taskIds = taskUpdates.map(t => t.id);
     const existingTasks = await queries.tasks.getByIds(taskIds);
@@ -365,13 +364,6 @@ export async function createCommentAction(taskId: string, projectId: string, con
     const isMember = projectMembers.some((member) => member.id === userId);
     if (!isMember) {
       return { success: false, error: "Forbidden: You are not a member of this project." };
-    }
-
-    const canComment = await hasSystemPermission(userId, "task:comment");
-    const canEdit = await hasSystemPermission(userId, "task:edit"); 
-    
-    if (!canComment && !canEdit) {
-      return { success: false, error: "Access Denied: You do not have permission to comment." };
     }
 
     const newComment = await queries.tasks.createComment(taskId, userId, validationResult.data.content);

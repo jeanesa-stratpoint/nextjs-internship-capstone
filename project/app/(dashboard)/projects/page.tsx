@@ -11,13 +11,12 @@ export default async function ProjectsPage() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
-  const canCreateProject = await hasSystemPermission(userId, "project:create");
-  const canEditProject = await hasSystemPermission(userId, "project:edit");
-  const canDeleteProject = await hasSystemPermission(userId, "project:delete");
-  const canInviteMember = await hasSystemPermission(userId, "project-invite:create");
-  const canCreateTask = await hasSystemPermission(userId, "task:create");
-  const canEditTask = await hasSystemPermission(userId, "task:edit");
-  const canDeleteTask = await hasSystemPermission(userId, "task:delete");
+  const [canCreateProject, canDeleteProject, canInviteMember] = await Promise.all([
+    hasSystemPermission(userId, "project:create"),
+    hasSystemPermission(userId, "project:delete"),
+    hasSystemPermission(userId, "project-invite:create"),
+  ]);
+
   const projectsWithMetrics = await queries.projects.getProjectsWithMetrics(userId);
   const currentDate = formatHeaderDate();
   const activeProjects = projectsWithMetrics.filter((p) => p.project.status === "active");
@@ -43,7 +42,6 @@ export default async function ProjectsPage() {
             completedTaskCount={metrics.completedTaskCount}
             ownerName={metrics.ownerName}
             isOwner={metrics.isOwner}
-            canEdit={canEditProject}
             canDelete={canDeleteProject}
             projectRole={role}
           />
@@ -83,9 +81,6 @@ export default async function ProjectsPage() {
         <QuickActions
           canCreateProject={canCreateProject}
           canInviteMember={canInviteMember}
-          canCreateTask={canCreateTask}
-          canEditTask={canEditTask}
-          canDeleteTask={canDeleteTask}
           userProjects={projectsWithMetrics.map((p) => p.project)}
         />
       </div>

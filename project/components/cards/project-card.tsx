@@ -41,7 +41,6 @@ export default function ProjectCard({
   completedTaskCount,
   ownerName,
   isOwner,
-  canEdit,
   canDelete,
   projectRole,
 }: {
@@ -52,7 +51,6 @@ export default function ProjectCard({
   completedTaskCount: number;
   ownerName: string;
   isOwner: boolean;
-  canEdit: boolean;
   canDelete: boolean;
   projectRole: "admin" | "member" | string;
 }) {
@@ -85,7 +83,7 @@ export default function ProjectCard({
 
   const progress = taskCount > 0 ? Math.round((completedTaskCount / taskCount) * 100) : 0;
 
-  const hasEditAccess = canEdit && (isOwner || projectRole === "admin");
+  const hasEditAccess = isOwner || projectRole === "admin";
   const hasDeleteAccess = canDelete && isOwner;
 
   const handleStatusChange = async (status: "active" | "on-hold") => {
@@ -223,7 +221,7 @@ export default function ProjectCard({
           <div className="absolute top-5 right-4 z-20">
             <button
               onClick={(e) => {
-                e.preventDefault(); // Prevent Link navigation
+                e.preventDefault();
                 setIsMenuOpen(!isMenuOpen);
               }}
               className={`p-1.5 rounded-full transition-all ${isMenuOpen ? "opacity-100 bg-gray-100 text-black" : "opacity-0 group-hover:opacity-100 text-gray-400 hover:text-black hover:bg-gray-100"}`}
@@ -235,20 +233,20 @@ export default function ProjectCard({
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setIsMenuOpen(false)}></div>
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-20">
-                  {canEdit && (
-                    <button
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        openEditProjectModal(project);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                    >
-                      <Edit size={14} /> Edit Details
-                    </button>
-                  )}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsMenuOpen(false);
+                      openEditProjectModal(project);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Edit size={14} /> Edit Details
+                  </button>
                   {project.status !== "completed" && (
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
                         setIsMenuOpen(false);
                         setShowCompleteModal(true);
                       }}
@@ -266,7 +264,10 @@ export default function ProjectCard({
                     </button>
                   ) : project.status === "on-hold" ? (
                     <button
-                      onClick={() => handleStatusChange("active")}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleStatusChange("active");
+                      }}
                       className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 font-medium"
                     >
                       <CheckCircle2 size={14} /> Resume Project

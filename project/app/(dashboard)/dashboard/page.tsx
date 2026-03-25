@@ -6,14 +6,12 @@ import { queries } from "@/lib/db/queries";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
-
   if (!userId) redirect("/sign-in");
 
-  const canCreateProject = await hasSystemPermission(userId, "project:create");
-  const canInviteMember = await hasSystemPermission(userId, "project-invite:create");
-  const canCreateTask = await hasSystemPermission(userId, "task:create");
-  const canEditTask = await hasSystemPermission(userId, "task:edit");
-  const canDeleteTask = await hasSystemPermission(userId, "task:delete");
+  const [canCreateProject, canInviteMember] = await Promise.all([
+    hasSystemPermission(userId, "project:create"),
+    hasSystemPermission(userId, "project-invite:create"),
+  ]);
 
   const userProjects = await queries.projects.getAllForUser(userId);
 
@@ -25,9 +23,6 @@ export default async function DashboardPage() {
         <QuickActions
           canCreateProject={canCreateProject}
           canInviteMember={canInviteMember}
-          canCreateTask={canCreateTask}
-          canEditTask={canEditTask}
-          canDeleteTask={canDeleteTask}
           userProjects={userProjects.map((p) => p.project)}
         />
       </div>

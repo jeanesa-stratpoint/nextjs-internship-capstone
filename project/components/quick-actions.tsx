@@ -13,21 +13,16 @@ import CreateTaskButton from "@/components/buttons/create-task-button";
 interface QuickActionsProps {
   canCreateProject: boolean;
   canInviteMember: boolean;
-  canCreateTask: boolean;
-  canEditTask: boolean;
-  canDeleteTask: boolean;
   userProjects: DbProject[];
 }
 
 export default function QuickActions({
   canCreateProject,
   canInviteMember,
-  canCreateTask,
-  canEditTask,
-  canDeleteTask,
   userProjects,
 }: QuickActionsProps) {
   const { isCreateTaskModalOpen, closeCreateTaskModal } = useUIStore();
+  const hasProjects = userProjects.length > 0;
 
   return (
     <div className="flex flex-col items-start lg:items-end gap-2 w-full lg:w-auto">
@@ -40,12 +35,12 @@ export default function QuickActions({
           onClose={closeCreateTaskModal}
           userProjects={userProjects}
         />
-        <TaskDetailModal canEditTask={canEditTask} canDeleteTask={canDeleteTask} />
+        <TaskDetailModal canEditTask={true} canDeleteTask={true} />
 
         {/* Modular Action Buttons */}
         {canCreateProject && <CreateProjectButton variant="outline" />}
         {canInviteMember && <TeamInviteButton variant="outline" />}
-        {canCreateTask && <CreateTaskButton variant="outline" />}
+        {hasProjects && <CreateTaskButton variant="outline" />}
       </div>
     </div>
   );
