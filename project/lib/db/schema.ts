@@ -36,6 +36,7 @@ export const users = pgTable('users', {
   lastName: varchar('last_name', { length: 255 }),
   roleId: uuid('role_id').references(() => roles.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  isRoleSelected: boolean("is_role_selected").default(false).notNull(),
 });
 
 export const projects = pgTable('projects', {

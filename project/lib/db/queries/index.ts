@@ -653,7 +653,7 @@ export const queries = {
     },
 
     getAssignableRoles: async () => {
-      const restrictedRoles = ["System Admin", "Super Admin"]; 
+      const restrictedRoles = ["System Admin", "Super Admin", "Standard User"]; 
 
       return await db
         .select()
@@ -665,9 +665,13 @@ export const queries = {
     updateRole: async (userId: string, roleId: string) => {
       await db
         .update(users)
-        .set({ roleId })
+        .set({ 
+          roleId: roleId,
+          isRoleSelected: true 
+        })
         .where(eq(users.id, userId));
     },
+    
   },
 
   // ANALYTICS QUERIES
